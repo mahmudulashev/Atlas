@@ -207,6 +207,12 @@ struct L10n {
         }
     }
 
+    var previewBadge: String      { s("koʻrinish", "preview") }
+    var widgetNeedsSigning: String {
+        s("Widget toʻliq yozilgan va ilova ichiga joylashtirilgan. Lekin macOS uchinchi tomon kengaytmalarini faqat Apple Developer ID bilan imzolangan boʻlsa roʻyxatga oladi — shusiz u Bildirishnoma markazida koʻrinmaydi. Yuqoridagi — oʻsha widget kodining haqiqiy natijasi.",
+          "The widget is written and embedded in the app. macOS only registers third-party extensions signed with an Apple Developer ID, so it cannot appear in Notification Centre on an unsigned build. What you see above is the real widget code rendering.")
+    }
+
     // MARK: - Difficulty
 
     var howHard: String           { s("Qanchalik qiyin", "How hard is this") }

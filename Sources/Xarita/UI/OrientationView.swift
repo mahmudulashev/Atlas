@@ -1,4 +1,5 @@
 import SwiftUI
+import WidgetKit
 
 /// What the reader sees the moment a project finishes analysing.
 ///
@@ -16,6 +17,7 @@ struct OrientationView: View {
                 heading
                 facts
                 routeSection
+                widgetPreview
             }
             .frame(maxWidth: 720, alignment: .leading)
             .padding(.horizontal, 44)
@@ -135,6 +137,62 @@ struct OrientationView: View {
                 }
             }
         }
+    }
+
+
+    // MARK: - Widget preview
+
+    /// Renders the real widget views at their real sizes.
+    ///
+    /// macOS will not register a third-party extension signed ad-hoc — it wants
+    /// a Developer ID team identifier — so the widget cannot appear in
+    /// Notification Centre on an unsigned build. The extension is built and
+    /// embedded regardless; this shows exactly what it renders, using the same
+    /// view code the extension runs.
+    private var widgetPreview: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Text(loc.t.widgetName)
+                    .font(Theme.Font.title)
+                    .foregroundStyle(Theme.textPrimary)
+                Text(loc.t.previewBadge.uppercased())
+                    .font(Theme.Font.micro.weight(.bold))
+                    .tracking(0.8)
+                    .foregroundStyle(Theme.gold)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 1.5)
+                    .overlay(RoundedRectangle(cornerRadius: 3)
+                        .strokeBorder(Theme.gold, lineWidth: 1))
+                Spacer(minLength: 0)
+            }
+
+            HStack(alignment: .top, spacing: 16) {
+                widgetTile(width: 158, height: 158, family: .systemSmall)
+                widgetTile(width: 338, height: 158, family: .systemMedium)
+                Spacer(minLength: 0)
+            }
+
+            Text(loc.t.widgetNeedsSigning)
+                .font(Theme.Font.micro)
+                .foregroundStyle(Theme.textTertiary)
+                .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: 520, alignment: .leading)
+        }
+        .padding(.top, 34)
+    }
+
+    private func widgetTile(width: CGFloat, height: CGFloat,
+                            family: WidgetFamily) -> some View {
+        XaritaWidgetView(entry: WidgetSnapshotEntry(date: Date(),
+                                                    snapshot: state.widgetSnapshot),
+                         familyOverride: family)
+            .padding(14)
+            .frame(width: width, height: height)
+            .background(RoundedRectangle(cornerRadius: 18).fill(WidgetColor.ink))
+            .overlay(RoundedRectangle(cornerRadius: 18)
+                .strokeBorder(Theme.border, lineWidth: 1))
+            .clipShape(RoundedRectangle(cornerRadius: 18))
     }
 
     private func fileName(_ id: Int, _ graph: CodeGraph) -> String {

@@ -114,7 +114,8 @@ final class AppState: ObservableObject {
         Notifier.analysisFinished(project: result.projectName,
                                   symbols: result.nodes.count,
                                   seconds: result.parseSeconds)
-        WidgetBridge.write(graph: result)
+        WidgetBridge.write(graph: result, issues: issues, kind: projectKind,
+                           routeSteps: route.steps.count, routeDone: routeProgress.done)
     }
 
     func reanalyze() {
@@ -143,6 +144,9 @@ final class AppState: ObservableObject {
             }
         }
     }
+
+    /// The snapshot the widget would be showing right now.
+    var widgetSnapshot: Snapshot? { WidgetBridge.read() }
 
     // MARK: - Diagram
 

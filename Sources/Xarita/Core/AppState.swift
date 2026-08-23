@@ -44,12 +44,15 @@ final class AppState: ObservableObject {
 
     // MARK: - Project lifecycle
 
-    func chooseProject() {
+    /// The caller supplies the button title so the panel speaks the interface
+    /// language rather than the system one.
+    func chooseProject(prompt: String) {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = false
-        panel.prompt = "Open"
+        panel.prompt = prompt
+        panel.message = prompt
         if panel.runModal() == .OK, let url = panel.url { open(url) }
     }
 

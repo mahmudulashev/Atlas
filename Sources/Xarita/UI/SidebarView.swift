@@ -25,6 +25,17 @@ struct SidebarView: View {
                 .padding(.vertical, 14)
             }
             .scrollContentBackground(.hidden)
+
+            Divider().overlay(Theme.border)
+            HStack {
+                LanguageToggle(compact: true)
+                Spacer(minLength: 0)
+                Text(state.graph.map { "\(loc.t.count($0.nodes.count))" } ?? "")
+                    .font(Theme.Font.micro)
+                    .foregroundStyle(Theme.textTertiary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
         }
         .background(Theme.surface)
     }

@@ -137,6 +137,8 @@ struct L10n {
                                       "The on-device model requires macOS 26 or newer.") }
     var openSettings: String      { s("Sozlamalarni ochish", "Open Settings") }
 
+    var codeMenu: String          { s("Kod", "Code") }
+
     // MARK: - Difficulty
 
     var howHard: String           { s("Qanchalik qiyin", "How hard is this") }

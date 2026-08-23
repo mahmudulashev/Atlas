@@ -9,7 +9,14 @@ struct WelcomeView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Spacer(minLength: 40)
+            HStack {
+                Spacer()
+                LanguageToggle()
+            }
+            .padding(.horizontal, 18)
+            .padding(.top, 14)
+
+            Spacer(minLength: 24)
 
             VStack(spacing: 18) {
                 MarkGlyph(size: 76)
@@ -44,7 +51,7 @@ struct WelcomeView: View {
 
             Spacer(minLength: 30)
 
-            languageStrip.padding(.bottom, 26)
+            languageStrip.padding(.bottom, 22)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.background)
@@ -62,7 +69,7 @@ struct WelcomeView: View {
                 .font(Theme.Font.heading)
                 .foregroundStyle(Theme.textPrimary)
 
-            Button(loc.t.chooseFolder) { state.chooseProject() }
+            Button(loc.t.chooseFolder) { state.chooseProject(prompt: loc.t.chooseFolder) }
                 .buttonStyle(PrimaryButtonStyle())
         }
         .frame(maxWidth: .infinity)

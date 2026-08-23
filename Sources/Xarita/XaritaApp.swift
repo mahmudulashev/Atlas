@@ -37,7 +37,7 @@ struct XaritaApp: App {
     @CommandsBuilder
     private var menuCommands: some Commands {
         CommandGroup(replacing: .newItem) {
-            Button(loc.t.openProject) { state.chooseProject() }
+            Button(loc.t.openProject) { state.chooseProject(prompt: loc.t.chooseFolder) }
                 .keyboardShortcut("o", modifiers: .command)
         }
         CommandGroup(after: .newItem) {
@@ -49,7 +49,7 @@ struct XaritaApp: App {
                 .keyboardShortcut("w", modifiers: [.command, .shift])
                 .disabled(state.graph == nil)
         }
-        CommandMenu(loc.t.overview) {
+        CommandMenu(loc.t.codeMenu) {
             Button(loc.t.explainThis) {
                 state.requestExplanation(explainer: explainer, language: loc.language)
             }

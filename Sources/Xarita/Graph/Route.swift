@@ -29,27 +29,26 @@ struct Route {
         var current = start
 
         while steps.count < maxSteps {
-            let candidates = graph.outgoing[current].filter { id in
-                !visited.contains(id)
-                    && !graph.nodes[id].isExternal
-                    && graph.nodes[id].kind.isCallable
-                    && graph.nodes[id].fileIndex >= 0
+            let isLast = steps.count == maxSteps - 1
+            let candidates = graph.outgoing[current].filter {
+                !visited.contains($0) && isReadable($0, in: graph)
+                    && (isLast || graph.nodes[$0].fanOut > 0)   // don't stop early on a dead end
             }
-            guard let next = candidates.max(by: { reach(of: $0, in: graph) < reach(of: $1, in: graph) })
-            else { break }
+            guard let next = candidates.max(by: {
+                stepScore($0, from: current, in: graph) < stepScore($1, from: current, in: graph)
+            }) else { break }
 
             steps.append(Step(nodeID: next, reachedFrom: current))
             visited.insert(next)
             current = next
         }
 
-        // A one-step route is not a route. Fall back to breadth at the entry
-        // point so the reader still gets somewhere to go.
-        if steps.count < 3 {
+        // A one- or two-step route is not a route. Widen out from the entry
+        // point so the reader still has somewhere to go.
+        if steps.count < 4 {
             let siblings = graph.outgoing[start]
-                .filter { !visited.contains($0) && !graph.nodes[$0].isExternal
-                          && graph.nodes[$0].kind.isCallable && graph.nodes[$0].fileIndex >= 0 }
-                .sorted { reach(of: $0, in: graph) > reach(of: $1, in: graph) }
+                .filter { !visited.contains($0) && isReadable($0, in: graph) }
+                .sorted { stepScore($0, from: start, in: graph) > stepScore($1, from: start, in: graph) }
             for id in siblings where steps.count < maxSteps {
                 steps.append(Step(nodeID: id, reachedFrom: start))
                 visited.insert(id)
@@ -59,43 +58,91 @@ struct Route {
         return Route(steps: steps)
     }
 
-    /// How much of the codebase a step opens up: its own connections plus, at a
-    /// discount, those of everything it calls. Preferring reach over raw
-    /// popularity keeps the route on the spine of the program instead of
-    /// detouring into a heavily-used leaf like a string helper.
-    private static func reach(of id: Int, in graph: CodeGraph) -> Int {
+    // MARK: - Filtering
+
+    /// Tests, examples and benchmarks are real code but they are not the
+    /// program. A first read should stay on the path the program itself takes.
+    private static func isReadable(_ id: Int, in graph: CodeGraph) -> Bool {
         let node = graph.nodes[id]
-        var score = node.fanOut * 3 + node.fanIn
-        for callee in graph.outgoing[id] where !graph.nodes[callee].isExternal {
-            score += graph.nodes[callee].fanOut
-        }
-        if node.span >= 6  { score += 4 }        // trivial one-liners teach little
-        if node.span <= 2  { score -= 8 }
-        if node.kind == .initializer { score -= 3 }
+        guard !node.isExternal, node.kind.isCallable, node.fileIndex >= 0,
+              node.fileIndex < graph.files.count else { return false }
+        let path = graph.files[node.fileIndex].lowercased()
+        for marker in ["test", "spec", "example", "sample", "benchmark", "demo",
+                       "fixture", "mock", "vendor", "third_party", "script"]
+        where path.contains(marker) { return false }
+        return true
+    }
+
+    /// Directories that hold the actual program rather than its surroundings.
+    private static func isCoreDirectory(_ id: Int, in graph: CodeGraph) -> Bool {
+        let node = graph.nodes[id]
+        guard node.fileIndex >= 0, node.fileIndex < graph.files.count else { return false }
+        let path = graph.files[node.fileIndex].lowercased()
+        return path.hasPrefix("src/") || path.hasPrefix("lib/") || path.hasPrefix("app/")
+            || path.hasPrefix("source/") || path.hasPrefix("internal/") || !path.contains("/")
+    }
+
+    private static func directory(_ id: Int, in graph: CodeGraph) -> String {
+        guard id >= 0, graph.nodes[id].fileIndex >= 0,
+              graph.nodes[id].fileIndex < graph.files.count else { return "" }
+        return (graph.files[graph.nodes[id].fileIndex] as NSString).deletingLastPathComponent
+    }
+
+    // MARK: - Scoring
+
+    /// Choosing the next step is a balance between *leading somewhere* and
+    /// *being worth reading*. Both halves are capped: without a cap a single
+    /// enormous function or a universally-used helper such as `strlen` wins
+    /// every comparison and the route collapses onto it.
+    private static func stepScore(_ id: Int, from previous: Int, in graph: CodeGraph) -> Int {
+        let node = graph.nodes[id]
+        var score = min(node.fanOut, 12) * 4 + min(node.fanIn, 6)
+
+        if node.span >= 6 { score += 6 } else { score -= 10 }
+        if node.fanOut == 0 { score -= 25 }
+        if node.fanIn > 40 { score -= 30 }               // a shared utility, not a stage
+        if isCoreDirectory(id, in: graph) { score += 12 }
+        if directory(id, in: graph) == directory(previous, in: graph) { score += 8 }
+        if node.kind == .initializer { score -= 4 }
         return score
     }
 
+    /// Reach is used only to break ties between plausible entry points, and is
+    /// capped for the same reason: the biggest function in a project is rarely
+    /// where a program starts.
+    private static func reach(of id: Int, in graph: CodeGraph) -> Int {
+        let node = graph.nodes[id]
+        var score = min(node.fanOut, 10) * 2
+        for callee in graph.outgoing[id].prefix(12) where !graph.nodes[callee].isExternal {
+            score += min(graph.nodes[callee].fanOut, 4)
+        }
+        return min(score, 40)
+    }
+
     /// Where a program actually begins, as far as the graph can tell.
+    ///
+    /// Being *named* like an entry point outweighs everything else, because a
+    /// function called `main` is a far stronger signal than any structural
+    /// measure — and structure alone will happily nominate the largest internal
+    /// routine in the project, which is the worst possible place to start.
     private static func pickEntryPoint(in graph: CodeGraph) -> Int? {
         let entryNames: Set<String> = ["main", "run", "start", "serve", "app", "application",
-                                       "wsgi_app", "handle", "execute", "launch", "boot", "init"]
-        let candidates = graph.nodes.indices.filter { id in
-            let n = graph.nodes[id]
-            guard !n.isExternal, n.kind.isCallable, n.fileIndex >= 0, n.fanOut >= 1 else { return false }
-            let path = graph.files[n.fileIndex].lowercased()
-            return !path.contains("test") && !path.contains("spec")
-                && !path.contains("example") && !path.contains("benchmark")
+                                       "wsgi_app", "handle", "execute", "launch", "boot",
+                                       "createapp", "createserver", "listen", "dispatch"]
+        let candidates = graph.nodes.indices.filter {
+            isReadable($0, in: graph) && graph.nodes[$0].fanOut >= 1
         }
         guard !candidates.isEmpty else { return nil }
-
-        return candidates.max { a, b in score(a) < score(b) }
+        return candidates.max { score($0) < score($1) }
 
         func score(_ id: Int) -> Int {
-            let n = graph.nodes[id]
+            let node = graph.nodes[id]
             var s = reach(of: id, in: graph)
-            if entryNames.contains(n.name.lowercased()) { s += 60 }
-            if n.fanIn == 0 { s += 25 }              // nothing above it: a true top
-            if n.fanIn > 20 { s -= 20 }              // a hub is a destination, not a start
+            if entryNames.contains(node.name.lowercased()) { s += 120 }
+            if node.fanIn == 0 { s += 45 }               // nothing above it
+            if node.fanIn > 20 { s -= 50 }               // a destination, not a start
+            if isCoreDirectory(id, in: graph) { s += 20 }
+            if node.span < 4 { s -= 15 }
             return s
         }
     }

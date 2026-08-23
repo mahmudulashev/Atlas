@@ -69,6 +69,12 @@ struct Parser {
         var scopes: [Scope] = []
         var braceDepth = 0
 
+        // Depth inside (), [] and {}. Indentation only means anything at depth
+        // zero: Python wraps long signatures and literals across lines, and the
+        // closing bracket sits at the *declaration's* indent, which otherwise
+        // reads as a dedent and closes the function before its body starts.
+        var bracketDepth = 0
+
         let funcKeywords = language.functionKeywords
         let typeKeywords = language.typeKeywords
         let control = language.controlKeywords
@@ -152,7 +158,7 @@ struct Parser {
             let tok = tokens[i]
 
             // Indentation-scoped languages close scopes on dedent.
-            if indentScoped, tok.firstOnLine, !scopes.isEmpty {
+            if indentScoped, tok.firstOnLine, bracketDepth == 0, !scopes.isEmpty {
                 closeIndentScopes(to: tok.indent, line: tok.line)
                 if let scope = scopes.last, scope.symbolIndex >= 0, scope.kind.isCallable {
                     let relative = max(0, (tok.indent - scope.indent) / 4)
@@ -163,11 +169,19 @@ struct Parser {
             }
 
             if tok.kind == .punct {
+                switch tok.punct {
+                case 0x28, 0x5B: bracketDepth += 1                 // ( [
+                case 0x29, 0x5D: bracketDepth = max(0, bracketDepth - 1)
+                default: break
+                }
+
                 if tok.punct == 0x7B {            // {
                     braceDepth += 1
+                    if indentScoped { bracketDepth += 1 }
                     noteNesting(depth: braceDepth)
                 } else if tok.punct == 0x7D {     // }
                     braceDepth -= 1
+                    if indentScoped { bracketDepth = max(0, bracketDepth - 1) }
                     closeScopes(downTo: braceDepth, line: tok.line)
                 } else if tok.punct == 0x26 || tok.punct == 0x7C {
                     // && and || each add a path; count the pair once.

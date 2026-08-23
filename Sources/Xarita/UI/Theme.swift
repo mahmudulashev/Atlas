@@ -63,6 +63,22 @@ enum Theme {
     static let edgeOutgoing    = dynamic(light: 0x2C6FD4, dark: 0x5A9CFF)
     static let canvasGrid      = dynamic(light: 0xE8EBF0, dark: 0x141821)
 
+    // MARK: - Code
+
+    /// Syntax colours. Tuned so that in dark mode nothing glows brighter than
+    /// the identifiers you are actually trying to read.
+    static let codePlain    = dynamic(light: 0x24292F, dark: 0xCBD3E1)
+    static let codeKeyword  = dynamic(light: 0xA02585, dark: 0xE58FD0)
+    static let codeString   = dynamic(light: 0x0A7B2E, dark: 0x7FD98F)
+    static let codeNumber   = dynamic(light: 0xB35309, dark: 0xF0A45C)
+    static let codeComment  = dynamic(light: 0x6A737D, dark: 0x5F6B7C)
+    static let codeFunction = dynamic(light: 0x2C6FD4, dark: 0x74B0FF)
+    static let codeType     = dynamic(light: 0xA9750F, dark: 0xE0A53A)
+    static let codePunct    = dynamic(light: 0x57606A, dark: 0x8B95A5)
+    static let codeGutter   = dynamic(light: 0xAFB8C3, dark: 0x4A5464)
+    static let codeBackground = dynamic(light: 0xFBFCFD, dark: 0x0D1017)
+    static let codeHighlight  = dynamic(light: 0xFFF7D6, dark: 0x1C2233)
+
     // MARK: - Type scale
 
     enum Font {

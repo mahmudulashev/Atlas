@@ -115,6 +115,35 @@ struct L10n {
         }
     }
 
+    // MARK: - Explanation panel
+
+    var whatThisDoes: String      { s("Bu nima qiladi", "What this does") }
+    var explainThis: String       { s("Tushuntirib ber", "Explain this") }
+    var thinking: String          { s("Oʻylayapti…", "Thinking…") }
+    var theFacts: String          { s("Aniq maʼlumot", "The facts") }
+    var pickSomething: String     { s("Chapdan bir funksiyani tanlang",
+                                      "Pick a function on the left") }
+    var onDeviceNote: String      { s("Apple'ning qurilma ichidagi modeli — hech narsa internetga chiqmaydi",
+                                      "Apple's on-device model — nothing leaves your Mac") }
+
+    var aiOffTitle: String        { s("AI tushuntirish yoqilmagan", "AI explanations are off") }
+    var aiOffNeedsEnable: String  { s("Apple Intelligence yoqilmagan. Yoqsangiz, har bir funksiyani sodda tilda tushuntirib beradi. Ilovaning qolgan qismi busiz ham toʻliq ishlaydi.",
+                                      "Apple Intelligence isn't enabled. Turn it on and each function gets a plain-language explanation. Everything else in the app works without it.") }
+    var aiOffDownloading: String  { s("Model yuklanmoqda. Tugagach bu yerda paydo boʻladi.",
+                                      "The model is still downloading. It will appear here when it's ready.") }
+    var aiOffIneligible: String   { s("Bu Mac Apple Intelligence'ni qoʻllab-quvvatlamaydi. Apple Silicon (M1 va undan yangi) kerak.",
+                                      "This Mac can't run Apple Intelligence — it needs Apple Silicon (M1 or newer).") }
+    var aiOffOldOS: String        { s("Qurilma ichidagi model macOS 26 va undan yangisini talab qiladi.",
+                                      "The on-device model requires macOS 26 or newer.") }
+    var openSettings: String      { s("Sozlamalarni ochish", "Open Settings") }
+
+    // MARK: - Junior guidance
+
+    var startHere: String         { s("Shu yerdan boshlang", "Start here") }
+    var startHereHint: String     { s("Bu funksiyalar loyihaning koʻp qismini harakatga keltiradi — notanish kodni oʻqishni shulardan boshlash qulay.",
+                                      "These drive most of the project — the easiest place to start reading unfamiliar code.") }
+    var browse: String            { s("Koʻrib chiqish", "Browse") }
+
     // MARK: - Canvas controls
 
     var fitToScreen: String       { s("Ekranga moslash", "Fit to screen")}

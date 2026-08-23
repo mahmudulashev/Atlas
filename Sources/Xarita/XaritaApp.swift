@@ -6,6 +6,7 @@ struct XaritaApp: App {
 
     @StateObject private var state = AppState()
     @StateObject private var loc = Localization()
+    @StateObject private var explainer = Explainer()
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
 
     var body: some Scene {
@@ -13,9 +14,13 @@ struct XaritaApp: App {
             ContentView()
                 .environmentObject(state)
                 .environmentObject(loc)
-                .frame(minWidth: 960, minHeight: 620)
+                .environmentObject(explainer)
+                .frame(minWidth: 1040, minHeight: 640)
                 .background(Theme.background)
-                .onAppear { Notifier.requestAuthorization() }
+                .onAppear {
+                    Notifier.requestAuthorization()
+                    explainer.refreshAvailability()
+                }
         }
         .windowToolbarStyle(.unified(showsTitle: true))
         .defaultSize(width: 1280, height: 820)
@@ -25,6 +30,7 @@ struct XaritaApp: App {
             SettingsView()
                 .environmentObject(state)
                 .environmentObject(loc)
+                .environmentObject(explainer)
         }
     }
 
@@ -44,14 +50,11 @@ struct XaritaApp: App {
                 .disabled(state.graph == nil)
         }
         CommandMenu(loc.t.overview) {
-            Button(loc.t.fitToScreen) { state.fitRequest &+= 1 }
-                .keyboardShortcut("0", modifiers: .command)
-                .disabled(state.graph == nil)
-            Button(loc.t.resetLayout) { state.rerunLayout() }
-                .keyboardShortcut("l", modifiers: [.command, .shift])
-                .disabled(state.graph == nil)
-            Toggle(loc.t.showLabels, isOn: $state.showLabels)
-                .keyboardShortcut("t", modifiers: .command)
+            Button(loc.t.explainThis) {
+                state.requestExplanation(explainer: explainer, language: loc.language)
+            }
+            .keyboardShortcut("e", modifiers: .command)
+            .disabled(state.selection == nil || !explainer.modelState.canGenerate)
             Divider()
             Picker(loc.t.interfaceLanguage, selection: $loc.language) {
                 ForEach(AppLanguage.allCases, id: \.self) { lang in

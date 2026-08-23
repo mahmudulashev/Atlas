@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject private var state: AppState
     @EnvironmentObject private var loc: Localization
+    @EnvironmentObject private var explainer: Explainer
 
     var body: some View {
         Group {
@@ -18,28 +19,29 @@ struct ContentView: View {
         .animation(.easeInOut(duration: 0.2), value: state.graph == nil)
     }
 
+    /// Three columns: what to read, the code itself, and what it means.
     private var workspace: some View {
         HStack(spacing: 0) {
             SidebarView()
                 .frame(width: Theme.Metric.sidebarWidth)
             Divider().overlay(Theme.border)
 
-            GraphCanvas()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            if state.selection != nil {
+            VStack(spacing: 0) {
+                CallTreeView()
                 Divider().overlay(Theme.border)
-                InspectorView()
-                    .frame(width: Theme.Metric.inspectorWidth)
-                    .transition(.move(edge: .trailing).combined(with: .opacity))
+                SourceView()
+                    .frame(maxHeight: .infinity)
             }
+            .frame(maxWidth: .infinity)
+
+            Divider().overlay(Theme.border)
+            ExplainPanel()
+                .frame(width: Theme.Metric.inspectorWidth)
         }
-        .animation(.easeOut(duration: 0.18), value: state.selection == nil)
     }
 }
 
-/// Shown while an analysis runs. Stage names are translated; the counter uses
-/// tabular figures so it doesn't shuffle as it climbs.
+/// Shown while an analysis runs.
 struct AnalysisProgressView: View {
     @EnvironmentObject private var state: AppState
     @EnvironmentObject private var loc: Localization
@@ -49,7 +51,6 @@ struct AnalysisProgressView: View {
         case .scanning:  return loc.t.stageScanning
         case .parsing:   return loc.t.stageParsing
         case .resolving: return loc.t.stageResolving
-        case .laying:    return loc.t.stageLaying
         default:         return loc.t.analyzing
         }
     }
@@ -57,13 +58,11 @@ struct AnalysisProgressView: View {
     var body: some View {
         VStack(spacing: 20) {
             MarkGlyph(size: 58)
-                .opacity(0.9)
 
             VStack(spacing: 7) {
                 Text(stageText)
                     .font(Theme.Font.heading)
                     .foregroundStyle(Theme.textPrimary)
-
                 if let p = state.progress, p.total > 0 {
                     Text("\(p.current) / \(p.total)")
                         .font(Theme.Font.mono)
@@ -71,17 +70,16 @@ struct AnalysisProgressView: View {
                 }
             }
 
-            if let p = state.progress, p.total > 0 {
-                ProgressView(value: Double(p.current), total: Double(p.total))
-                    .progressViewStyle(.linear)
-                    .tint(Theme.accent)
-                    .frame(width: 260)
-            } else {
-                ProgressView()
-                    .progressViewStyle(.linear)
-                    .tint(Theme.accent)
-                    .frame(width: 260)
+            Group {
+                if let p = state.progress, p.total > 0 {
+                    ProgressView(value: Double(p.current), total: Double(p.total))
+                } else {
+                    ProgressView()
+                }
             }
+            .progressViewStyle(.linear)
+            .tint(Theme.accent)
+            .frame(width: 260)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.background)
@@ -93,6 +91,7 @@ struct AnalysisProgressView: View {
 struct SettingsView: View {
     @EnvironmentObject private var state: AppState
     @EnvironmentObject private var loc: Localization
+    @EnvironmentObject private var explainer: Explainer
     @State private var notify = Notifier.isEnabled
 
     var body: some View {
@@ -108,9 +107,14 @@ struct SettingsView: View {
                 .onChange(of: notify) { _, value in Notifier.isEnabled = value }
 
             Toggle(loc.t.showExternal, isOn: $state.includeExternal)
+
+            LabeledContent(loc.t.whatThisDoes) {
+                Text(explainer.modelState.canGenerate ? "✓" : "—")
+                    .foregroundStyle(explainer.modelState.canGenerate ? Theme.accent : Theme.textTertiary)
+            }
         }
         .formStyle(.grouped)
-        .frame(width: 380)
+        .frame(width: 400)
         .padding(.vertical, 6)
     }
 }

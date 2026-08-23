@@ -32,6 +32,7 @@ xcrun swiftc \
   -parse-as-library \
   -O -whole-module-optimization \
   -framework SwiftUI -framework AppKit -framework UserNotifications -framework WidgetKit \
+  -Xlinker -weak_framework -Xlinker FoundationModels \
   -o "$CONTENTS/MacOS/$APP_NAME" \
   "${SOURCES[@]}"
 

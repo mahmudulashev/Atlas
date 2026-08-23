@@ -4,13 +4,14 @@ import Foundation
 /// the tokenizer consumes them so that a `(` inside a string or a `func` inside a
 /// comment can't fabricate a symbol.
 struct Token {
-    enum Kind: UInt8 { case identifier, punct, number }
+    enum Kind: UInt8 { case identifier, punct, number, comment, string }
 
     let kind: Kind
     let text: String      // identifiers only
     let punct: UInt8      // punctuation byte only
     let line: Int         // 1-based
     let offset: Int       // byte offset of the token start
+    let length: Int       // byte length, for source highlighting
     let indent: Int       // indentation column of the line this token sits on
     let firstOnLine: Bool
 }
@@ -26,9 +27,15 @@ struct Tokenizer {
     let language: Language
     private let bytes: [UInt8]
 
-    init(source: String, language: Language) {
+    /// When true, comments and string literals are emitted as tokens instead of
+    /// being consumed. The parser wants them gone; the syntax highlighter needs
+    /// them, and both walk the same lexer rather than keeping two in step.
+    private let includeTrivia: Bool
+
+    init(source: String, language: Language, includeTrivia: Bool = false) {
         self.language = language
         self.bytes = Array(source.utf8)
+        self.includeTrivia = includeTrivia
     }
 
     // MARK: - Byte classes
@@ -108,7 +115,14 @@ struct Tokenizer {
             // Line comments
             var consumed = false
             for marker in lineCommentMarkers where matches(marker, at: i) {
+                let start = i
                 while i < n && bytes[i] != 0x0A { i += 1 }
+                if includeTrivia {
+                    tokens.append(Token(kind: .comment, text: "", punct: 0, line: line,
+                                        offset: start, length: i - start,
+                                        indent: indent, firstOnLine: !seenTokenOnLine))
+                }
+                seenTokenOnLine = true
                 consumed = true
                 break
             }
@@ -116,6 +130,8 @@ struct Tokenizer {
 
             // Block comments
             if let open = blockOpen, let close = blockClose, matches(open, at: i) {
+                let start = i
+                let startLine = line
                 var depth = 1
                 i += open.count
                 while i < n && depth > 0 {
@@ -128,12 +144,20 @@ struct Tokenizer {
                     }
                     i += 1
                 }
+                if includeTrivia {
+                    tokens.append(Token(kind: .comment, text: "", punct: 0, line: startLine,
+                                        offset: start, length: i - start,
+                                        indent: indent, firstOnLine: !seenTokenOnLine))
+                }
+                seenTokenOnLine = true
                 continue
             }
 
             // Multi-line strings (""" / ''')
             var handledMultiline = false
             for delim in multiStrings where matches(delim, at: i) {
+                let start = i
+                let startLine = line
                 i += delim.count
                 while i < n && !matches(delim, at: i) {
                     if bytes[i] == 0x0A { newline(at: i) }
@@ -141,6 +165,12 @@ struct Tokenizer {
                     i += 1
                 }
                 i = min(i + delim.count, n)
+                if includeTrivia {
+                    tokens.append(Token(kind: .string, text: "", punct: 0, line: startLine,
+                                        offset: start, length: i - start,
+                                        indent: indent, firstOnLine: !seenTokenOnLine))
+                }
+                seenTokenOnLine = true
                 handledMultiline = true
                 break
             }
@@ -149,6 +179,8 @@ struct Tokenizer {
             // Single-delimiter strings
             if stringBytes.contains(b) {
                 let quote = b
+                let start = i
+                let startLine = line
                 i += 1
                 while i < n {
                     let c = bytes[i]
@@ -160,6 +192,12 @@ struct Tokenizer {
                     if c == quote { i += 1; break }
                     i += 1
                 }
+                if includeTrivia {
+                    tokens.append(Token(kind: .string, text: "", punct: 0, line: startLine,
+                                        offset: start, length: i - start,
+                                        indent: indent, firstOnLine: !seenTokenOnLine))
+                }
+                seenTokenOnLine = true
                 continue
             }
 
@@ -169,8 +207,8 @@ struct Tokenizer {
                 while i < n && Self.isIdentBody(bytes[i]) { i += 1 }
                 let text = String(decoding: bytes[start..<i], as: UTF8.self)
                 tokens.append(Token(kind: .identifier, text: text, punct: 0,
-                                    line: line, offset: start, indent: indent,
-                                    firstOnLine: !seenTokenOnLine))
+                                    line: line, offset: start, length: i - start,
+                                    indent: indent, firstOnLine: !seenTokenOnLine))
                 seenTokenOnLine = true
                 continue
             }
@@ -180,16 +218,16 @@ struct Tokenizer {
                 let start = i
                 while i < n, Self.isIdentBody(bytes[i]) || bytes[i] == 0x2E { i += 1 }
                 tokens.append(Token(kind: .number, text: "", punct: 0,
-                                    line: line, offset: start, indent: indent,
-                                    firstOnLine: !seenTokenOnLine))
+                                    line: line, offset: start, length: i - start,
+                                    indent: indent, firstOnLine: !seenTokenOnLine))
                 seenTokenOnLine = true
                 continue
             }
 
             // Punctuation
             tokens.append(Token(kind: .punct, text: "", punct: b,
-                                line: line, offset: i, indent: indent,
-                                firstOnLine: !seenTokenOnLine))
+                                line: line, offset: i, length: 1,
+                                indent: indent, firstOnLine: !seenTokenOnLine))
             seenTokenOnLine = true
             i += 1
         }

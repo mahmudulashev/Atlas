@@ -16,8 +16,9 @@ struct SidebarView: View {
                     if !state.searchText.isEmpty {
                         searchSection
                     } else {
-                        statsSection
+                        startHereSection
                         hubsSection
+                        statsSection
                         unreachableSection
                     }
                 }
@@ -91,6 +92,24 @@ struct SidebarView: View {
             } else {
                 ForEach(results.prefix(60), id: \.self) { id in
                     NodeRow(id: id)
+                }
+            }
+        }
+    }
+
+    // MARK: - Start here
+
+    /// The first thing a newcomer sees. Handing someone a concrete place to
+    /// begin is the difference between reading a project and bouncing off it.
+    private var startHereSection: some View {
+        Group {
+            let starts = state.startingPoints()
+            if !starts.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    SectionLabel(loc.t.startHere, count: nil, hint: loc.t.startHereHint)
+                    ForEach(starts, id: \.self) { id in
+                        NodeRow(id: id)
+                    }
                 }
             }
         }

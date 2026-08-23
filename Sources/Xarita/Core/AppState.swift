@@ -2,29 +2,6 @@ import SwiftUI
 import AppKit
 import Combine
 
-/// Mutable positions kept outside the published surface.
-///
-/// The layout produces new coordinates for every node up to sixty times a
-/// second. Publishing an eight-thousand-element array at that rate would copy
-/// it on every frame and thrash SwiftUI's diffing, so positions live in a
-/// reference type the canvas reads directly, and only a small tick counter is
-/// published to trigger the redraw.
-final class LayoutStore {
-    var x: [Double] = []
-    var y: [Double] = []
-    var settled = false
-
-    func adopt(_ engine: LayoutEngine) {
-        x = engine.x
-        y = engine.y
-    }
-
-    func point(_ i: Int) -> CGPoint {
-        guard i >= 0 && i < x.count else { return .zero }
-        return CGPoint(x: x[i], y: y[i])
-    }
-}
-
 @MainActor
 final class AppState: ObservableObject {
 
@@ -34,29 +11,23 @@ final class AppState: ObservableObject {
     @Published private(set) var progress: Analyzer.Progress?
     @Published private(set) var isAnalyzing = false
     @Published private(set) var errorMessage: String?
-    @Published private(set) var layoutTick: Int = 0
 
-    @Published var selection: Int?
-    @Published var hovered: Int?
+    @Published var selection: Int? {
+        didSet { if selection != oldValue { pendingExplanation = true } }
+    }
     @Published var searchText: String = ""
-    @Published var showLabels: Bool = true
     @Published var includeExternal: Bool = false
     @Published var recentProjects: [URL] = []
 
-    /// Requests the canvas fit the graph on the next draw.
-    @Published var fitRequest: Int = 0
+    let sourceCache = SourceCache()
 
-    let store = LayoutStore()
+    /// Set when the selection changes, so the explanation panel knows the
+    /// cached text no longer matches what is on screen.
+    private var pendingExplanation = false
 
-    private var engine: LayoutEngine?
-    private var layoutTask: Task<Void, Never>?
     private let recentsKey = "uz.xarita.recents"
 
-    // MARK: - Init
-
-    init() {
-        loadRecents()
-    }
+    init() { loadRecents() }
 
     // MARK: - Project lifecycle
 
@@ -66,17 +37,11 @@ final class AppState: ObservableObject {
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = false
         panel.prompt = "Open"
-        if panel.runModal() == .OK, let url = panel.url {
-            open(url)
-        }
+        if panel.runModal() == .OK, let url = panel.url { open(url) }
     }
 
     func open(_ url: URL) {
-        layoutTask?.cancel()
-        layoutTask = nil
-        engine = nil
         selection = nil
-        hovered = nil
         errorMessage = nil
         isAnalyzing = true
         progress = Analyzer.Progress(stage: .scanning, current: 0, total: 0)
@@ -84,15 +49,12 @@ final class AppState: ObservableObject {
         let options = Analyzer.Options(includeExternal: includeExternal)
 
         // `AppState` is @MainActor-isolated and therefore implicitly Sendable,
-        // so capturing it strongly here is safe — and avoids the nested weak
-        // capture that Swift 6 rejects outright.
+        // so capturing it strongly here is safe.
         Task.detached(priority: .userInitiated) { [self] in
             let result = Analyzer.analyze(root: url, options: options) { p in
                 Task { @MainActor in self.progress = p }
             }
-            await MainActor.run {
-                self.finishAnalysis(result, url: url)
-            }
+            await MainActor.run { self.finishAnalysis(result, url: url) }
         }
     }
 
@@ -109,61 +71,13 @@ final class AppState: ObservableObject {
         graph = result
         rememberRecent(url)
 
-        var engine = LayoutEngine(graph: result)
-        // A warm start: run the coarse phase synchronously so the first frame
-        // already shows structure instead of a spiral of unsorted dots.
-        engine.run(iterations: 24)
-        self.engine = engine
-        store.adopt(engine)
-        store.settled = false
-        layoutTick &+= 1
-        fitRequest &+= 1
+        // Open on something worth reading rather than an empty pane.
+        selection = result.hubs(limit: 1).first ?? result.nodes.first?.id
 
         Notifier.analysisFinished(project: result.projectName,
                                   symbols: result.nodes.count,
                                   seconds: result.parseSeconds)
         WidgetBridge.write(graph: result)
-
-        startLayoutLoop()
-    }
-
-    // MARK: - Layout animation
-
-    private func startLayoutLoop() {
-        layoutTask?.cancel()
-        layoutTask = Task { [self] in
-            while !Task.isCancelled {
-                guard var engine = self.engine else { return }
-
-                // Several integration steps per frame: the simulation converges
-                // in far fewer frames than it does steps, and stepping is cheap
-                // relative to a redraw.
-                let steps = engine.count > 4_000 ? 1 : 3
-                for _ in 0..<steps { engine.step() }
-
-                self.engine = engine
-                self.store.adopt(engine)
-                self.layoutTick &+= 1
-
-                if engine.temperature <= 0.07 {
-                    self.store.settled = true
-                    return
-                }
-                try? await Task.sleep(nanoseconds: 16_000_000)
-            }
-        }
-    }
-
-    func rerunLayout() {
-        guard let graph else { return }
-        var fresh = LayoutEngine(graph: graph)
-        fresh.run(iterations: 24)
-        engine = fresh
-        store.adopt(fresh)
-        store.settled = false
-        layoutTick &+= 1
-        fitRequest &+= 1
-        startLayoutLoop()
     }
 
     func reanalyze() {
@@ -172,18 +86,60 @@ final class AppState: ObservableObject {
     }
 
     func closeProject() {
-        layoutTask?.cancel()
-        layoutTask = nil
-        engine = nil
         graph = nil
         selection = nil
-        hovered = nil
         errorMessage = nil
+        searchText = ""
     }
 
-    // MARK: - Queries
+    // MARK: - Selection
 
-    /// Nodes whose name matches the current search, best matches first.
+    func select(_ id: Int?) { selection = id }
+
+    /// Asks the on-device model to describe the current selection.
+    func requestExplanation(explainer: Explainer, language: AppLanguage) {
+        guard let graph, let id = selection, id < graph.nodes.count else { return }
+        let node = graph.nodes[id]
+        guard let snippet = sourceCache.snippet(for: node, in: graph) else { return }
+        explainer.explain(node: node, graph: graph, source: snippet.text, language: language)
+        pendingExplanation = false
+    }
+
+    // MARK: - Junior-friendly entry points
+
+    /// Where a newcomer should start reading: the functions that reach the most
+    /// of the codebase, biased towards ones with names that look like entry
+    /// points. Being handed a starting point is the single biggest difference
+    /// between bouncing off a project and getting into it.
+    func startingPoints(limit: Int = 8) -> [Int] {
+        guard let graph else { return [] }
+        let interesting = graph.nodes.indices.filter { idx in
+            let n = graph.nodes[idx]
+            guard !n.isExternal, n.kind.isCallable, n.fileIndex >= 0 else { return false }
+            let path = graph.files[n.fileIndex].lowercased()
+            if path.contains("test") || path.contains("spec") { return false }
+            return n.fanOut >= 2
+        }
+        return interesting
+            .sorted { a, b in
+                let na = graph.nodes[a], nb = graph.nodes[b]
+                let sa = score(na), sb = score(nb)
+                if sa != sb { return sa > sb }
+                return na.fanOut > nb.fanOut
+            }
+            .prefix(limit)
+            .map { $0 }
+    }
+
+    private func score(_ node: GraphNode) -> Int {
+        var s = node.fanOut
+        let entryish = ["main", "run", "start", "app", "init", "serve", "handle", "execute"]
+        if entryish.contains(node.name.lowercased()) { s += 40 }
+        if node.fanIn == 0 { s += 12 }          // nothing above it: a top of the tree
+        if node.span > 12 { s += 4 }
+        return s
+    }
+
     var searchResults: [Int] {
         guard let graph, !searchText.isEmpty else { return [] }
         let needle = searchText.lowercased()
@@ -193,16 +149,10 @@ final class AppState: ObservableObject {
             .sorted { a, b in
                 let na = graph.nodes[a].name.lowercased()
                 let nb = graph.nodes[b].name.lowercased()
-                let ea = na == needle, eb = nb == needle
-                if ea != eb { return ea }
-                let pa = na.hasPrefix(needle), pb = nb.hasPrefix(needle)
-                if pa != pb { return pa }
+                if (na == needle) != (nb == needle) { return na == needle }
+                if na.hasPrefix(needle) != nb.hasPrefix(needle) { return na.hasPrefix(needle) }
                 return graph.nodes[a].fanIn > graph.nodes[b].fanIn
             }
-    }
-
-    func select(_ id: Int?) {
-        selection = id
     }
 
     // MARK: - Recents

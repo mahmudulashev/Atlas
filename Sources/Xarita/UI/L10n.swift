@@ -1,0 +1,185 @@
+import Foundation
+import SwiftUI
+
+/// UI language. Independent of the system locale: a developer working in an
+/// English toolchain may still want the interface in Uzbek, so the choice is
+/// explicit and persisted.
+enum AppLanguage: String, CaseIterable, Codable, Sendable {
+    case uz, en
+
+    var displayName: String {
+        switch self {
+        case .uz: return "O‘zbekcha"
+        case .en: return "English"
+        }
+    }
+
+    var flagless: String {
+        switch self {
+        case .uz: return "UZ"
+        case .en: return "EN"
+        }
+    }
+
+    /// Best guess on first launch, from the user's preferred languages.
+    static var systemDefault: AppLanguage {
+        for code in Locale.preferredLanguages {
+            if code.hasPrefix("uz") { return .uz }
+            if code.hasPrefix("en") { return .en }
+        }
+        return .en
+    }
+}
+
+/// Every string in the interface, in both languages.
+///
+/// A plain struct rather than `.strings` files: the app ships as a hand-built
+/// bundle without an asset pipeline, and keeping both languages side by side in
+/// one file makes a missing translation a compile error rather than a silent
+/// fallback to the key name.
+struct L10n {
+
+    let language: AppLanguage
+
+    private func s(_ uz: String, _ en: String) -> String {
+        language == .uz ? uz : en
+    }
+
+    // MARK: - App level
+
+    var appTagline: String        { s("Kodning shaklini koʻr", "See the shape of a codebase") }
+
+    // MARK: - Welcome
+
+    var welcomeTitle: String      { s("Loyihani tanlang", "Open a project") }
+    var welcomeBody: String       { s("Papkani bu yerga tashlang yoki tanlang. Xarita kodni oʻqib, funksiyalar oʻrtasidagi bogʻlanishlar xaritasini chizadi.",
+                                      "Drop a folder here, or choose one. Xarita reads the code and draws the map of how its functions connect.") }
+    var chooseFolder: String      { s("Papka tanlash", "Choose folder…") }
+    var dropHere: String          { s("Papkani tashlang", "Drop folder here") }
+    var recentProjects: String    { s("Yaqinda ochilganlar", "Recent projects") }
+    var supportedLanguages: String { s("Qoʻllab-quvvatlanadigan tillar", "Supported languages") }
+
+    // MARK: - Analysis
+
+    var analyzing: String         { s("Tahlil qilinmoqda", "Analyzing") }
+    var stageScanning: String     { s("Fayllar qidirilmoqda", "Scanning files") }
+    var stageParsing: String      { s("Kod oʻqilmoqda", "Parsing code") }
+    var stageResolving: String    { s("Bogʻlanishlar aniqlanmoqda", "Resolving references") }
+    var stageLaying: String       { s("Xarita joylashtirilmoqda", "Laying out map") }
+    var analysisFailed: String    { s("Tahlil qilib boʻlmadi", "Analysis failed") }
+    var noSourceFiles: String     { s("Bu papkada tanish kod fayllari topilmadi",
+                                      "No recognised source files in this folder") }
+
+    // MARK: - Stats
+
+    var files: String             { s("Fayl", "Files") }
+    var lines: String             { s("Qator", "Lines") }
+    var symbols: String           { s("Funksiya", "Symbols") }
+    var connections: String       { s("Bogʻlanish", "Connections") }
+    var parseTime: String         { s("Oʻqish vaqti", "Parse time") }
+    var languagesLabel: String    { s("Tillar", "Languages") }
+
+    // MARK: - Panels
+
+    var overview: String          { s("Umumiy", "Overview") }
+    var hubs: String              { s("Markazlar", "Hubs") }
+    var hubsHint: String          { s("Eng koʻp chaqiriladigan funksiyalar — kod shu yerga toʻplanadi",
+                                      "The most-called functions — where the code converges") }
+    var entryPoints: String       { s("Kirish nuqtalari", "Entry points") }
+    var unreachable: String       { s("Ishlatilmagan", "Unreachable") }
+    var unreachableHint: String   { s("Hech kim chaqirmaydi. Bu shubha, isbot emas — framework orqali chaqirilgan boʻlishi mumkin.",
+                                      "Nothing calls these. A hint, not proof — they may be invoked by a framework.") }
+    var search: String            { s("Qidirish", "Search") }
+    var searchPlaceholder: String { s("Funksiya nomi…", "Function name…") }
+    var noResults: String         { s("Hech narsa topilmadi", "No results") }
+
+    // MARK: - Inspector
+
+    var callers: String           { s("Chaqiruvchilar", "Callers") }
+    var callees: String           { s("Chaqiradi", "Calls") }
+    var definedIn: String         { s("Eʼlon qilingan", "Defined in") }
+    var kind: String              { s("Turi", "Kind") }
+    var noCallers: String         { s("Chaqiruvchi yoʻq", "No callers") }
+    var noCallees: String         { s("Hech nimani chaqirmaydi", "Calls nothing") }
+    var openInEditor: String      { s("Muharrirda ochish", "Open in editor") }
+    var copyPath: String          { s("Yoʻlni nusxalash", "Copy path") }
+    var focusNode: String         { s("Shunga fokuslash", "Focus on this") }
+
+    func kindName(_ k: SymbolKind) -> String {
+        switch k {
+        case .function:     return s("funksiya", "function")
+        case .method:       return s("metod", "method")
+        case .initializer:  return s("konstruktor", "initializer")
+        case .type:         return s("tip", "type")
+        case .closureOrVar: return s("yopilma", "closure")
+        }
+    }
+
+    // MARK: - Canvas controls
+
+    var fitToScreen: String       { s("Ekranga moslash", "Fit to screen")}
+    var resetLayout: String       { s("Qaytadan joylashtirish", "Re-run layout") }
+    var showLabels: String        { s("Nomlarni koʻrsatish", "Show labels") }
+    var showExternal: String      { s("Tashqi chaqiruvlar", "External calls") }
+    var zoomIn: String            { s("Kattalashtirish", "Zoom in") }
+    var zoomOut: String           { s("Kichraytirish", "Zoom out") }
+
+    // MARK: - Menu / settings
+
+    var settings: String          { s("Sozlamalar", "Settings") }
+    var interfaceLanguage: String { s("Interfeys tili", "Interface language") }
+    var openProject: String       { s("Loyiha ochish…", "Open Project…") }
+    var reanalyze: String         { s("Qayta tahlil qilish", "Re-analyze") }
+    var close: String             { s("Yopish", "Close") }
+    var notifications: String     { s("Bildirishnomalar", "Notifications") }
+    var notifyOnFinish: String    { s("Tahlil tugaganda xabar berish", "Notify when analysis finishes") }
+
+    // MARK: - Notifications
+
+    var notifDoneTitle: String    { s("Tahlil tugadi", "Analysis complete") }
+    func notifDoneBody(project: String, symbols: Int, seconds: Double) -> String {
+        let t = String(format: "%.2f", seconds)
+        return s("\(project): \(symbols) ta funksiya, \(t) soniyada",
+                 "\(project): \(symbols) symbols in \(t)s")
+    }
+
+    // MARK: - Widget
+
+    var widgetName: String        { s("Kod xaritasi", "Code map") }
+    var widgetDescription: String { s("Oxirgi tahlil qilingan loyiha holati",
+                                      "Status of your most recently analysed project") }
+    var widgetEmpty: String       { s("Hali loyiha ochilmagan", "No project analysed yet") }
+    var widgetTopHub: String      { s("Eng koʻp chaqiriladigan", "Most called") }
+
+    // MARK: - Units
+
+    func count(_ n: Int) -> String {
+        if n >= 1_000_000 { return String(format: "%.1fM", Double(n) / 1_000_000) }
+        if n >= 10_000    { return String(format: "%.0fk", Double(n) / 1_000) }
+        if n >= 1_000     { return String(format: "%.1fk", Double(n) / 1_000) }
+        return "\(n)"
+    }
+
+    func seconds(_ v: Double) -> String {
+        v < 1 ? String(format: "%.0f ms", v * 1000) : String(format: "%.2f s", v)
+    }
+}
+
+/// Observable holder so a language switch re-renders the whole interface.
+@MainActor
+final class Localization: ObservableObject {
+    @Published var language: AppLanguage {
+        didSet { UserDefaults.standard.set(language.rawValue, forKey: "uz.xarita.language") }
+    }
+
+    var t: L10n { L10n(language: language) }
+
+    init() {
+        if let raw = UserDefaults.standard.string(forKey: "uz.xarita.language"),
+           let saved = AppLanguage(rawValue: raw) {
+            language = saved
+        } else {
+            language = .systemDefault
+        }
+    }
+}

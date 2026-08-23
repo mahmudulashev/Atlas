@@ -68,12 +68,7 @@ struct ExplainPanel: View {
                 let text = cached ?? explainer.streaming
 
                 if !text.isEmpty {
-                    Text(text)
-                        .font(Theme.Font.body)
-                        .foregroundStyle(Theme.textPrimary)
-                        .lineSpacing(4)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .textSelection(.enabled)
+                    RichText(raw: text)
                         .padding(.horizontal, 14)
                 }
 
@@ -265,11 +260,9 @@ struct ExplainPanel: View {
     private func factsSection(node: GraphNode, graph: CodeGraph) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             SectionLabel(loc.t.theFacts, count: nil)
-            Text(Explainer.staticExplanation(node: node, graph: graph, t: loc.t))
-                .font(Theme.Font.caption)
-                .foregroundStyle(Theme.textSecondary)
-                .lineSpacing(3.5)
-                .fixedSize(horizontal: false, vertical: true)
+            RichText(raw: Explainer.staticExplanation(node: node, graph: graph, t: loc.t),
+                     font: Theme.Font.caption,
+                     color: Theme.textSecondary)
                 .padding(.horizontal, 14)
         }
     }

@@ -76,3 +76,54 @@ struct SmallAction: View {
         .onHover { hovering = $0 }
     }
 }
+
+
+/// Renders inline markdown from a runtime string.
+///
+/// SwiftUI only interprets markdown in `Text` when it is given a *literal*;
+/// a `String` built at runtime is drawn verbatim, backticks and asterisks
+/// included. Explanations are assembled at runtime, so they are parsed here and
+/// their code spans and emphasis are styled explicitly.
+struct RichText: View {
+    let raw: String
+    var font: Font = Theme.Font.body
+    var color: Color = Theme.textPrimary
+
+    var body: some View {
+        Text(attributed)
+            .lineSpacing(4)
+            .fixedSize(horizontal: false, vertical: true)
+            .textSelection(.enabled)
+    }
+
+    private var attributed: AttributedString {
+        guard var text = try? AttributedString(
+            markdown: raw,
+            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))
+        else {
+            var plain = AttributedString(raw)
+            plain.font = font
+            plain.foregroundColor = color
+            return plain
+        }
+
+        text.font = font
+        text.foregroundColor = color
+
+        for run in text.runs {
+            guard let intent = run.inlinePresentationIntent else { continue }
+            if intent.contains(.code) {
+                text[run.range].font = Theme.Font.mono
+                text[run.range].foregroundColor = Theme.codeFunction
+            }
+            if intent.contains(.stronglyEmphasized) {
+                text[run.range].font = font.weight(.semibold)
+                text[run.range].foregroundColor = Theme.accent
+            }
+            if intent.contains(.emphasized) {
+                text[run.range].font = font.italic()
+            }
+        }
+        return text
+    }
+}

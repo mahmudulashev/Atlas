@@ -123,8 +123,12 @@ struct L10n {
     var theFacts: String          { s("Aniq maʼlumot", "The facts") }
     var pickSomething: String     { s("Chapdan bir funksiyani tanlang",
                                       "Pick a function on the left") }
-    var onDeviceNote: String      { s("Apple'ning qurilma ichidagi modeli — hech narsa internetga chiqmaydi",
-                                      "Apple's on-device model — nothing leaves your Mac") }
+    /// The two languages take different routes through the model, so the note
+    /// that explains what just happened differs too.
+    var onDeviceNote: String {
+        s("Model kodni tasnifladi, gapni Xarita yozdi — hech narsa internetga chiqmaydi",
+          "Apple's on-device model — nothing leaves your Mac")
+    }
 
     var englishFallbackNote: String {
         s("Apple modeli oʻzbekcha yoza olmaydi, shuning uchun u faqat kodni tasniflaydi — gapni Xarita oʻzi yozadi.",

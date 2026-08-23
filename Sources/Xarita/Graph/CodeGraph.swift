@@ -75,6 +75,11 @@ struct CodeGraph: Sendable {
     var totalLines: Int = 0
     var parseSeconds: Double = 0
 
+    /// File-to-file dependencies taken from imports, `<script src>` and the
+    /// like. These carry the structure of a project whose files barely call
+    /// each other's functions — a static site being the clearest case.
+    var fileReferences: [(from: Int, to: Int)] = []
+
     // MARK: - Derived views
 
     /// Functions nothing calls — either entry points or dead code.
@@ -145,6 +150,7 @@ struct GraphBuilder {
         var calls: [RawCall]
         var lines: Int
         var language: Language
+        var references: [String] = []
     }
 
     static func build(from results: [FileResult],
@@ -271,6 +277,24 @@ struct GraphBuilder {
         for i in nodes.indices {
             nodes[i].fanOut = outgoing[i].count
             nodes[i].fanIn = incoming[i].count
+        }
+
+        // ---- 5. File-level references ----
+        var pathIndex: [String: Int] = [:]
+        for (index, path) in graph.files.enumerated() {
+            pathIndex[(path as NSString).standardizingPath] = index
+        }
+        var seenReferences = Set<Int64>()
+        for (fileIndex, result) in results.enumerated() {
+            for reference in result.references {
+                guard let target = References.resolve(reference, from: result.path,
+                                                      index: pathIndex),
+                      target != fileIndex else { continue }
+                let key = Int64(fileIndex) << 32 | Int64(target)
+                if seenReferences.insert(key).inserted {
+                    graph.fileReferences.append((from: fileIndex, to: target))
+                }
+            }
         }
 
         graph.nodes = nodes

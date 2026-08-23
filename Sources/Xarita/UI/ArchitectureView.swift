@@ -206,11 +206,31 @@ struct ArchitectureView: View {
             guard let graph = state.graph, symbolID < graph.nodes.count else { break }
             let symbol = graph.nodes[symbolID]
 
-            let name = Text(symbol.name)
-                .font(.system(size: 10.5 * scale, design: .monospaced))
-                .foregroundStyle(Theme.textPrimary.opacity(alpha))
-            context.draw(context.resolve(name),
-                         at: CGPoint(x: frame.minX + 10 * scale, y: y + rowHeight / 2),
+            // Rows truncate for the same reason the header does: Canvas draws
+            // whatever it is given, so a long symbol name runs straight off the
+            // edge of the card unless it is measured and trimmed first.
+            let rowFont = Font.system(size: 10.5 * scale, design: .monospaced)
+            let countWidth: CGFloat = symbol.fanIn > 0 ? 22 * scale : 0
+            let rowSpace = frame.width - padding * 2 - countWidth
+
+            func resolvedRow(_ string: String) -> GraphicsContext.ResolvedText {
+                context.resolve(Text(string).font(rowFont)
+                    .foregroundStyle(Theme.textPrimary.opacity(alpha)))
+            }
+            var rowText = symbol.name
+            var name = resolvedRow(rowText)
+            if name.measure(in: CGSize(width: .infinity, height: rowHeight)).width > rowSpace,
+               rowSpace > 24 {
+                while rowText.count > 3,
+                      resolvedRow(rowText + "…")
+                        .measure(in: CGSize(width: .infinity, height: rowHeight)).width > rowSpace {
+                    rowText.removeLast()
+                }
+                rowText += "…"
+                name = resolvedRow(rowText)
+            }
+            context.draw(name,
+                         at: CGPoint(x: frame.minX + padding, y: y + rowHeight / 2),
                          anchor: .leading)
 
             if symbol.fanIn > 0 {
@@ -218,7 +238,7 @@ struct ArchitectureView: View {
                     .font(.system(size: 9.5 * scale, design: .monospaced))
                     .foregroundStyle(Theme.textTertiary.opacity(alpha))
                 context.draw(context.resolve(count),
-                             at: CGPoint(x: frame.maxX - 10 * scale, y: y + rowHeight / 2),
+                             at: CGPoint(x: frame.maxX - padding, y: y + rowHeight / 2),
                              anchor: .trailing)
             }
             y += rowHeight
@@ -229,7 +249,7 @@ struct ArchitectureView: View {
                 .font(.system(size: 9 * scale))
                 .foregroundStyle(Theme.textTertiary.opacity(alpha))
             context.draw(context.resolve(more),
-                         at: CGPoint(x: frame.minX + 10 * scale, y: y + 6 * scale), anchor: .leading)
+                         at: CGPoint(x: frame.minX + padding, y: y + 6 * scale), anchor: .leading)
         }
     }
 

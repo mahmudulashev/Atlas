@@ -7,6 +7,7 @@ import Foundation
 /// a language means adding a case here — nothing else in the pipeline changes.
 enum Language: String, CaseIterable, Codable, Sendable {
     case swift, python, javascript, typescript, c, cpp, go, java, rust, ruby, csharp, php, kotlin
+    case html, css, scss, vue, svelte
 
     // MARK: - Detection
 
@@ -26,6 +27,11 @@ enum Language: String, CaseIterable, Codable, Sendable {
         case "cs":                          return .csharp
         case "php":                         return .php
         case "kt", "kts":                   return .kotlin
+        case "html", "htm", "xhtml":        return .html
+        case "css":                         return .css
+        case "scss", "sass", "less":        return .scss
+        case "vue":                         return .vue
+        case "svelte":                      return .svelte
         default:                            return nil
         }
     }
@@ -45,6 +51,11 @@ enum Language: String, CaseIterable, Codable, Sendable {
         case .csharp:     return "C#"
         case .php:        return "PHP"
         case .kotlin:     return "Kotlin"
+        case .html:       return "HTML"
+        case .css:        return "CSS"
+        case .scss:       return "SCSS"
+        case .vue:        return "Vue"
+        case .svelte:     return "Svelte"
         }
     }
 
@@ -54,6 +65,7 @@ enum Language: String, CaseIterable, Codable, Sendable {
         switch self {
         case .python, .ruby: return ["#"]
         case .php:           return ["//", "#"]
+        case .css, .html:    return []          // neither has a line comment
         default:             return ["//"]
         }
     }
@@ -61,6 +73,7 @@ enum Language: String, CaseIterable, Codable, Sendable {
     var blockComment: (open: String, close: String)? {
         switch self {
         case .python, .ruby: return nil
+        case .html:          return ("<!--", "-->")
         default:             return ("/*", "*/")
         }
     }
@@ -84,7 +97,8 @@ enum Language: String, CaseIterable, Codable, Sendable {
 
     var stringDelimiters: [Character] {
         switch self {
-        case .python, .javascript, .typescript, .ruby, .php: return ["\"", "'", "`"]
+        case .python, .javascript, .typescript, .ruby, .php,
+             .vue, .svelte, .html, .css, .scss:               return ["\"", "'", "`"]
         case .go, .rust:                                     return ["\"", "`"]
         case .c, .cpp, .java, .csharp, .kotlin:              return ["\"", "'"]
         default:                                             return ["\""]
@@ -93,6 +107,20 @@ enum Language: String, CaseIterable, Codable, Sendable {
 
     /// True when blocks are delimited by indentation rather than braces.
     var isIndentScoped: Bool { self == .python }
+
+    /// Stylesheets and markup have no functions to find; their structure is
+    /// rules and elements, which `StyleParser` extracts instead.
+    var isMarkupOrStyle: Bool {
+        self == .html || self == .css || self == .scss
+    }
+
+    /// Files a beginner's front-end project is actually made of.
+    var isWeb: Bool {
+        switch self {
+        case .html, .css, .scss, .vue, .svelte, .javascript, .typescript: return true
+        default: return false
+        }
+    }
 
     // MARK: - Declarations
 
@@ -110,6 +138,8 @@ enum Language: String, CaseIterable, Codable, Sendable {
         case .php:                    return ["function"]
         case .kotlin:                 return ["fun"]
         case .c, .cpp, .java, .csharp: return []   // shape-detected, no keyword
+        case .vue, .svelte:           return ["function"]
+        case .html, .css, .scss:      return []   // handled by StyleParser
         }
     }
 
@@ -125,6 +155,8 @@ enum Language: String, CaseIterable, Codable, Sendable {
         case .cpp:    return ["class", "struct", "namespace", "union"]
         case .c:      return ["struct", "union", "enum"]
         case .php:    return ["class", "interface", "trait"]
+        case .vue, .svelte: return ["class", "interface"]
+        case .html, .css, .scss: return []
         }
     }
 

@@ -102,15 +102,26 @@ enum Analyzer {
                 return
             }
 
-            let tokens = Tokenizer(source: source, language: entry.language).tokenize()
-            let parsed = Parser(language: entry.language, fileIndex: index).parse(tokens: tokens)
+            // Stylesheets and markup have no callables; their structure is
+            // rules and named elements, so they take a different route.
+            let parsed: (symbols: [RawSymbol], calls: [RawCall])
+            if entry.language.isMarkupOrStyle {
+                parsed = StyleParser.parse(source: source, language: entry.language,
+                                           fileIndex: index)
+            } else {
+                let tokens = Tokenizer(source: source, language: entry.language).tokenize()
+                parsed = Parser(language: entry.language, fileIndex: index).parse(tokens: tokens)
+            }
             let lines = source.reduce(into: 1) { acc, ch in if ch == "\n" { acc += 1 } }
 
             box.set(index, GraphBuilder.FileResult(path: entry.relative,
                                                    symbols: parsed.symbols,
                                                    calls: parsed.calls,
                                                    lines: lines,
-                                                   language: entry.language))
+                                                   language: entry.language,
+                                                   references: References.scan(
+                                                       source: source,
+                                                       language: entry.language)))
 
             let done = counter.increment()
             if done % 64 == 0 {

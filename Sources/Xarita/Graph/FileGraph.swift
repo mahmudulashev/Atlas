@@ -218,6 +218,16 @@ struct FileGraph: Sendable {
 
         // Collapse symbol edges into file edges.
         var edgeWeights: [Int64: Int] = [:]
+
+        // An explicit import or <script src> is a stronger statement of
+        // dependency than any single call site, so it is seeded with weight
+        // rather than merely counted.
+        for reference in graph.fileReferences {
+            guard let from = indexMap[reference.from], let to = indexMap[reference.to],
+                  from != to else { continue }
+            edgeWeights[Int64(from) << 32 | Int64(to), default: 0] += 3
+        }
+
         for edge in graph.edges {
             let a = graph.nodes[edge.from].fileIndex
             let b = graph.nodes[edge.to].fileIndex

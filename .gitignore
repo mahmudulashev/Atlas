@@ -1,0 +1,76 @@
+# ---------------------------------------------------------------
+# Build output
+# ---------------------------------------------------------------
+# Builds are written to ~/Library/Caches/uz.xarita.build, deliberately
+# outside the repo: this project lives on an iCloud-synced folder, and
+# iCloud stamps com.apple.FinderInfo onto files, which breaks codesign.
+build/
+.build/
+DerivedData/
+*.o
+*.d
+*.dia
+*.swiftmodule
+*.swiftdoc
+*.swiftsourceinfo
+*.abi.json
+
+# Products
+*.app
+*.dmg
+*.pkg
+*.zip
+Xarita.app/
+dist/
+
+# ---------------------------------------------------------------
+# Xcode
+# ---------------------------------------------------------------
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+project.xcworkspace/
+!default.xcworkspace
+
+# Swift Package Manager
+.swiftpm/
+Package.resolved
+Packages/
+
+# ---------------------------------------------------------------
+# macOS
+# ---------------------------------------------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+.DocumentRevisions-V100
+.TemporaryItems
+Icon?
+
+# ---------------------------------------------------------------
+# Editors
+# ---------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.claude/
+
+# ---------------------------------------------------------------
+# Local scratch
+# ---------------------------------------------------------------
+testrepos/
+*.log
+.env
+.env.local

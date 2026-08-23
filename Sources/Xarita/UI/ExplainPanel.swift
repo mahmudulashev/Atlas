@@ -93,6 +93,21 @@ struct ExplainPanel: View {
                     .padding(.horizontal, 14)
                 }
 
+                if explainer.fellBackToEnglish && !text.isEmpty {
+                    HStack(alignment: .top, spacing: 5) {
+                        Image(systemName: "info.circle")
+                            .font(.system(size: 9))
+                            .foregroundStyle(Theme.gold)
+                            .padding(.top, 1)
+                        Text(loc.t.englishFallbackNote)
+                            .font(Theme.Font.micro)
+                            .foregroundStyle(Theme.textTertiary)
+                            .lineSpacing(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.horizontal, 14)
+                }
+
                 Text(loc.t.onDeviceNote)
                     .font(Theme.Font.micro)
                     .foregroundStyle(Theme.textTertiary)

@@ -33,6 +33,13 @@ final class Explainer: ObservableObject {
     @Published private(set) var streaming: String = ""
     @Published private(set) var isGenerating = false
 
+    /// True when the answer on screen had to be produced in English because the
+    /// on-device model refused the requested language. Apple's model supports
+    /// neither Uzbek generation nor Uzbek translation, so rather than showing
+    /// nothing we fall back and say so.
+    @Published private(set) var fellBackToEnglish = false
+    @Published private(set) var lastError: String?
+
     /// Explanations already produced, keyed by node id.
     @Published private(set) var cache: [Int: String] = [:]
 
@@ -120,6 +127,8 @@ final class Explainer: ObservableObject {
     func explain(node: GraphNode, graph: CodeGraph, source: String, language: AppLanguage) {
         task?.cancel()
         streaming = ""
+        fellBackToEnglish = false
+        lastError = nil
 
         guard modelState.canGenerate else { return }
 
@@ -127,27 +136,63 @@ final class Explainer: ObservableObject {
         guard #available(macOS 26.0, *) else { return }
 
         isGenerating = true
-        let prompt = Self.buildPrompt(node: node, graph: graph, source: source, language: language)
-        let instructions = Self.instructions(for: language)
 
         task = Task { [weak self] in
             guard let self else { return }
-            do {
-                let session = LanguageModelSession(model: .default, instructions: instructions)
-                let stream = session.streamResponse(to: prompt,
-                                                    options: GenerationOptions(temperature: 0.3))
-                for try await partial in stream {
-                    if Task.isCancelled { return }
-                    self.streaming = partial.content
+
+            // Try the interface language first, then English. Uzbek is refused
+            // outright by the model, and a refusal must not leave a blank panel.
+            let attempts: [AppLanguage] = language == .en ? [.en] : [language, .en]
+
+            for (index, attempt) in attempts.enumerated() {
+                if Task.isCancelled { self.isGenerating = false; return }
+                let isFallback = index > 0
+                do {
+                    let session = LanguageModelSession(
+                        model: .default,
+                        instructions: Self.instructions(for: attempt))
+                    let prompt = Self.buildPrompt(node: node, graph: graph,
+                                                  source: source, language: attempt)
+                    let stream = session.streamResponse(
+                        to: prompt, options: GenerationOptions(temperature: 0.3))
+
+                    var text = ""
+                    for try await partial in stream {
+                        if Task.isCancelled { self.isGenerating = false; return }
+                        text = partial.content
+                        self.streaming = text
+                        self.fellBackToEnglish = isFallback
+                    }
+                    guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                        continue
+                    }
+                    self.cache[node.id] = text
+                    self.fellBackToEnglish = isFallback
+                    self.isGenerating = false
+                    return
+                } catch {
+                    self.streaming = ""
+                    self.lastError = Self.describe(error)
+                    continue
                 }
-                self.cache[node.id] = self.streaming
-            } catch {
-                self.streaming = ""
             }
             self.isGenerating = false
         }
         #endif
     }
+
+    #if canImport(FoundationModels)
+    @available(macOS 26.0, *)
+    private static func describe(_ error: Error) -> String {
+        let text = "\(error)"
+        if text.contains("unsupportedLanguageOrLocale") { return "unsupportedLanguage" }
+        if text.contains("guardrailViolation")          { return "guardrail" }
+        if text.contains("exceededContextWindowSize")   { return "tooLong" }
+        return "generic"
+    }
+    #else
+    private static func describe(_ error: Error) -> String { "generic" }
+    #endif
 
     func cancel() {
         task?.cancel()

@@ -126,6 +126,11 @@ struct L10n {
     var onDeviceNote: String      { s("Apple'ning qurilma ichidagi modeli — hech narsa internetga chiqmaydi",
                                       "Apple's on-device model — nothing leaves your Mac") }
 
+    var englishFallbackNote: String {
+        s("Apple'ning qurilma ichidagi modeli oʻzbek tilini qoʻllab-quvvatlamaydi, shuning uchun bu izoh inglizcha. Pastdagi maʼlumot va lugʻat oʻzbekcha.",
+          "Apple's on-device model doesn't support Uzbek, so this explanation is in English.")
+    }
+
     var aiOffTitle: String        { s("AI tushuntirish yoqilmagan", "AI explanations are off") }
     var aiOffNeedsEnable: String  { s("Apple Intelligence yoqilmagan. Yoqsangiz, har bir funksiyani sodda tilda tushuntirib beradi. Ilovaning qolgan qismi busiz ham toʻliq ishlaydi.",
                                       "Apple Intelligence isn't enabled. Turn it on and each function gets a plain-language explanation. Everything else in the app works without it.") }

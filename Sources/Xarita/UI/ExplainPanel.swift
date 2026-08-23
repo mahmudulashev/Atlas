@@ -24,8 +24,11 @@ struct ExplainPanel: View {
                         let node = graph.nodes[id]
 
                         aiSection(node: node, graph: graph)
+                        difficultySection(node: node)
                         factsSection(node: node, graph: graph)
+                        glossarySection(node: node, graph: graph)
                         detailsSection(node: node, graph: graph)
+                        understoodButton(id: node.id)
                     } else {
                         Text(loc.t.pickSomething)
                             .font(Theme.Font.caption)
@@ -141,6 +144,105 @@ struct ExplainPanel: View {
         case .unsupportedOS:          return loc.t.aiOffOldOS
         default:                      return ""
         }
+    }
+
+    // MARK: - Difficulty
+
+    /// Tells a beginner whether to expect a fight before they start reading.
+    private func difficultySection(node: GraphNode) -> some View {
+        Group {
+            if node.kind.isCallable, !node.isExternal {
+                VStack(alignment: .leading, spacing: 6) {
+                    SectionLabel(loc.t.howHard, count: nil)
+                    HStack(spacing: 8) {
+                        HStack(spacing: 2) {
+                            ForEach(0..<3, id: \.self) { step in
+                                RoundedRectangle(cornerRadius: 1)
+                                    .fill(step <= node.difficulty.rawValue
+                                          ? Theme.color(for: node.difficulty)
+                                          : Theme.border)
+                                    .frame(width: 16, height: 4)
+                            }
+                        }
+                        Text(loc.t.difficultyName(node.difficulty))
+                            .font(Theme.Font.caption.weight(.medium))
+                            .foregroundStyle(Theme.color(for: node.difficulty))
+                        Spacer(minLength: 0)
+                    }
+                    Text(loc.t.difficultyReason(node))
+                        .font(Theme.Font.micro)
+                        .foregroundStyle(Theme.textTertiary)
+                }
+                .padding(.horizontal, 14)
+            }
+        }
+    }
+
+    // MARK: - Glossary
+
+    /// Terms that appear in the code on screen, explained in the reader's own
+    /// language. Beginners lose time to unfamiliar vocabulary at least as often
+    /// as to unfamiliar logic.
+    private func glossarySection(node: GraphNode, graph: CodeGraph) -> some View {
+        Group {
+            if let snippet = state.sourceCache.snippet(for: node, in: graph) {
+                let terms = Glossary.found(in: snippet.text, language: node.language)
+                if !terms.isEmpty {
+                    VStack(alignment: .leading, spacing: 7) {
+                        SectionLabel(loc.t.glossary, count: nil, hint: loc.t.glossaryHint)
+                        VStack(alignment: .leading, spacing: 8) {
+                            ForEach(terms, id: \.key) { term in
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(Glossary.title(term, language: loc.language))
+                                        .font(Theme.Font.monoSmall.weight(.semibold))
+                                        .foregroundStyle(Theme.codeKeyword)
+                                    Text(Glossary.body(term, language: loc.language))
+                                        .font(Theme.Font.micro)
+                                        .foregroundStyle(Theme.textSecondary)
+                                        .lineSpacing(2.5)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                                .padding(9)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(RoundedRectangle(cornerRadius: 7)
+                                    .fill(Theme.surfaceRaised))
+                            }
+                        }
+                        .padding(.horizontal, 14)
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Progress
+
+    private func understoodButton(id: Int) -> some View {
+        let done = state.isUnderstood(id)
+        return Button {
+            state.toggleUnderstood(id)
+        } label: {
+            HStack(spacing: 7) {
+                Image(systemName: done ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 13))
+                    .foregroundStyle(done ? Theme.color(for: .easy) : Theme.textTertiary)
+                Text(done ? loc.t.understoodMark : loc.t.understood)
+                    .font(Theme.Font.caption.weight(.medium))
+                    .foregroundStyle(done ? Theme.color(for: .easy) : Theme.textSecondary)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 11)
+            .padding(.vertical, 8)
+            .background(RoundedRectangle(cornerRadius: 7)
+                .fill(done ? Theme.color(for: .easy).opacity(0.11) : Theme.surfaceRaised))
+            .overlay(RoundedRectangle(cornerRadius: 7)
+                .strokeBorder(done ? Theme.color(for: .easy).opacity(0.4) : Theme.border,
+                              lineWidth: 1))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 14)
+        .padding(.top, 2)
     }
 
     // MARK: - Static facts

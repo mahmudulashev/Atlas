@@ -13,8 +13,21 @@ final class AppState: ObservableObject {
     @Published private(set) var errorMessage: String?
 
     @Published var selection: Int? {
-        didSet { if selection != oldValue { pendingExplanation = true } }
+        didSet {
+            guard selection != oldValue else { return }
+            pendingExplanation = true
+            if !isNavigatingHistory { pushHistory(selection) }
+        }
     }
+
+    /// Functions the reader has ticked off, as stable signatures rather than
+    /// node ids — ids are assigned per analysis and would not survive a
+    /// re-scan, but `file#name#line` does.
+    @Published private(set) var understood: Set<String> = []
+
+    @Published private(set) var history: [Int?] = []
+    @Published private(set) var historyIndex: Int = -1
+    private var isNavigatingHistory = false
     @Published var searchText: String = ""
     @Published var includeExternal: Bool = false
     @Published var recentProjects: [URL] = []
@@ -70,9 +83,14 @@ final class AppState: ObservableObject {
 
         graph = result
         rememberRecent(url)
+        history = []
+        historyIndex = -1
+        loadUnderstood()
 
         // Open on something worth reading rather than an empty pane.
-        selection = result.hubs(limit: 1).first ?? result.nodes.first?.id
+        selection = startingPoints(limit: 1).first
+                 ?? result.hubs(limit: 1).first
+                 ?? result.nodes.first?.id
 
         Notifier.analysisFinished(project: result.projectName,
                                   symbols: result.nodes.count,
@@ -92,9 +110,77 @@ final class AppState: ObservableObject {
         searchText = ""
     }
 
-    // MARK: - Selection
+    // MARK: - Selection and history
 
     func select(_ id: Int?) { selection = id }
+
+    private func pushHistory(_ id: Int?) {
+        if historyIndex < history.count - 1 {
+            history.removeSubrange((historyIndex + 1)...)
+        }
+        history.append(id)
+        if history.count > 100 { history.removeFirst() }
+        historyIndex = history.count - 1
+    }
+
+    var canGoBack: Bool { historyIndex > 0 }
+    var canGoForward: Bool { historyIndex >= 0 && historyIndex < history.count - 1 }
+
+    func goBack() {
+        guard canGoBack else { return }
+        isNavigatingHistory = true
+        historyIndex -= 1
+        selection = history[historyIndex]
+        isNavigatingHistory = false
+    }
+
+    func goForward() {
+        guard canGoForward else { return }
+        isNavigatingHistory = true
+        historyIndex += 1
+        selection = history[historyIndex]
+        isNavigatingHistory = false
+    }
+
+    // MARK: - Reading progress
+
+    /// A signature that survives re-analysis of the same project.
+    func signature(for node: GraphNode, in graph: CodeGraph) -> String {
+        let file = node.fileIndex >= 0 && node.fileIndex < graph.files.count
+            ? graph.files[node.fileIndex] : "?"
+        return "\(file)#\(node.displayName)#\(node.line)"
+    }
+
+    func isUnderstood(_ id: Int) -> Bool {
+        guard let graph, id < graph.nodes.count else { return false }
+        return understood.contains(signature(for: graph.nodes[id], in: graph))
+    }
+
+    func toggleUnderstood(_ id: Int) {
+        guard let graph, id < graph.nodes.count else { return }
+        let key = signature(for: graph.nodes[id], in: graph)
+        if understood.contains(key) { understood.remove(key) } else { understood.insert(key) }
+        saveUnderstood()
+    }
+
+    /// Progress against the functions actually worth reading — external nodes
+    /// and bare type declarations are not something you "read".
+    var readableCount: Int {
+        guard let graph else { return 0 }
+        return graph.nodes.filter { !$0.isExternal && $0.kind.isCallable }.count
+    }
+
+    private var understoodKey: String {
+        "uz.xarita.understood." + (graph?.rootPath ?? "none")
+    }
+
+    private func saveUnderstood() {
+        UserDefaults.standard.set(Array(understood), forKey: understoodKey)
+    }
+
+    private func loadUnderstood() {
+        understood = Set(UserDefaults.standard.stringArray(forKey: understoodKey) ?? [])
+    }
 
     /// Asks the on-device model to describe the current selection.
     func requestExplanation(explainer: Explainer, language: AppLanguage) {

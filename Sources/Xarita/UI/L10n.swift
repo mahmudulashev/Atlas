@@ -137,6 +137,52 @@ struct L10n {
                                       "The on-device model requires macOS 26 or newer.") }
     var openSettings: String      { s("Sozlamalarni ochish", "Open Settings") }
 
+    // MARK: - Difficulty
+
+    var howHard: String           { s("Qanchalik qiyin", "How hard is this") }
+    var difficultyEasy: String    { s("Oson", "Easy") }
+    var difficultyModerate: String { s("Oʻrtacha", "Moderate") }
+    var difficultyHard: String    { s("Qiyin", "Hard") }
+
+    func difficultyName(_ d: GraphNode.Difficulty) -> String {
+        switch d {
+        case .easy:     return difficultyEasy
+        case .moderate: return difficultyModerate
+        case .hard:     return difficultyHard
+        }
+    }
+
+    func difficultyReason(_ node: GraphNode) -> String {
+        var bits: [String] = []
+        if node.branches > 0 {
+            bits.append(language == .uz ? "\(node.branches) ta shart/tsikl"
+                                        : "\(node.branches) branch\(node.branches == 1 ? "" : "es")")
+        }
+        if node.maxNesting > 2 {
+            bits.append(language == .uz ? "\(node.maxNesting) qavat ichma-ich"
+                                        : "nested \(node.maxNesting) deep")
+        }
+        bits.append(language == .uz ? "\(node.span) qator" : "\(node.span) lines")
+        return bits.joined(separator: " · ")
+    }
+
+    // MARK: - Glossary
+
+    var glossary: String          { s("Bu koddagi soʻzlar", "Words in this code") }
+    var glossaryHint: String      { s("Kodda uchragan atamalar — sodda tilda",
+                                      "Terms that appear here, in plain language") }
+
+    // MARK: - Reading progress
+
+    var understood: String        { s("Tushundim", "I understand this") }
+    var understoodMark: String    { s("Tushunilgan", "Understood") }
+    var readingProgress: String   { s("Oʻqilgan", "Read so far") }
+    func progressText(_ done: Int, _ total: Int) -> String {
+        language == .uz ? "\(done) / \(total) funksiya" : "\(done) of \(total) functions"
+    }
+    var goBack: String            { s("Orqaga", "Back") }
+    var goForward: String         { s("Oldinga", "Forward") }
+
     // MARK: - Junior guidance
 
     var startHere: String         { s("Shu yerdan boshlang", "Start here") }

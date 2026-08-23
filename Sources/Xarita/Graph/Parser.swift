@@ -17,6 +17,15 @@ struct RawSymbol {
     var fileIndex: Int
     var line: Int
     var endLine: Int
+
+    /// Decision points inside the body — `if`, loops, `case`, `catch`, `&&`,
+    /// `||`. One plus this count is the classic cyclomatic complexity: the
+    /// number of independent paths through the function.
+    var branches: Int = 0
+
+    /// Deepest nesting reached inside the body. Depth hurts readability more
+    /// than length does, which is what a beginner needs warning about.
+    var maxNesting: Int = 0
 }
 
 /// A call site found inside a declaration, before resolution.
@@ -47,6 +56,12 @@ struct Parser {
         var braceDepth: Int       // depth this scope's body sits at
         var indent: Int           // for indentation-scoped languages
     }
+
+    /// Words that introduce an independent path through a function.
+    private static let decisionWords: Set<String> = [
+        "if", "elif", "else", "for", "while", "case", "catch", "except",
+        "guard", "when", "match", "unless", "and", "or"
+    ]
 
     func parse(tokens: [Token]) -> (symbols: [RawSymbol], calls: [RawCall]) {
         var symbols: [RawSymbol] = []
@@ -100,6 +115,24 @@ struct Parser {
             return nil
         }
 
+        /// Attributes a decision point to the innermost enclosing callable.
+        func noteBranch() {
+            for scope in scopes.reversed() where scope.symbolIndex >= 0 && scope.kind.isCallable {
+                symbols[scope.symbolIndex].branches += 1
+                return
+            }
+        }
+
+        func noteNesting(depth: Int) {
+            for scope in scopes.reversed() where scope.symbolIndex >= 0 && scope.kind.isCallable {
+                let relative = depth - scope.braceDepth
+                if relative > symbols[scope.symbolIndex].maxNesting {
+                    symbols[scope.symbolIndex].maxNesting = relative
+                }
+                return
+            }
+        }
+
         func closeScopes(downTo depth: Int, line: Int) {
             while let last = scopes.last, last.braceDepth > depth {
                 if last.symbolIndex >= 0 { symbols[last.symbolIndex].endLine = line }
@@ -121,14 +154,28 @@ struct Parser {
             // Indentation-scoped languages close scopes on dedent.
             if indentScoped, tok.firstOnLine, !scopes.isEmpty {
                 closeIndentScopes(to: tok.indent, line: tok.line)
+                if let scope = scopes.last, scope.symbolIndex >= 0, scope.kind.isCallable {
+                    let relative = max(0, (tok.indent - scope.indent) / 4)
+                    if relative > symbols[scope.symbolIndex].maxNesting {
+                        symbols[scope.symbolIndex].maxNesting = relative
+                    }
+                }
             }
 
             if tok.kind == .punct {
                 if tok.punct == 0x7B {            // {
                     braceDepth += 1
+                    noteNesting(depth: braceDepth)
                 } else if tok.punct == 0x7D {     // }
                     braceDepth -= 1
                     closeScopes(downTo: braceDepth, line: tok.line)
+                } else if tok.punct == 0x26 || tok.punct == 0x7C {
+                    // && and || each add a path; count the pair once.
+                    if isPunct(i + 1, tok.punct) {
+                        noteBranch()
+                        i += 2
+                        continue
+                    }
                 }
                 i += 1
                 continue
@@ -136,6 +183,8 @@ struct Parser {
 
             guard tok.kind == .identifier else { i += 1; continue }
             let word = tok.text
+
+            if Self.decisionWords.contains(word) { noteBranch() }
 
             // ---- Type / container declarations -------------------------------
             if typeKeywords.contains(word), isIdent(i + 1) {

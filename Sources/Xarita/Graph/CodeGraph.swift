@@ -15,6 +15,32 @@ struct GraphNode: Identifiable, Sendable {
     var fanOut: Int = 0         // how many distinct symbols this calls
     var isExternal: Bool = false
 
+    var branches: Int = 0       // decision points inside the body
+    var maxNesting: Int = 0     // deepest nesting reached
+
+    /// How hard this is likely to be to read.
+    ///
+    /// Cyclomatic complexity alone under-reports deeply nested code, which is
+    /// what actually defeats a beginner, so nesting is weighted separately and
+    /// length contributes a little.
+    enum Difficulty: Int, Comparable, Sendable {
+        case easy, moderate, hard
+
+        static func < (a: Difficulty, b: Difficulty) -> Bool { a.rawValue < b.rawValue }
+    }
+
+    var difficultyScore: Int {
+        (branches + 1) + maxNesting * 2 + max(0, span - 20) / 15
+    }
+
+    var difficulty: Difficulty {
+        switch difficultyScore {
+        case ..<6:  return .easy
+        case 6..<13: return .moderate
+        default:    return .hard
+        }
+    }
+
     var displayName: String {
         if let container { return "\(container).\(name)" }
         return name
@@ -140,9 +166,12 @@ struct GraphBuilder {
             map.reserveCapacity(result.symbols.count)
             for sym in result.symbols {
                 let id = nodes.count
-                nodes.append(GraphNode(id: id, name: sym.name, container: sym.container,
-                                       kind: sym.kind, language: sym.language,
-                                       fileIndex: fileIdx, line: sym.line, endLine: sym.endLine))
+                var node = GraphNode(id: id, name: sym.name, container: sym.container,
+                                     kind: sym.kind, language: sym.language,
+                                     fileIndex: fileIdx, line: sym.line, endLine: sym.endLine)
+                node.branches = sym.branches
+                node.maxNesting = sym.maxNesting
+                nodes.append(node)
                 map.append(id)
             }
             localToGlobal.append(map)

@@ -63,6 +63,16 @@ enum Theme {
     static let edgeOutgoing    = dynamic(light: 0x2C6FD4, dark: 0x5A9CFF)
     static let canvasGrid      = dynamic(light: 0xE8EBF0, dark: 0x141821)
 
+    /// Difficulty badges. Green/amber/red reads instantly, and the hues are the
+    /// same family as the danger and gold accents so nothing looks bolted on.
+    static func color(for difficulty: GraphNode.Difficulty) -> Color {
+        switch difficulty {
+        case .easy:     return dynamic(light: 0x1B7F4B, dark: 0x5BC98A)
+        case .moderate: return dynamic(light: 0xA9750F, dark: 0xE0A53A)
+        case .hard:     return dynamic(light: 0xC23A47, dark: 0xF4707E)
+        }
+    }
+
     // MARK: - Code
 
     /// Syntax colours. Tuned so that in dark mode nothing glows brighter than

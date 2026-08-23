@@ -55,6 +55,20 @@ struct XaritaApp: App {
             }
             .keyboardShortcut("e", modifiers: .command)
             .disabled(state.selection == nil || !explainer.modelState.canGenerate)
+
+            Button(loc.t.understood) {
+                if let id = state.selection { state.toggleUnderstood(id) }
+            }
+            .keyboardShortcut("d", modifiers: .command)
+            .disabled(state.selection == nil)
+
+            Divider()
+            Button(loc.t.goBack) { state.goBack() }
+                .keyboardShortcut("[", modifiers: .command)
+                .disabled(!state.canGoBack)
+            Button(loc.t.goForward) { state.goForward() }
+                .keyboardShortcut("]", modifiers: .command)
+                .disabled(!state.canGoForward)
             Divider()
             Picker(loc.t.interfaceLanguage, selection: $loc.language) {
                 ForEach(AppLanguage.allCases, id: \.self) { lang in

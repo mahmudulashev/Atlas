@@ -32,28 +32,67 @@ struct SidebarView: View {
     // MARK: - Header
 
     private var header: some View {
-        HStack(spacing: 9) {
-            MarkGlyph(size: 22)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(state.graph?.projectName ?? "—")
-                    .font(Theme.Font.heading)
-                    .foregroundStyle(Theme.textPrimary)
-                    .lineLimit(1)
-                if let g = state.graph {
-                    Text(g.languageCounts
-                            .sorted { $0.value > $1.value }
-                            .prefix(3)
-                            .map(\.key.displayName)
-                            .joined(separator: " · "))
-                        .font(Theme.Font.micro)
-                        .foregroundStyle(Theme.textTertiary)
+        VStack(spacing: 9) {
+            HStack(spacing: 9) {
+                MarkGlyph(size: 22)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(state.graph?.projectName ?? "—")
+                        .font(Theme.Font.heading)
+                        .foregroundStyle(Theme.textPrimary)
                         .lineLimit(1)
+                    if let g = state.graph {
+                        Text(g.languageCounts
+                                .sorted { $0.value > $1.value }
+                                .prefix(3)
+                                .map(\.key.displayName)
+                                .joined(separator: " · "))
+                            .font(Theme.Font.micro)
+                            .foregroundStyle(Theme.textTertiary)
+                            .lineLimit(1)
+                    }
+                }
+                Spacer(minLength: 0)
+
+                HStack(spacing: 2) {
+                    HistoryButton(icon: "chevron.left", help: loc.t.goBack,
+                                  enabled: state.canGoBack) { state.goBack() }
+                    HistoryButton(icon: "chevron.right", help: loc.t.goForward,
+                                  enabled: state.canGoForward) { state.goForward() }
                 }
             }
-            Spacer(minLength: 0)
+            progressStrip
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 11)
+    }
+
+    /// Reading progress. Seeing a bar move is what turns "this codebase is
+    /// enormous" into "I have read a third of it".
+    private var progressStrip: some View {
+        let total = max(state.readableCount, 1)
+        let done = state.understood.count
+        return VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(loc.t.readingProgress.uppercased())
+                    .font(Theme.Font.micro)
+                    .tracking(0.6)
+                    .foregroundStyle(Theme.textTertiary)
+                Spacer(minLength: 4)
+                Text(loc.t.progressText(done, total))
+                    .font(Theme.Font.micro)
+                    .foregroundStyle(Theme.textTertiary)
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Theme.border).frame(height: 3)
+                    Capsule()
+                        .fill(Theme.accent)
+                        .frame(width: geo.size.width * min(1, Double(done) / Double(total)),
+                               height: 3)
+                }
+            }
+            .frame(height: 3)
+        }
     }
 
     // MARK: - Search
@@ -253,6 +292,24 @@ struct NodeRow: View {
                         .lineLimit(1)
                         .truncationMode(.middle)
                     Spacer(minLength: 4)
+                    if state.isUnderstood(id) {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundStyle(Theme.color(for: .easy))
+                    }
+                    if !node.isExternal, node.kind.isCallable {
+                        // A three-step bar reads as difficulty at a glance
+                        // without costing a word of explanation.
+                        HStack(spacing: 1.5) {
+                            ForEach(0..<3, id: \.self) { step in
+                                RoundedRectangle(cornerRadius: 0.5)
+                                    .fill(step <= node.difficulty.rawValue
+                                          ? Theme.color(for: node.difficulty)
+                                          : Theme.border)
+                                    .frame(width: 2.5, height: 6)
+                            }
+                        }
+                    }
                     if let trailing {
                         Text(trailing)
                             .font(Theme.Font.micro)
@@ -271,5 +328,29 @@ struct NodeRow: View {
             .buttonStyle(.plain)
             .onHover { hovering = $0 }
         }
+    }
+}
+
+
+private struct HistoryButton: View {
+    let icon: String
+    let help: String
+    let enabled: Bool
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(enabled ? (hovering ? Theme.accent : Theme.textSecondary)
+                                         : Theme.textTertiary.opacity(0.4))
+                .frame(width: 22, height: 20)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+        .onHover { hovering = $0 }
+        .help(help)
     }
 }

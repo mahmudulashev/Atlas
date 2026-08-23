@@ -38,7 +38,7 @@ struct DiagramLayout {
     static let rowHeight: CGFloat = 21
     static let cardPadBottom: CGFloat = 8
     static let columnGap: CGFloat = 108
-    static let rowGap: CGFloat = 30
+    static let rowGap: CGFloat = 24
     static let margin: CGFloat = 48
     static let maxRowsShown = 6
 

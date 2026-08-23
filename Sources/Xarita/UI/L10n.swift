@@ -189,6 +189,24 @@ struct L10n {
           "Each card is one file. The lines show what calls what, running left to right from caller to callee.")
     }
 
+    // MARK: - Issues
+
+    var issuesTab: String         { s("Xatolar", "Findings") }
+    var issuesTitle: String       { s("Eʼtibor talab qiladigan joylar", "Worth a second look") }
+    var issuesHint: String {
+        s("Bularning hammasi kod tahlilidan olingan — har biri aniq fayl va qatorni koʻrsatadi. Bu xato degani emas, bu «shu yerga qarab qoʻy» degani.",
+          "All of this comes from the analysis, and every item points at a real file and line. These are not errors — they are places worth looking at.")
+    }
+    var issuesNone: String        { s("Eʼtibor talab qiladigan joy topilmadi.", "Nothing stood out.") }
+
+    func severityName(_ s2: Issue.Severity) -> String {
+        switch s2 {
+        case .high:   return s("Muhim", "Important")
+        case .medium: return s("Oʻrtacha", "Worth checking")
+        case .low:    return s("Kichik", "Minor")
+        }
+    }
+
     // MARK: - Difficulty
 
     var howHard: String           { s("Qanchalik qiyin", "How hard is this") }

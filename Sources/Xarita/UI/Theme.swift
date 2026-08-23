@@ -72,6 +72,10 @@ enum Theme {
     }
 
     static let edge            = dynamic(light: 0xC3CBDA, dark: 0x24314A)
+
+    /// Diagram connectors sit on the paper grid and need more contrast than a
+    /// hairline border does, or they vanish into it.
+    static let connector       = dynamic(light: 0x93A0B5, dark: 0x415471)
     static let edgeIncoming    = dynamic(light: 0x8A6A2E, dark: 0xC9A45E)
     static let edgeOutgoing    = dynamic(light: 0x2B4C87, dark: 0x7FA6E8)
 

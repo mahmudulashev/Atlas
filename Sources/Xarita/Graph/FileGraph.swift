@@ -68,6 +68,13 @@ enum Layer: String, CaseIterable, Sendable {
         for marker in ["main.", "index.", "app.", "__main__", "cli.", "bin/", "cmd/", "entry"]
         where last.hasPrefix(marker) || p.contains("/" + marker) { return .entry }
 
+        // Apple projects name the launch file after the app — XaritaApp.swift,
+        // MyThingApp.swift — and it never matches a prefix rule.
+        let stem = (last as NSString).deletingPathExtension
+        if stem.hasSuffix("app") || stem.hasSuffix("main") || stem.hasSuffix("delegate") {
+            return .entry
+        }
+
         for marker in ["component", "view", "page", "screen", "widget", "ui/", "/ui",
                        ".tsx", ".jsx", "template", "layout", "style", "render"]
         where p.contains(marker) { return .ui }
@@ -179,9 +186,20 @@ struct FileGraph: Sendable {
 
         for fileIndex in graph.files.indices where kept.contains(fileIndex) {
             let path = graph.files[fileIndex]
+            // One row per distinct name. A file with three initialisers should
+            // not spend three of its six visible rows saying "init", and a type
+            // and its extension are one thing to a reader, not two.
+            var seenNames = Set<String>()
             let symbols = symbolsByFile[fileIndex]
-                .sorted { graph.nodes[$0].fanIn + graph.nodes[$0].fanOut
-                        > graph.nodes[$1].fanIn + graph.nodes[$1].fanOut }
+                .sorted { a, b in
+                    let na = graph.nodes[a], nb = graph.nodes[b]
+                    let wa = na.fanIn * 2 + na.fanOut, wb = nb.fanIn * 2 + nb.fanOut
+                    if wa != wb { return wa > wb }
+                    // Prefer things that do something over bare declarations.
+                    if (na.kind == .type) != (nb.kind == .type) { return nb.kind == .type }
+                    return na.span > nb.span
+                }
+                .filter { seenNames.insert(graph.nodes[$0].name).inserted }
             let names = symbols.prefix(12).map { graph.nodes[$0].name }
             let language = symbols.first.map { graph.nodes[$0].language } ?? .swift
 

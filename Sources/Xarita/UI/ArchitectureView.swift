@@ -97,16 +97,16 @@ struct ArchitectureView: View {
             for point in points.dropFirst() { path.addLine(to: point) }
 
             let color: Color = {
-                if highlighted == nil { return Theme.edge }
+                if highlighted == nil { return Theme.connector }
                 if connector.to == highlighted { return Theme.edgeIncoming }
                 if connector.from == highlighted { return Theme.edgeOutgoing }
                 return Theme.edge.opacity(0.18)
             }()
 
             context.stroke(path, with: .color(color),
-                           style: StrokeStyle(lineWidth: isLive && highlighted != nil ? 1.8 : 1.1,
+                           style: StrokeStyle(lineWidth: (isLive && highlighted != nil) ? 2.1 : 1.5,
                                               lineCap: .round, lineJoin: .round,
-                                              dash: [5 * scale, 4 * scale]))
+                                              dash: [6 * max(scale, 0.4), 4 * max(scale, 0.4)]))
 
             if let last = points.last, let previous = points.dropLast().last, isLive {
                 drawArrowhead(context: context, at: last, from: previous, color: color)
@@ -159,18 +159,43 @@ struct ArchitectureView: View {
 
         guard scale > 0.32 else { return }
 
-        // File name and layer badge.
-        let title = Text(node.name)
-            .font(.system(size: 12 * scale, weight: .semibold, design: .monospaced))
-            .foregroundStyle(Color.white)
-        context.draw(context.resolve(title),
-                     at: CGPoint(x: frame.minX + 10 * scale, y: header.midY), anchor: .leading)
+        // Badge first, so the file name knows how much room is actually left.
+        // Canvas text does not truncate itself; without measuring, a long file
+        // name simply runs underneath the badge.
+        let badgeFont = Font.system(size: 8.5 * scale, weight: .bold)
+        let badge = context.resolve(Text(node.layer.name(loc.language))
+            .font(badgeFont)
+            .foregroundStyle(Color.white.opacity(0.85)))
+        let badgeWidth = badge.measure(in: CGSize(width: frame.width, height: headerHeight)).width
 
-        let badge = Text(node.layer.name(loc.language))
-            .font(.system(size: 8.5 * scale, weight: .bold))
-            .foregroundStyle(Color.white.opacity(0.85))
-        context.draw(context.resolve(badge),
-                     at: CGPoint(x: frame.maxX - 10 * scale, y: header.midY), anchor: .trailing)
+        let padding = 10 * scale
+        let available = frame.width - padding * 2 - badgeWidth - 8 * scale
+        let titleFont = Font.system(size: 12 * scale, weight: .semibold, design: .monospaced)
+
+        func resolvedTitle(_ string: String) -> GraphicsContext.ResolvedText {
+            context.resolve(Text(string).font(titleFont).foregroundStyle(Color.white))
+        }
+
+        var displayName = node.name
+        var title = resolvedTitle(displayName)
+        if title.measure(in: CGSize(width: .infinity, height: headerHeight)).width > available,
+           available > 20 {
+            // Trim from the front: the extension and the distinctive tail of a
+            // file name carry more meaning than its prefix.
+            while displayName.count > 4,
+                  resolvedTitle("…" + displayName)
+                    .measure(in: CGSize(width: .infinity, height: headerHeight)).width > available {
+                displayName.removeFirst()
+            }
+            displayName = "…" + displayName
+            title = resolvedTitle(displayName)
+        }
+
+        context.draw(title, at: CGPoint(x: frame.minX + padding, y: header.midY), anchor: .leading)
+        if available > 20 {
+            context.draw(badge, at: CGPoint(x: frame.maxX - padding, y: header.midY),
+                         anchor: .trailing)
+        }
 
         guard scale > 0.42 else { return }
 

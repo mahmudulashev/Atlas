@@ -18,6 +18,7 @@ struct ContentView: View {
                     switch state.mode {
                     case .orientation:  OrientationView()
                     case .architecture: ArchitectureView()
+                    case .issues:       IssuesView()
                     case .reading:      reading
                     }
                 }
@@ -198,6 +199,10 @@ struct ModeBar: View {
                 tab(loc.t.architecture, icon: "rectangle.3.group", mode: .architecture) {
                     state.showArchitecture()
                 }
+                tab(loc.t.issuesTab, icon: "exclamationmark.triangle", mode: .issues,
+                    badge: state.issues.isEmpty ? nil : "\(state.issues.count)") {
+                    state.showIssues()
+                }
                 tab(loc.t.readingTab, icon: "text.alignleft", mode: .reading) {
                     state.beginReading()
                 }
@@ -225,13 +230,21 @@ struct ModeBar: View {
         .background(Theme.surface)
     }
 
-    private func tab(_ title: String, icon: String,
-                     mode: AppState.Mode, action: @escaping () -> Void) -> some View {
+    private func tab(_ title: String, icon: String, mode: AppState.Mode,
+                     badge: String? = nil, action: @escaping () -> Void) -> some View {
         let selected = state.mode == mode
         return Button(action: action) {
             HStack(spacing: 5) {
                 Image(systemName: icon).font(.system(size: 10.5))
                 Text(title).font(Theme.Font.caption.weight(selected ? .semibold : .regular))
+                if let badge {
+                    Text(badge)
+                        .font(Theme.Font.micro.weight(.bold).monospacedDigit())
+                        .foregroundStyle(selected ? Theme.accent : Color.white)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 0.5)
+                        .background(Capsule().fill(selected ? Color.white : Theme.marker))
+                }
             }
             .foregroundStyle(selected ? Color.white : Theme.textSecondary)
             .padding(.horizontal, 10)

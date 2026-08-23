@@ -11,13 +11,14 @@ final class AppState: ObservableObject {
     /// whole, or the reading view for a single step. Opening straight into a
     /// function was the old behaviour and it is precisely what leaves a
     /// newcomer with no idea where they are.
-    enum Mode { case orientation, architecture, reading }
+    enum Mode { case orientation, architecture, issues, reading }
 
     @Published private(set) var graph: CodeGraph?
     @Published private(set) var mode: Mode = .orientation
     @Published private(set) var route: Route = Route(steps: [])
     @Published private(set) var fileGraph = FileGraph()
     @Published private(set) var diagram = DiagramLayout(graph: FileGraph())
+    @Published private(set) var issues: [Issue] = []
     @Published var showTestsInDiagram = false {
         didSet { rebuildDiagram() }
     }
@@ -129,6 +130,7 @@ final class AppState: ObservableObject {
         route = Route(steps: [])
         fileGraph = FileGraph()
         diagram = DiagramLayout(graph: FileGraph())
+        issues = []
         mode = .orientation
     }
 
@@ -145,12 +147,19 @@ final class AppState: ObservableObject {
     // MARK: - Diagram
 
     private func rebuildDiagram() {
-        guard let graph else { fileGraph = FileGraph(); diagram = DiagramLayout(graph: FileGraph()); return }
+        guard let graph else {
+            fileGraph = FileGraph()
+            diagram = DiagramLayout(graph: FileGraph())
+            issues = []
+            return
+        }
         fileGraph = FileGraph.build(from: graph, includeTests: showTestsInDiagram)
         diagram = DiagramLayout(graph: fileGraph)
+        issues = IssueFinder.find(graph: graph, fileGraph: fileGraph)
     }
 
     func showArchitecture() { mode = .architecture }
+    func showIssues() { mode = .issues }
 
     // MARK: - Route
 

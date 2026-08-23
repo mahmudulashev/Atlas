@@ -20,27 +20,41 @@ enum Theme {
     }
 
     // MARK: - Surfaces
+    //
+    // "Siyoh" — ink. The ground is drafting paper rather than white: a neutral
+    // biased toward the accent reads as chosen, where a pure grey reads as
+    // inherited. Navy carries structure; vermilion is spent on exactly one
+    // thing, the "you are here" marker, so the eye never has to hunt for it.
 
-    static let background      = dynamic(light: 0xF6F7F9, dark: 0x0A0C10)
-    static let surface         = dynamic(light: 0xFFFFFF, dark: 0x12151C)
-    static let surfaceRaised   = dynamic(light: 0xFFFFFF, dark: 0x191D26)
-    static let surfaceSunken   = dynamic(light: 0xEDEFF3, dark: 0x070910)
+    static let background      = dynamic(light: 0xEFF1F5, dark: 0x080B12)
+    static let surface         = dynamic(light: 0xFFFFFF, dark: 0x101724)
+    static let surfaceRaised   = dynamic(light: 0xF6F8FB, dark: 0x151E2E)
+    static let surfaceSunken   = dynamic(light: 0xE9ECF3, dark: 0x05070C)
 
-    static let border          = dynamic(light: 0xE3E7EE, dark: 0x232935)
-    static let borderStrong    = dynamic(light: 0xC8CFDA, dark: 0x333B4A)
+    static let border          = dynamic(light: 0xDBE0EA, dark: 0x1F2A3D)
+    static let borderSoft      = dynamic(light: 0xE8ECF3, dark: 0x192234)
+    static let borderStrong    = dynamic(light: 0xC3CBDA, dark: 0x2C3A52)
+
+    /// The faint drafting grid drawn behind the whole window.
+    static let paperGrid       = dynamic(light: 0xE3E8F1, dark: 0x131B29)
 
     // MARK: - Text
 
-    static let textPrimary     = dynamic(light: 0x10131A, dark: 0xE8EDF5)
-    static let textSecondary   = dynamic(light: 0x54606F, dark: 0x98A3B5)
-    static let textTertiary    = dynamic(light: 0x8992A0, dark: 0x626D7E)
+    static let textPrimary     = dynamic(light: 0x0E1626, dark: 0xE3E9F4)
+    static let textSecondary   = dynamic(light: 0x4A566B, dark: 0x98A6BE)
+    static let textTertiary    = dynamic(light: 0x7C8698, dark: 0x63718A)
 
     // MARK: - Accent
 
-    static let accent          = dynamic(light: 0x0E8F86, dark: 0x3FC7BE)
-    static let accentMuted     = dynamic(light: 0xD8F0EE, dark: 0x14322F)
-    static let gold            = dynamic(light: 0xA9750F, dark: 0xE0A53A)
-    static let danger          = dynamic(light: 0xC23A47, dark: 0xF4707E)
+    static let accent          = dynamic(light: 0x2B4C87, dark: 0x7FA6E8)
+    static let accentMuted     = dynamic(light: 0xDFE7F5, dark: 0x152439)
+
+    /// Reserved for the reader's own position. Nothing else uses it.
+    static let marker          = dynamic(light: 0xC0432C, dark: 0xF0705A)
+    static let markerMuted     = dynamic(light: 0xF7E3DF, dark: 0x2B1512)
+
+    static let gold            = dynamic(light: 0xA97514, dark: 0xE0AB3E)
+    static let danger          = dynamic(light: 0xB1402F, dark: 0xE87A68)
 
     // MARK: - Graph
 
@@ -49,27 +63,25 @@ enum Theme {
     static func color(for kind: SymbolKind, external: Bool = false) -> Color {
         if external { return dynamic(light: 0x9AA3B0, dark: 0x525C6B) }
         switch kind {
-        case .function:     return dynamic(light: 0x2C6FD4, dark: 0x5A9CFF)
-        case .method:       return dynamic(light: 0x0E8F86, dark: 0x3FC7BE)
-        case .initializer:  return dynamic(light: 0x6B4BC8, dark: 0xA98BFF)
-        case .type:         return dynamic(light: 0xA9750F, dark: 0xE0A53A)
-        case .closureOrVar: return dynamic(light: 0xC0507A, dark: 0xF08CB0)
+        case .function:     return dynamic(light: 0x2B4C87, dark: 0x7FA6E8)
+        case .method:       return dynamic(light: 0x1F6E7C, dark: 0x5FC2D4)
+        case .initializer:  return dynamic(light: 0x5B4A9E, dark: 0x9E90E0)
+        case .type:         return dynamic(light: 0xA97514, dark: 0xE0AB3E)
+        case .closureOrVar: return dynamic(light: 0xA34668, dark: 0xE58AA8)
         }
     }
 
-    static let edge            = dynamic(light: 0xB9C1CD, dark: 0x2C3441)
-    static let edgeHighlight   = dynamic(light: 0x0E8F86, dark: 0x3FC7BE)
-    static let edgeIncoming    = dynamic(light: 0xC23A47, dark: 0xF4707E)
-    static let edgeOutgoing    = dynamic(light: 0x2C6FD4, dark: 0x5A9CFF)
-    static let canvasGrid      = dynamic(light: 0xE8EBF0, dark: 0x141821)
+    static let edge            = dynamic(light: 0xC3CBDA, dark: 0x24314A)
+    static let edgeIncoming    = dynamic(light: 0x8A6A2E, dark: 0xC9A45E)
+    static let edgeOutgoing    = dynamic(light: 0x2B4C87, dark: 0x7FA6E8)
 
     /// Difficulty badges. Green/amber/red reads instantly, and the hues are the
     /// same family as the danger and gold accents so nothing looks bolted on.
     static func color(for difficulty: GraphNode.Difficulty) -> Color {
         switch difficulty {
-        case .easy:     return dynamic(light: 0x1B7F4B, dark: 0x5BC98A)
-        case .moderate: return dynamic(light: 0xA9750F, dark: 0xE0A53A)
-        case .hard:     return dynamic(light: 0xC23A47, dark: 0xF4707E)
+        case .easy:     return dynamic(light: 0x2F7A54, dark: 0x66C089)
+        case .moderate: return dynamic(light: 0xA9750F, dark: 0xE0AB3E)
+        case .hard:     return dynamic(light: 0xB1402F, dark: 0xE87A68)
         }
     }
 
@@ -77,17 +89,17 @@ enum Theme {
 
     /// Syntax colours. Tuned so that in dark mode nothing glows brighter than
     /// the identifiers you are actually trying to read.
-    static let codePlain    = dynamic(light: 0x24292F, dark: 0xCBD3E1)
-    static let codeKeyword  = dynamic(light: 0xA02585, dark: 0xE58FD0)
-    static let codeString   = dynamic(light: 0x0A7B2E, dark: 0x7FD98F)
-    static let codeNumber   = dynamic(light: 0xB35309, dark: 0xF0A45C)
-    static let codeComment  = dynamic(light: 0x6A737D, dark: 0x5F6B7C)
-    static let codeFunction = dynamic(light: 0x2C6FD4, dark: 0x74B0FF)
-    static let codeType     = dynamic(light: 0xA9750F, dark: 0xE0A53A)
-    static let codePunct    = dynamic(light: 0x57606A, dark: 0x8B95A5)
-    static let codeGutter   = dynamic(light: 0xAFB8C3, dark: 0x4A5464)
-    static let codeBackground = dynamic(light: 0xFBFCFD, dark: 0x0D1017)
-    static let codeHighlight  = dynamic(light: 0xFFF7D6, dark: 0x1C2233)
+    static let codePlain    = dynamic(light: 0x18202F, dark: 0xC9D3E4)
+    static let codeKeyword  = dynamic(light: 0x8B3070, dark: 0xDE93C4)
+    static let codeString   = dynamic(light: 0x1F6E4A, dark: 0x74C79A)
+    static let codeNumber   = dynamic(light: 0xA85A18, dark: 0xE3A467)
+    static let codeComment  = dynamic(light: 0x7C8698, dark: 0x5B6A82)
+    static let codeFunction = dynamic(light: 0x2B4C87, dark: 0x86ABEB)
+    static let codeType     = dynamic(light: 0xA97514, dark: 0xE0AB3E)
+    static let codePunct    = dynamic(light: 0x5C6779, dark: 0x8593A9)
+    static let codeGutter   = dynamic(light: 0xA9B3C4, dark: 0x44526B)
+    static let codeBackground = dynamic(light: 0xFCFDFE, dark: 0x0B1019)
+    static let codeHighlight  = dynamic(light: 0xFBF0EC, dark: 0x1A2434)
 
     // MARK: - Type scale
 

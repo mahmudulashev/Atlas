@@ -127,8 +127,8 @@ struct L10n {
                                       "Apple's on-device model — nothing leaves your Mac") }
 
     var englishFallbackNote: String {
-        s("Apple'ning qurilma ichidagi modeli oʻzbek tilini qoʻllab-quvvatlamaydi, shuning uchun bu izoh inglizcha. Pastdagi maʼlumot va lugʻat oʻzbekcha.",
-          "Apple's on-device model doesn't support Uzbek, so this explanation is in English.")
+        s("Apple modeli oʻzbekcha yoza olmaydi, shuning uchun u faqat kodni tasniflaydi — gapni Xarita oʻzi yozadi.",
+          "Apple's model classifies the code; the sentence itself is written by Xarita.")
     }
 
     var aiOffTitle: String        { s("AI tushuntirish yoqilmagan", "AI explanations are off") }

@@ -139,49 +139,97 @@ final class Explainer: ObservableObject {
 
         task = Task { [weak self] in
             guard let self else { return }
+            defer { self.isGenerating = false }
 
-            // Try the interface language first, then English. Uzbek is refused
-            // outright by the model, and a refusal must not leave a blank panel.
-            let attempts: [AppLanguage] = language == .en ? [.en] : [language, .en]
-
-            for (index, attempt) in attempts.enumerated() {
-                if Task.isCancelled { self.isGenerating = false; return }
-                let isFallback = index > 0
-                do {
-                    let session = LanguageModelSession(
-                        model: .default,
-                        instructions: Self.instructions(for: attempt))
-                    let prompt = Self.buildPrompt(node: node, graph: graph,
-                                                  source: source, language: attempt)
-                    let stream = session.streamResponse(
-                        to: prompt, options: GenerationOptions(temperature: 0.3))
-
-                    var text = ""
-                    for try await partial in stream {
-                        if Task.isCancelled { self.isGenerating = false; return }
-                        text = partial.content
-                        self.streaming = text
-                        self.fellBackToEnglish = isFallback
-                    }
-                    guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                        continue
-                    }
+            // Two different routes, because the model's abilities differ by
+            // language. English gets free prose, which reads better. Uzbek gets
+            // guided classification rendered through our own wording, because
+            // the model will not produce Uzbek at all.
+            if language == .uz {
+                if let summary = await Self.classify(node: node, source: source) {
+                    guard !Task.isCancelled else { return }
+                    let text = summary.sentence(for: node, language: .uz,
+                                                t: L10n(language: .uz))
+                    self.streaming = text
                     self.cache[node.id] = text
-                    self.fellBackToEnglish = isFallback
-                    self.isGenerating = false
                     return
-                } catch {
-                    self.streaming = ""
-                    self.lastError = Self.describe(error)
-                    continue
+                }
+                self.lastError = "classificationFailed"
+                return
+            }
+
+            do {
+                let session = LanguageModelSession(
+                    model: .default, instructions: Self.instructions(for: .en))
+                let prompt = Self.buildPrompt(node: node, graph: graph,
+                                              source: source, language: .en)
+                let stream = session.streamResponse(
+                    to: prompt, options: GenerationOptions(temperature: 0.3))
+                var text = ""
+                for try await partial in stream {
+                    guard !Task.isCancelled else { return }
+                    text = partial.content
+                    self.streaming = text
+                }
+                if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    self.cache[node.id] = text
+                }
+            } catch {
+                // The model occasionally rejects perfectly ordinary source with
+                // "unsupported language" — short symbolic string literals seem
+                // to defeat its language detector. Falling back to the guided
+                // route keeps something useful on screen.
+                self.lastError = Self.describe(error)
+                if let summary = await Self.classify(node: node, source: source) {
+                    let text = summary.sentence(for: node, language: .en,
+                                                t: L10n(language: .en))
+                    self.streaming = text
+                    self.cache[node.id] = text
                 }
             }
-            self.isGenerating = false
         }
         #endif
     }
 
     #if canImport(FoundationModels)
+    /// Asks the model to pick from fixed options rather than to write prose.
+    ///
+    /// Retried once: the classifier is cheap (well under a second) and its
+    /// occasional refusals are not deterministic.
+    @available(macOS 26.0, *)
+    private static func classify(node: GraphNode, source: String) async -> CodeSummary? {
+        let excerpt = source.count > 2_000 ? String(source.prefix(2_000)) : source
+
+        guard let schema = try? buildSchema() else { return nil }
+
+        for attempt in 0..<2 {
+            do {
+                let session = LanguageModelSession(model: .default, instructions: """
+                You classify source code. Choose the single best option for each field.
+                """)
+                let response = try await session.respond(
+                    to: "Classify this \(node.language.displayName) function named \(node.name):\n\n\(excerpt)",
+                    schema: schema,
+                    options: GenerationOptions(temperature: 0.1))
+
+                let content = response.content
+                func field(_ key: String) -> String {
+                    (try? content.value(String.self, forProperty: key)) ?? ""
+                }
+                if let summary = CodeSummary.from(operation: field("operation"),
+                                                  target: field("target"),
+                                                  canFail: field("canFail"),
+                                                  repeats: field("repeats")) {
+                    return summary
+                }
+            } catch {
+                if attempt == 1 { return nil }
+                continue
+            }
+        }
+        return nil
+    }
+
     @available(macOS 26.0, *)
     private static func describe(_ error: Error) -> String {
         let text = "\(error)"
@@ -190,8 +238,30 @@ final class Explainer: ObservableObject {
         if text.contains("exceededContextWindowSize")   { return "tooLong" }
         return "generic"
     }
-    #else
-    private static func describe(_ error: Error) -> String { "generic" }
+
+    @available(macOS 26.0, *)
+    private static func buildSchema() throws -> GenerationSchema {
+        func choice(_ name: String, _ options: [String], _ description: String)
+            -> DynamicGenerationSchema.Property {
+            .init(name: name, description: description,
+                  schema: DynamicGenerationSchema(name: name.capitalized, anyOf: options))
+        }
+
+        let root = DynamicGenerationSchema(
+            name: "CodeSummary",
+            description: "A classification of what a function does",
+            properties: [
+                choice("operation", CodeSummary.Operation.allCases.map(\.rawValue),
+                       "The single best verb for what this function primarily does"),
+                choice("target", CodeSummary.Target.allCases.map(\.rawValue),
+                       "What the function primarily acts on"),
+                choice("canFail", ["yes", "no"],
+                       "Whether it can throw an error or return a failure"),
+                choice("repeats", ["yes", "no"],
+                       "Whether it loops or recurses over multiple items"),
+            ])
+        return try GenerationSchema(root: root, dependencies: [])
+    }
     #endif
 
     func cancel() {

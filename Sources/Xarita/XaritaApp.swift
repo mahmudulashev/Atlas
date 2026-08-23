@@ -21,6 +21,9 @@ struct XaritaApp: App {
                     Notifier.requestAuthorization()
                     explainer.refreshAvailability()
                 }
+                .onChange(of: state.graph?.rootPath) { _, _ in
+                    state.refineProjectKind(using: explainer)
+                }
         }
         .windowToolbarStyle(.unified(showsTitle: true))
         .defaultSize(width: 1280, height: 820)
@@ -62,6 +65,16 @@ struct XaritaApp: App {
             .keyboardShortcut("d", modifiers: .command)
             .disabled(state.selection == nil)
 
+            Divider()
+            Button(loc.t.nextStepLabel) { state.nextStep() }
+                .keyboardShortcut(.rightArrow, modifiers: [.command, .shift])
+                .disabled(!state.canGoNextStep)
+            Button(loc.t.prevStepLabel) { state.previousStep() }
+                .keyboardShortcut(.leftArrow, modifiers: [.command, .shift])
+                .disabled(!state.canGoPreviousStep)
+            Button(loc.t.backToOverview) { state.showOrientation() }
+                .keyboardShortcut("0", modifiers: .command)
+                .disabled(state.graph == nil)
             Divider()
             Button(loc.t.goBack) { state.goBack() }
                 .keyboardShortcut("[", modifiers: .command)

@@ -148,6 +148,35 @@ struct L10n {
 
     var codeMenu: String          { s("Kod", "Code") }
 
+    // MARK: - Orientation
+
+    var projectIs: String         { s("Bu —", "This is a") }
+    var beginReading: String      { s("Oʻqishni boshlash", "Start reading") }
+    var suggestedRoute: String    { s("Taklif qilingan yoʻnalish", "Suggested route") }
+    var routeHint: String {
+        s("Dastur ishini boshlagan joydan boshlanadi va chaqiruvlar boʻylab boradi. Har bir bosqichga oldingisidan yetib kelinadi.",
+          "It starts where the program starts and follows the calls. Each step is reached by the one before it.")
+    }
+    var routeEmpty: String {
+        s("Bu loyihada aniq boshlanish nuqtasi topilmadi. Chapdagi roʻyxatdan oʻzing tanlashing mumkin.",
+          "No clear starting point was found here. Pick something from the list instead.")
+    }
+    var youAreHere: String        { s("shu yerdasiz", "you are here") }
+    var stepWord: String          { s("bosqich", "step") }
+    var nextStepLabel: String     { s("Keyingi", "Next") }
+    var prevStepLabel: String     { s("Oldingi", "Previous") }
+    var backToOverview: String    { s("Umumiy koʻrinish", "Overview") }
+    var routeLabel: String        { s("Yoʻnalish", "Route") }
+    var everythingElse: String    { s("Qolgan hammasi", "Everything else") }
+
+    // MARK: - Questions
+
+    var askQuestion: String       { s("Savol berish", "Ask a question") }
+    var questionWhoCalls: String  { s("Bu qayerdan chaqiriladi?", "Where is this called from?") }
+    var questionWhyExists: String { s("Nega bu funksiya kerak?", "Why does this exist?") }
+    var questionWhatBreaks: String { s("Bu yerda nima xato ketishi mumkin?", "What can go wrong here?") }
+    var questionSimpler: String   { s("Yanada soddaroq tushuntir", "Explain it more simply") }
+
     // MARK: - Difficulty
 
     var howHard: String           { s("Qanchalik qiyin", "How hard is this") }

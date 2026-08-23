@@ -127,3 +127,42 @@ struct RichText: View {
         return text
     }
 }
+
+/// A small caps section heading, optionally with a count and an explanatory line.
+struct SectionLabel: View {
+    let title: String
+    var count: Int?
+    var hint: String?
+
+    init(_ title: String, count: Int? = nil, hint: String? = nil) {
+        self.title = title
+        self.count = count
+        self.hint = hint
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 5) {
+                Text(title.uppercased())
+                    .font(Theme.Font.micro)
+                    .tracking(0.8)
+                    .foregroundStyle(Theme.textTertiary)
+                if let count {
+                    Text("\(count)")
+                        .font(Theme.Font.micro.monospacedDigit())
+                        .foregroundStyle(Theme.textTertiary.opacity(0.7))
+                }
+                Spacer(minLength: 0)
+            }
+            if let hint {
+                Text(hint)
+                    .font(Theme.Font.micro)
+                    .foregroundStyle(Theme.textTertiary.opacity(0.8))
+                    .lineSpacing(1.5)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.bottom, 2)
+    }
+}

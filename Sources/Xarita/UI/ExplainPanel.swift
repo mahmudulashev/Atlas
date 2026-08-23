@@ -24,6 +24,7 @@ struct ExplainPanel: View {
                         let node = graph.nodes[id]
 
                         aiSection(node: node, graph: graph)
+                        questionsSection(node: node, graph: graph)
                         difficultySection(node: node)
                         factsSection(node: node, graph: graph)
                         glossarySection(node: node, graph: graph)
@@ -153,6 +154,34 @@ struct ExplainPanel: View {
         case .ineligibleDevice:       return loc.t.aiOffIneligible
         case .unsupportedOS:          return loc.t.aiOffOldOS
         default:                      return ""
+        }
+    }
+
+    // MARK: - Questions
+
+    /// Beginners often cannot phrase the question they have. Offering the four
+    /// that matter removes that step entirely.
+    private func questionsSection(node: GraphNode, graph: CodeGraph) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            SectionLabel(loc.t.askQuestion)
+            VStack(spacing: 4) {
+                questionButton(.whoCalls, loc.t.questionWhoCalls, node: node, graph: graph)
+                if explainer.modelState.canGenerate {
+                    questionButton(.whyExists, loc.t.questionWhyExists, node: node, graph: graph)
+                    questionButton(.whatBreaks, loc.t.questionWhatBreaks, node: node, graph: graph)
+                    questionButton(.simpler, loc.t.questionSimpler, node: node, graph: graph)
+                }
+            }
+            .padding(.horizontal, 14)
+        }
+    }
+
+    private func questionButton(_ q: Explainer.Question, _ title: String,
+                                node: GraphNode, graph: CodeGraph) -> some View {
+        QuestionButton(title: title) {
+            guard let snippet = state.sourceCache.snippet(for: node, in: graph) else { return }
+            explainer.ask(q, node: node, graph: graph,
+                          source: snippet.text, language: loc.language)
         }
     }
 
@@ -287,5 +316,38 @@ struct ExplainPanel: View {
             }
             .padding(.horizontal, 14)
         }
+    }
+}
+
+
+private struct QuestionButton: View {
+    let title: String
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Text(title)
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(hovering ? Theme.accent : Theme.textSecondary)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(hovering ? Theme.accent : Theme.textTertiary.opacity(0.6))
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 7)
+                .fill(hovering ? Theme.accentMuted : Theme.surface))
+            .overlay(RoundedRectangle(cornerRadius: 7)
+                .strokeBorder(hovering ? Theme.accent.opacity(0.5) : Theme.border, lineWidth: 1))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
     }
 }

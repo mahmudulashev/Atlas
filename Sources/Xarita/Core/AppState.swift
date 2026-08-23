@@ -7,7 +7,16 @@ final class AppState: ObservableObject {
 
     // MARK: - Published state
 
+    /// The window shows one of two things: an orientation on the project as a
+    /// whole, or the reading view for a single step. Opening straight into a
+    /// function was the old behaviour and it is precisely what leaves a
+    /// newcomer with no idea where they are.
+    enum Mode { case orientation, reading }
+
     @Published private(set) var graph: CodeGraph?
+    @Published private(set) var mode: Mode = .orientation
+    @Published private(set) var route: Route = Route(steps: [])
+    @Published private(set) var projectKind: ProjectKind = .library
     @Published private(set) var progress: Analyzer.Progress?
     @Published private(set) var isAnalyzing = false
     @Published private(set) var errorMessage: String?
@@ -90,10 +99,10 @@ final class AppState: ObservableObject {
         historyIndex = -1
         loadUnderstood()
 
-        // Open on something worth reading rather than an empty pane.
-        selection = startingPoints(limit: 1).first
-                 ?? result.hubs(limit: 1).first
-                 ?? result.nodes.first?.id
+        route = Route.build(from: result)
+        projectKind = ProjectKind.heuristic(for: result)
+        mode = .orientation
+        selection = route.nodeIDs.first
 
         Notifier.analysisFinished(project: result.projectName,
                                   symbols: result.nodes.count,
@@ -111,11 +120,71 @@ final class AppState: ObservableObject {
         selection = nil
         errorMessage = nil
         searchText = ""
+        route = Route(steps: [])
+        mode = .orientation
+    }
+
+    /// Refines the heuristic guess with the on-device model, when available.
+    func refineProjectKind(using explainer: Explainer) {
+        guard let graph else { return }
+        Task { [weak self] in
+            if let kind = await explainer.classifyProject(graph: graph) {
+                await MainActor.run { self?.projectKind = kind }
+            }
+        }
+    }
+
+    // MARK: - Route
+
+    /// Index of the current selection within the route, when it is on it.
+    var currentStepIndex: Int? {
+        guard let selection else { return nil }
+        return route.nodeIDs.firstIndex(of: selection)
+    }
+
+    var canGoNextStep: Bool {
+        guard let i = currentStepIndex else { return !route.isEmpty }
+        return i + 1 < route.steps.count
+    }
+
+    var canGoPreviousStep: Bool { (currentStepIndex ?? 0) > 0 }
+
+    func beginReading() {
+        guard !route.isEmpty else { return }
+        selection = route.nodeIDs.first
+        mode = .reading
+    }
+
+    func showOrientation() { mode = .orientation }
+
+    func openStep(_ index: Int) {
+        guard index >= 0, index < route.steps.count else { return }
+        selection = route.steps[index].nodeID
+        mode = .reading
+    }
+
+    func nextStep() {
+        guard let i = currentStepIndex else { openStep(0); return }
+        openStep(i + 1)
+    }
+
+    func previousStep() {
+        guard let i = currentStepIndex, i > 0 else { return }
+        openStep(i - 1)
+    }
+
+    /// How much of the route has been ticked off.
+    var routeProgress: (done: Int, total: Int) {
+        let done = route.nodeIDs.filter { isUnderstood($0) }.count
+        return (done, route.steps.count)
     }
 
     // MARK: - Selection and history
 
-    func select(_ id: Int?) { selection = id }
+    func select(_ id: Int?) {
+        selection = id
+        if mode == .orientation { mode = .reading }
+    }
 
     private func pushHistory(_ id: Int?) {
         if historyIndex < history.count - 1 {

@@ -51,15 +51,18 @@ struct DiagramLayout {
     init(graph: FileGraph) {
         guard !graph.nodes.isEmpty else { return }
 
-        // ---- 1. Columns from semantic layer, compacted to those in use ----
-        let usedLayers = Set(graph.nodes.map(\.layer)).sorted { $0.depth < $1.depth }
-        var columnOf: [Layer: Int] = [:]
-        for (i, layer) in usedLayers.enumerated() { columnOf[layer] = i }
+        // ---- 1. Columns from actual dependency depth ----
+        // Semantic layers describe what a file *is*; they say nothing about
+        // what calls what. Using them as columns sent seventy per cent of the
+        // edges backwards, which draws as spaghetti. Depth in the dependency
+        // graph puts callers left of callees so nearly every line runs forward.
+        // The semantic layer survives as the card's colour, where it belongs.
+        let columnOfNode = Self.topologicalColumns(graph: graph)
+        let columnCount = (columnOfNode.max() ?? 0) + 1
 
-        var columns: [[Int]] = Array(repeating: [], count: usedLayers.count)
-        for (index, node) in graph.nodes.enumerated() {
-            let column = columnOf[node.layer] ?? 0
-            columns[column].append(index)
+        var columns: [[Int]] = Array(repeating: [], count: columnCount)
+        for index in graph.nodes.indices {
+            columns[columnOfNode[index]].append(index)
         }
 
         // ---- 2. Order within each column to reduce crossings ----
@@ -102,7 +105,9 @@ struct DiagramLayout {
                 y += height + Self.rowGap
             }
             maxHeight = max(maxHeight, y)
-            columnLabels.append((x: x, layer: usedLayers[c]))
+            var tally: [Layer: Int] = [:]
+            for nodeIndex in column { tally[graph.nodes[nodeIndex].layer, default: 0] += 1 }
+            columnLabels.append((x: x, layer: tally.max { $0.value < $1.value }?.key ?? .logic))
             x += Self.cardWidth + Self.columnGap
         }
 
@@ -129,6 +134,30 @@ struct DiagramLayout {
                                                       backward: backward),
                                         isBackward: backward))
         }
+    }
+
+    /// Longest-path layering over the dependency graph.
+    ///
+    /// Cycles are broken by ignoring edges that revisit a node still open on
+    /// the current path — arbitrary but stable, and unavoidable since a cyclic
+    /// graph has no true layering. Depth is capped so one pathological chain
+    /// cannot stretch the canvas a mile wide.
+    private static func topologicalColumns(graph: FileGraph, maxDepth: Int = 7) -> [Int] {
+        var depth = [Int](repeating: 0, count: graph.nodes.count)
+        var state = [UInt8](repeating: 0, count: graph.nodes.count)   // 0 new, 1 open, 2 done
+
+        func visit(_ v: Int) -> Int {
+            if state[v] == 2 { return depth[v] }
+            if state[v] == 1 { return 0 }
+            state[v] = 1
+            var best = 0
+            for w in graph.incoming[v] { best = max(best, visit(w) + 1) }
+            depth[v] = min(best, maxDepth)
+            state[v] = 2
+            return depth[v]
+        }
+        for v in graph.nodes.indices { _ = visit(v) }
+        return depth
     }
 
     private func barycentre(_ node: Int, in graph: FileGraph, position: [Int: Int]) -> Double {

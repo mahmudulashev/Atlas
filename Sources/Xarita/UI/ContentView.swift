@@ -11,10 +11,16 @@ struct ContentView: View {
                 AnalysisProgressView()
             } else if state.graph == nil {
                 WelcomeView()
-            } else if state.mode == .orientation {
-                OrientationView()
             } else {
-                reading
+                VStack(spacing: 0) {
+                    ModeBar()
+                    Divider().overlay(Theme.border)
+                    switch state.mode {
+                    case .orientation:  OrientationView()
+                    case .architecture: ArchitectureView()
+                    case .reading:      reading
+                    }
+                }
             }
         }
         .animation(.easeInOut(duration: 0.18), value: state.isAnalyzing)
@@ -174,5 +180,66 @@ struct SettingsView: View {
         .formStyle(.grouped)
         .frame(width: 400)
         .padding(.vertical, 6)
+    }
+}
+
+
+/// Switches between the three ways of looking at a project.
+struct ModeBar: View {
+    @EnvironmentObject private var state: AppState
+    @EnvironmentObject private var loc: Localization
+
+    var body: some View {
+        HStack(spacing: 10) {
+            HStack(spacing: 2) {
+                tab(loc.t.overviewTab, icon: "square.text.square", mode: .orientation) {
+                    state.showOrientation()
+                }
+                tab(loc.t.architecture, icon: "rectangle.3.group", mode: .architecture) {
+                    state.showArchitecture()
+                }
+                tab(loc.t.readingTab, icon: "text.alignleft", mode: .reading) {
+                    state.beginReading()
+                }
+            }
+            .padding(2)
+            .background(RoundedRectangle(cornerRadius: 8).fill(Theme.surfaceSunken))
+            .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Theme.border, lineWidth: 1))
+
+            if state.mode == .architecture {
+                Text(loc.t.architectureHint)
+                    .font(Theme.Font.micro)
+                    .foregroundStyle(Theme.textTertiary)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+                Toggle(loc.t.showTests, isOn: $state.showTestsInDiagram)
+                    .toggleStyle(.checkbox)
+                    .font(Theme.Font.micro)
+                    .foregroundStyle(Theme.textSecondary)
+            } else {
+                Spacer(minLength: 0)
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 7)
+        .background(Theme.surface)
+    }
+
+    private func tab(_ title: String, icon: String,
+                     mode: AppState.Mode, action: @escaping () -> Void) -> some View {
+        let selected = state.mode == mode
+        return Button(action: action) {
+            HStack(spacing: 5) {
+                Image(systemName: icon).font(.system(size: 10.5))
+                Text(title).font(Theme.Font.caption.weight(selected ? .semibold : .regular))
+            }
+            .foregroundStyle(selected ? Color.white : Theme.textSecondary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4.5)
+            .background(RoundedRectangle(cornerRadius: 6)
+                .fill(selected ? Theme.accent : Color.clear))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }

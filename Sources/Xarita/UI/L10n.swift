@@ -177,6 +177,18 @@ struct L10n {
     var questionWhatBreaks: String { s("Bu yerda nima xato ketishi mumkin?", "What can go wrong here?") }
     var questionSimpler: String   { s("Yanada soddaroq tushuntir", "Explain it more simply") }
 
+    // MARK: - Architecture
+
+    var architecture: String      { s("Tuzilma", "Architecture") }
+    var overviewTab: String       { s("Umumiy", "Overview") }
+    var readingTab: String        { s("Oʻqish", "Reading") }
+    var cycles: String            { s("aylanma", "cycles") }
+    var showTests: String         { s("Testlarni koʻrsatish", "Show tests") }
+    var architectureHint: String {
+        s("Har bir kartochka — bitta fayl. Chiziqlar kim kimni chaqirishini koʻrsatadi. Chapdan oʻngga — chaqiruvchidan chaqirilganga.",
+          "Each card is one file. The lines show what calls what, running left to right from caller to callee.")
+    }
+
     // MARK: - Difficulty
 
     var howHard: String           { s("Qanchalik qiyin", "How hard is this") }

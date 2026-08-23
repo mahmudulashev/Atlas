@@ -11,11 +11,16 @@ final class AppState: ObservableObject {
     /// whole, or the reading view for a single step. Opening straight into a
     /// function was the old behaviour and it is precisely what leaves a
     /// newcomer with no idea where they are.
-    enum Mode { case orientation, reading }
+    enum Mode { case orientation, architecture, reading }
 
     @Published private(set) var graph: CodeGraph?
     @Published private(set) var mode: Mode = .orientation
     @Published private(set) var route: Route = Route(steps: [])
+    @Published private(set) var fileGraph = FileGraph()
+    @Published private(set) var diagram = DiagramLayout(graph: FileGraph())
+    @Published var showTestsInDiagram = false {
+        didSet { rebuildDiagram() }
+    }
     @Published private(set) var projectKind: ProjectKind = .library
     @Published private(set) var progress: Analyzer.Progress?
     @Published private(set) var isAnalyzing = false
@@ -101,6 +106,7 @@ final class AppState: ObservableObject {
 
         route = Route.build(from: result)
         projectKind = ProjectKind.heuristic(for: result)
+        rebuildDiagram()
         mode = .orientation
         selection = route.nodeIDs.first
 
@@ -121,6 +127,8 @@ final class AppState: ObservableObject {
         errorMessage = nil
         searchText = ""
         route = Route(steps: [])
+        fileGraph = FileGraph()
+        diagram = DiagramLayout(graph: FileGraph())
         mode = .orientation
     }
 
@@ -133,6 +141,16 @@ final class AppState: ObservableObject {
             }
         }
     }
+
+    // MARK: - Diagram
+
+    private func rebuildDiagram() {
+        guard let graph else { fileGraph = FileGraph(); diagram = DiagramLayout(graph: FileGraph()); return }
+        fileGraph = FileGraph.build(from: graph, includeTests: showTestsInDiagram)
+        diagram = DiagramLayout(graph: fileGraph)
+    }
+
+    func showArchitecture() { mode = .architecture }
 
     // MARK: - Route
 

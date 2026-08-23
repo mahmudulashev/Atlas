@@ -83,7 +83,7 @@ enum Layer: String, CaseIterable, Sendable {
                        "cache", "storage", "persist", "dao"]
         where p.contains(marker) { return .data }
 
-        for marker in ["util", "helper", "common", "shared", "lib/", "tool", "format"]
+        for marker in ["util", "helper", "common", "shared", "tool", "format", "misc"]
         where p.contains(marker) { return .util }
 
         for marker in ["service", "manager", "engine", "core", "domain", "usecase",
@@ -141,7 +141,10 @@ struct FileGraph: Sendable {
 
     // MARK: - Construction
 
-    static func build(from graph: CodeGraph, maxNodes: Int = 90) -> FileGraph {
+    static func build(from graph: CodeGraph,
+                      maxNodes: Int = 60,
+                      maxEdges: Int = 130,
+                      includeTests: Bool = false) -> FileGraph {
         guard !graph.files.isEmpty else { return FileGraph() }
 
         // Group symbols by file.
@@ -161,10 +164,15 @@ struct FileGraph: Sendable {
             if a >= 0 { weight[a] += 1 }
             if b >= 0, b != a { weight[b] += 1 }
         }
-        let kept = Set(graph.files.indices
-            .filter { !symbolsByFile[$0].isEmpty }
-            .sorted { weight[$0] > weight[$1] }
-            .prefix(maxNodes))
+        // Tests double the card count and add nothing to the picture of how
+        // the program itself is wired, so they are out unless asked for.
+        let eligible = graph.files.indices.filter { index in
+            guard !symbolsByFile[index].isEmpty else { return false }
+            if includeTests { return true }
+            let names = symbolsByFile[index].prefix(6).map { graph.nodes[$0].name }
+            return Layer.classify(path: graph.files[index], symbols: names) != .test
+        }
+        let kept = Set(eligible.sorted { weight[$0] > weight[$1] }.prefix(maxNodes))
 
         var result = FileGraph()
         var indexMap: [Int: Int] = [:]
@@ -200,9 +208,17 @@ struct FileGraph: Sendable {
             edgeWeights[Int64(from) << 32 | Int64(to), default: 0] += edge.count
         }
 
+        // Densely-connected codebases — C projects especially — produce more
+        // edges than any drawing can carry: Redis yields over eight hundred
+        // between seventy files. Keeping the heaviest dependencies preserves
+        // the shape of the system while leaving a picture that can be read.
+        // Weight is the number of distinct call sites, so what survives is what
+        // the files actually lean on.
+        let ranked = edgeWeights.sorted { $0.value > $1.value }.prefix(maxEdges)
+
         result.outgoing = Array(repeating: [], count: result.nodes.count)
         result.incoming = Array(repeating: [], count: result.nodes.count)
-        for (key, count) in edgeWeights {
+        for (key, count) in ranked {
             let from = Int(key >> 32), to = Int(Int32(truncatingIfNeeded: key))
             result.edges.append(Edge(from: from, to: to, weight: count))
             result.outgoing[from].append(to)

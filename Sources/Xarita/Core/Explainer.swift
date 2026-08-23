@@ -148,8 +148,8 @@ final class Explainer: ObservableObject {
             if language == .uz {
                 if let summary = await Self.classify(node: node, source: source) {
                     guard !Task.isCancelled else { return }
-                    let text = summary.sentence(for: node, language: .uz,
-                                                t: L10n(language: .uz))
+                    let text = summary.paragraph(for: node, language: .uz,
+                                                 t: L10n(language: .uz))
                     self.streaming = text
                     self.cache[node.id] = text
                     return
@@ -181,8 +181,8 @@ final class Explainer: ObservableObject {
                 // route keeps something useful on screen.
                 self.lastError = Self.describe(error)
                 if let summary = await Self.classify(node: node, source: source) {
-                    let text = summary.sentence(for: node, language: .en,
-                                                t: L10n(language: .en))
+                    let text = summary.paragraph(for: node, language: .en,
+                                                 t: L10n(language: .en))
                     self.streaming = text
                     self.cache[node.id] = text
                 }
@@ -213,13 +213,9 @@ final class Explainer: ObservableObject {
                     options: GenerationOptions(temperature: 0.1))
 
                 let content = response.content
-                func field(_ key: String) -> String {
+                if let summary = CodeSummary.from({ key in
                     (try? content.value(String.self, forProperty: key)) ?? ""
-                }
-                if let summary = CodeSummary.from(operation: field("operation"),
-                                                  target: field("target"),
-                                                  canFail: field("canFail"),
-                                                  repeats: field("repeats")) {
+                }) {
                     return summary
                 }
             } catch {
@@ -288,16 +284,29 @@ final class Explainer: ObservableObject {
                   schema: DynamicGenerationSchema(name: name.capitalized, anyOf: options))
         }
 
+        // Eight questions rather than four. The model answers all of them in a
+        // single call, and each extra answer is another sentence of real Uzbek
+        // the reader gets — which is the whole point of choosing classification
+        // over translation.
+        let shapes = CodeSummary.DataShape.allCases.map(\.rawValue)
         let root = DynamicGenerationSchema(
             name: "CodeSummary",
-            description: "A classification of what a function does",
+            description: "A structured reading of what a function does",
             properties: [
                 choice("operation", CodeSummary.Operation.allCases.map(\.rawValue),
                        "The single best verb for what this function primarily does"),
                 choice("target", CodeSummary.Target.allCases.map(\.rawValue),
                        "What the function primarily acts on"),
+                choice("input", shapes,
+                       "The main kind of data this function takes as an argument"),
+                choice("output", shapes,
+                       "The main kind of data this function returns"),
+                choice("timing", CodeSummary.Timing.allCases.map(\.rawValue),
+                       "When during the program's life this function is called"),
                 choice("canFail", ["yes", "no"],
                        "Whether it can throw an error or return a failure"),
+                choice("changesState", ["yes", "no"],
+                       "Whether it modifies data or state, rather than only reading"),
                 choice("repeats", ["yes", "no"],
                        "Whether it loops or recurses over multiple items"),
             ])

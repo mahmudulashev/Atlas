@@ -213,6 +213,46 @@ struct L10n {
           "The widget is written and embedded in the app. macOS only registers third-party extensions signed with an Apple Developer ID, so it cannot appear in Notification Centre on an unsigned build. What you see above is the real widget code rendering.")
     }
 
+    // MARK: - Tabs
+
+    var tabAtlas: String          { s("Atlas", "Atlas") }
+    var tabMap: String            { s("Xarita", "Map") }
+    var tabRead: String           { s("Oʻqish", "Read") }
+    var tabReview: String         { s("Koʻrib chiqish", "Review") }
+
+    var tabAtlasHint: String      { s("shakli", "the shape") }
+    var tabMapHint: String        { s("grafi", "the graph") }
+    func tabReadHint(_ n: Int) -> String  { s("\(n) bosqich", "\(n) steps") }
+    func tabReviewHint(_ n: Int) -> String { s("\(n) topilma", "\(n) findings") }
+
+    // MARK: - Atlas
+
+    var shapeOfIt: String         { s("Uning shakli", "The shape of it") }
+    var callEdges: String         { s("chaqiruv", "call edges") }
+    var districts: String         { s("Mahallalar", "Districts") }
+    var districtInterface: String { s("INTERFEYS", "INTERFACE") }
+    var districtLogic: String     { s("MANTIQ", "LOGIC") }
+    var districtData: String      { s("MAʼLUMOT", "DATA") }
+    var everyFigure: String {
+        s("Quyidagi har bir raqam tahlilchi allaqachon qurgan grafdan olingan.",
+          "Every figure below comes from the graph the analyser already builds.")
+    }
+    var startHereBlurb: String {
+        s("Bu loyihaning eng koʻp qismiga yetib boradigan funksiyalar. Shu tartibda oʻqisang, loyihaning umurtqasi qoʻlingda boʻladi.",
+          "The functions that reach the most of this codebase. Read them in order and you have the spine of the project.")
+    }
+    func reaches(_ n: Int) -> String { s("\(n) taga yetadi", "reaches \(n)") }
+    var readArrow: String         { s("Oʻqish →", "Read →") }
+
+    var viewLadder: String        { s("Zina", "Ladder") }
+    var viewMatrix: String        { s("Jadval", "Matrix") }
+
+    var matrixKeyForward: String  { s("oldinga bogʻliqlik", "forward dependency") }
+    var matrixKeyBackward: String { s("orqaga — aylanma boʻlishi mumkin", "backward — may be a cycle") }
+    var matrixKeyRow: String      { s("qator: nimani chaqiradi", "row: what it calls") }
+    var matrixKeyColumn: String   { s("ustun: kim chaqiradi", "column: what calls it") }
+    var backward: String          { s("orqaga", "backward") }
+
     // MARK: - Difficulty
 
     var howHard: String           { s("Qanchalik qiyin", "How hard is this") }

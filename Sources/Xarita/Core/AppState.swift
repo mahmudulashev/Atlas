@@ -11,14 +11,20 @@ final class AppState: ObservableObject {
     /// whole, or the reading view for a single step. Opening straight into a
     /// function was the old behaviour and it is precisely what leaves a
     /// newcomer with no idea where they are.
-    enum Mode { case orientation, architecture, issues, reading }
+    enum Mode { case atlas, map, review, read }
+
+    /// Two drawings of the same dependency data. The ladder shows direction as
+    /// arrows and reads well while a project is small; the matrix has no lines
+    /// at all and so does not degrade as one grows.
+    enum MapView: String { case ladder, matrix }
 
     @Published private(set) var graph: CodeGraph?
-    @Published private(set) var mode: Mode = .orientation
+    @Published private(set) var mode: Mode = .atlas
     @Published private(set) var route: Route = Route(steps: [])
     @Published private(set) var fileGraph = FileGraph()
     @Published private(set) var diagram = DiagramLayout(graph: FileGraph())
     @Published private(set) var issues: [Issue] = []
+    @Published var mapView: MapView = .ladder
     @Published var showTestsInDiagram = false {
         didSet { rebuildDiagram() }
     }
@@ -108,7 +114,7 @@ final class AppState: ObservableObject {
         route = Route.build(from: result)
         projectKind = ProjectKind.heuristic(for: result)
         rebuildDiagram()
-        mode = .orientation
+        mode = .atlas
         selection = route.nodeIDs.first
 
         Notifier.analysisFinished(project: result.projectName,
@@ -132,7 +138,7 @@ final class AppState: ObservableObject {
         fileGraph = FileGraph()
         diagram = DiagramLayout(graph: FileGraph())
         issues = []
-        mode = .orientation
+        mode = .atlas
     }
 
     /// Refines the heuristic guess with the on-device model, when available.
@@ -162,8 +168,8 @@ final class AppState: ObservableObject {
         issues = IssueFinder.find(graph: graph, fileGraph: fileGraph)
     }
 
-    func showArchitecture() { mode = .architecture }
-    func showIssues() { mode = .issues }
+    func showMap() { mode = .map }
+    func showReview() { mode = .review }
 
     // MARK: - Route
 
@@ -183,15 +189,15 @@ final class AppState: ObservableObject {
     func beginReading() {
         guard !route.isEmpty else { return }
         selection = route.nodeIDs.first
-        mode = .reading
+        mode = .read
     }
 
-    func showOrientation() { mode = .orientation }
+    func showAtlas() { mode = .atlas }
 
     func openStep(_ index: Int) {
         guard index >= 0, index < route.steps.count else { return }
         selection = route.steps[index].nodeID
-        mode = .reading
+        mode = .read
     }
 
     func nextStep() {
@@ -214,7 +220,7 @@ final class AppState: ObservableObject {
 
     func select(_ id: Int?) {
         selection = id
-        if mode == .orientation { mode = .reading }
+        if mode == .atlas { mode = .read }
     }
 
     private func pushHistory(_ id: Int?) {

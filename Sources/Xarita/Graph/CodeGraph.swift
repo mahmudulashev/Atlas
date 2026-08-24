@@ -129,6 +129,26 @@ struct CodeGraph: Sendable {
         }
     }
 
+    /// How many distinct symbols this one can reach by following calls.
+    ///
+    /// The measure the atlas ranks entry points by: fan-out counts the first
+    /// step only, and a function that calls one coordinator which calls forty
+    /// things is a far better place to start reading than one that calls three
+    /// leaves. Breadth-first, bounded, and cycle-safe.
+    func reach(of id: Int, limit: Int = 400) -> Int {
+        guard id >= 0, id < nodes.count else { return 0 }
+        var seen: Set<Int> = [id]
+        var queue = [id]
+        var head = 0
+        while head < queue.count, seen.count < limit {
+            let current = queue[head]; head += 1
+            for next in outgoing[current] where !nodes[next].isExternal {
+                if seen.insert(next).inserted { queue.append(next) }
+            }
+        }
+        return seen.count - 1
+    }
+
     func neighbours(of id: Int) -> (callers: [Int], callees: [Int]) {
         guard id >= 0 && id < nodes.count else { return ([], []) }
         return (incoming[id], outgoing[id])

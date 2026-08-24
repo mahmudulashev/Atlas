@@ -16,10 +16,10 @@ struct ContentView: View {
                     ModeBar()
                     Divider().overlay(Theme.border)
                     switch state.mode {
-                    case .orientation:  OrientationView()
-                    case .architecture: ArchitectureView()
-                    case .issues:       IssuesView()
-                    case .reading:      reading
+                    case .atlas:  AtlasView()
+                    case .map: ArchitectureView()
+                    case .review:       IssuesView()
+                    case .read:      reading
                     }
                 }
             }
@@ -185,72 +185,90 @@ struct SettingsView: View {
 }
 
 
-/// Switches between the three ways of looking at a project.
+/// The four ways of looking at a project.
+///
+/// Set as a masthead rather than a control strip: the label in the serif, its
+/// hint underneath, and the current tab marked by a rule of cyan under the
+/// word. A filled pill would put a block of colour next to two inks that
+/// already mean something, so the selection is drawn the way a printed page
+/// marks a running head — with a rule.
 struct ModeBar: View {
     @EnvironmentObject private var state: AppState
     @EnvironmentObject private var loc: Localization
 
     var body: some View {
-        HStack(spacing: 10) {
-            HStack(spacing: 2) {
-                tab(loc.t.overviewTab, icon: "square.text.square", mode: .orientation) {
-                    state.showOrientation()
-                }
-                tab(loc.t.architecture, icon: "rectangle.3.group", mode: .architecture) {
-                    state.showArchitecture()
-                }
-                tab(loc.t.issuesTab, icon: "exclamationmark.triangle", mode: .issues,
-                    badge: state.issues.isEmpty ? nil : "\(state.issues.count)") {
-                    state.showIssues()
-                }
-                tab(loc.t.readingTab, icon: "text.alignleft", mode: .reading) {
-                    state.beginReading()
-                }
-            }
-            .padding(2)
-            .background(RoundedRectangle(cornerRadius: 8).fill(Theme.surfaceSunken))
-            .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Theme.border, lineWidth: 1))
+        HStack(alignment: .bottom, spacing: 26) {
+            tab(loc.t.tabAtlas,  hint: loc.t.tabAtlasHint, mode: .atlas)  { state.showAtlas() }
+            tab(loc.t.tabMap,    hint: loc.t.tabMapHint,   mode: .map)    { state.showMap() }
+            tab(loc.t.tabRead,   hint: loc.t.tabReadHint(state.route.steps.count),
+                mode: .read) { state.beginReading() }
+            tab(loc.t.tabReview, hint: loc.t.tabReviewHint(state.issues.count),
+                mode: .review) { state.showReview() }
 
-            if state.mode == .architecture {
-                Text(loc.t.architectureHint)
-                    .font(Theme.Font.micro)
-                    .foregroundStyle(Theme.textTertiary)
-                    .lineLimit(1)
-                Spacer(minLength: 0)
+            Spacer(minLength: 0)
+
+            if state.mode == .map {
+                viewSwitch
                 Toggle(loc.t.showTests, isOn: $state.showTestsInDiagram)
                     .toggleStyle(.checkbox)
                     .font(Theme.Font.micro)
                     .foregroundStyle(Theme.textSecondary)
-            } else {
-                Spacer(minLength: 0)
             }
+            LanguageToggle(compact: true)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 7)
-        .background(Theme.surface)
+        .padding(.horizontal, 22)
+        .padding(.top, 12)
+        .padding(.bottom, 0)
+        .background(Theme.background)
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(Theme.border).frame(height: 1)
+        }
     }
 
-    private func tab(_ title: String, icon: String, mode: AppState.Mode,
-                     badge: String? = nil, action: @escaping () -> Void) -> some View {
+    /// Ladder or matrix. A hairline segmented control — print chrome, not a
+    /// filled pill, for the same reason the tabs are underlined.
+    private var viewSwitch: some View {
+        HStack(spacing: 0) {
+            segment(loc.t.viewLadder, view: .ladder)
+            Rectangle().fill(Theme.border).frame(width: 1, height: 20)
+            segment(loc.t.viewMatrix, view: .matrix)
+        }
+        .overlay(Rectangle().strokeBorder(Theme.border, lineWidth: 1))
+        .padding(.bottom, 9)
+    }
+
+    private func segment(_ title: String, view: AppState.MapView) -> some View {
+        let selected = state.mapView == view
+        return Button { state.mapView = view } label: {
+            Text(title)
+                .font(Theme.Font.micro)
+                .foregroundStyle(selected ? Theme.background : Theme.textSecondary)
+                .padding(.horizontal, 11)
+                .padding(.vertical, 4)
+                .background(selected ? Theme.textPrimary : Color.clear)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func tab(_ title: String, hint: String,
+                     mode: AppState.Mode, action: @escaping () -> Void) -> some View {
         let selected = state.mode == mode
         return Button(action: action) {
-            HStack(spacing: 5) {
-                Image(systemName: icon).font(.system(size: 10.5))
-                Text(title).font(Theme.Font.caption.weight(selected ? .semibold : .regular))
-                if let badge {
-                    Text(badge)
-                        .font(Theme.Font.micro.weight(.bold).monospacedDigit())
-                        .foregroundStyle(selected ? Theme.accent : Color.white)
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 0.5)
-                        .background(Capsule().fill(selected ? Color.white : Theme.marker))
-                }
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(Theme.Font.heading)
+                    .foregroundStyle(selected ? Theme.textPrimary : Theme.textSecondary)
+                Text(hint)
+                    .font(Theme.Font.micro.weight(.regular))
+                    .foregroundStyle(Theme.textTertiary)
             }
-            .foregroundStyle(selected ? Color.white : Theme.textSecondary)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4.5)
-            .background(RoundedRectangle(cornerRadius: 6)
-                .fill(selected ? Theme.accent : Color.clear))
+            .padding(.bottom, 9)
+            .overlay(alignment: .bottom) {
+                Rectangle()
+                    .fill(selected ? Theme.inkCyan : Color.clear)
+                    .frame(height: 3)
+            }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

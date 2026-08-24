@@ -72,7 +72,7 @@ struct XaritaApp: App {
             Button(loc.t.prevStepLabel) { state.previousStep() }
                 .keyboardShortcut(.leftArrow, modifiers: [.command, .shift])
                 .disabled(!state.canGoPreviousStep)
-            Button(loc.t.backToOverview) { state.showOrientation() }
+            Button(loc.t.backToOverview) { state.showAtlas() }
                 .keyboardShortcut("0", modifiers: .command)
                 .disabled(state.graph == nil)
             Divider()

@@ -25,6 +25,8 @@ final class AppState: ObservableObject {
     @Published private(set) var diagram = DiagramLayout(graph: FileGraph())
     @Published private(set) var issues: [Issue] = []
     @Published var mapView: MapView = .ladder
+    @Published private(set) var drift = Drift()
+    @Published var blastHops: Int = 2
     @Published var showTestsInDiagram = false {
         didSet { rebuildDiagram() }
     }
@@ -114,6 +116,7 @@ final class AppState: ObservableObject {
         route = Route.build(from: result)
         projectKind = ProjectKind.heuristic(for: result)
         rebuildDiagram()
+        updateDrift(for: result)
         mode = .atlas
         selection = route.nodeIDs.first
 
@@ -169,6 +172,32 @@ final class AppState: ObservableObject {
     }
 
     func showMap() { mode = .map }
+
+    /// Diffs this scan against the last one, then records this one for next
+    /// time. Order matters: compare first, or the project always looks
+    /// unchanged.
+    private func updateDrift(for graph: CodeGraph) {
+        let current = DriftStore.record(from: graph, fileGraph: fileGraph)
+        if let previous = DriftStore.load(projectPath: graph.rootPath) {
+            drift = DriftStore.compare(previous: previous, current: current)
+        } else {
+            drift = Drift()
+        }
+        DriftStore.save(current, projectPath: graph.rootPath)
+    }
+
+    /// The chain of calls that reaches the current selection.
+    var callChain: [Int] {
+        guard let graph, let id = selection else { return [] }
+        return graph.chain(to: id)
+    }
+
+    /// What a change to the current selection could reach.
+    var blastRadius: (symbols: Int, files: Int) {
+        guard let graph, let id = selection else { return (0, 0) }
+        let result = graph.blast(from: id, hops: blastHops)
+        return (result.symbols.count, result.files.count)
+    }
     func showReview() { mode = .review }
 
     // MARK: - Route

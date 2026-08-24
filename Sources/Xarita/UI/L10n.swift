@@ -253,6 +253,59 @@ struct L10n {
     var matrixKeyColumn: String   { s("ustun: kim chaqiradi", "column: what calls it") }
     var backward: String          { s("orqaga", "backward") }
 
+    // MARK: - Drift
+
+    var driftTitle: String        { s("Oʻzgarishlar", "Drift") }
+    func driftSince(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: language == .uz ? "uz" : "en_US")
+        f.dateFormat = "d MMM"
+        return language == .uz ? "oxirgi skandan beri · \(f.string(from: date))"
+                               : "since last scan · \(f.string(from: date))"
+    }
+    var driftNone: String {
+        s("Oxirgi skandan beri sezilarli oʻzgarish yoʻq.",
+          "Nothing moved since the last scan.")
+    }
+    var driftFirst: String {
+        s("Bu birinchi skan. Keyingi safar nima oʻzgargani shu yerda koʻrinadi.",
+          "This is the first scan. Next time, what moved will appear here.")
+    }
+
+    func driftNote(_ e: Drift.Entry) -> String {
+        switch (e.kind, language) {
+        case (.newCycle, .uz):  return "Yangi aylanma bogʻliqlik. Oldin toʻgʻri chiziq edi."
+        case (.newCycle, .en):  return "New cycle. It was a straight line before."
+        case (.grew, .uz):      return "\(abs(e.delta)) qatorga oʻsdi." + (e.detail.isEmpty ? "" : " Shartlar ham koʻpaydi.")
+        case (.grew, .en):      return "Grew \(abs(e.delta)) lines." + (e.detail.isEmpty ? "" : " And gained branches.")
+        case (.shrank, .uz):    return "\(abs(e.delta)) qatorga qisqardi."
+        case (.shrank, .en):    return "Shrank by \(abs(e.delta)) lines."
+        case (.gainedCallers, .uz): return "\(abs(e.delta)) ta koʻproq joy shunga tayanadi endi."
+        case (.gainedCallers, .en): return "\(abs(e.delta)) more places lean on it now."
+        case (.lostCallers, .uz):   return "\(abs(e.delta)) ta kamroq chaqiruvchi. Undan koʻchish ketyapti."
+        case (.lostCallers, .en):   return "\(abs(e.delta)) fewer callers. The migration off it is moving."
+        case (.appeared, .uz):  return "\(abs(e.delta)) ta yangi funksiya qoʻshildi."
+        case (.appeared, .en):  return "\(abs(e.delta)) new functions."
+        case (.vanished, .uz):  return "\(abs(e.delta)) ta funksiya olib tashlandi."
+        case (.vanished, .en):  return "\(abs(e.delta)) functions removed."
+        }
+    }
+
+    // MARK: - Call chain and blast
+
+    var callChain: String         { s("Chaqiruv zanjiri", "Call chain") }
+    var callChainHint: String {
+        s("Bu yerga qanday yetib kelinadi — kirish nuqtasidan boshlab.",
+          "How execution reaches here, starting from an entry point.")
+    }
+    var blastTitle: String        { s("Taʼsir doirasi", "Blast radius") }
+    func blastBody(symbols: Int, files: Int, hops: Int) -> String {
+        language == .uz
+            ? "\(hops) qadam narigacha \(symbols) ta funksiya, \(files) ta faylda."
+            : "\(symbols) symbols across \(files) files, within \(hops) hops."
+    }
+    var hops: String              { s("qadam", "hops") }
+
     // MARK: - Difficulty
 
     var howHard: String           { s("Qanchalik qiyin", "How hard is this") }

@@ -17,6 +17,7 @@ struct AtlasView: View {
                 masthead
                 figures
                 startHere
+                driftSection
                 districts
                 widgetPreview
             }
@@ -132,6 +133,40 @@ struct AtlasView: View {
         let node = graph.nodes[id]
         guard node.fileIndex >= 0, node.fileIndex < graph.files.count else { return "" }
         return "\(graph.files[node.fileIndex]):\(node.line)"
+    }
+
+
+    // MARK: - Drift
+
+    /// The only view in the app with a memory. It opens the Atlas because
+    /// "what moved since I was away" is the first question on returning to a
+    /// project, and nothing else here can answer it.
+    private var driftSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                Rule(loc.t.driftTitle)
+                if let since = state.drift.previousScan {
+                    Text(loc.t.driftSince(since))
+                        .font(Theme.Font.micro.weight(.regular))
+                        .foregroundStyle(Theme.textTertiary)
+                        .fixedSize()
+                }
+            }
+
+            if state.drift.entries.isEmpty {
+                Text(state.drift.previousScan == nil ? loc.t.driftFirst : loc.t.driftNone)
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.textTertiary)
+                    .padding(.vertical, 6)
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(state.drift.entries) { entry in
+                        DriftRow(entry: entry, note: loc.t.driftNote(entry))
+                    }
+                }
+            }
+        }
+        .padding(.top, 34)
     }
 
     // MARK: - Districts
@@ -340,6 +375,53 @@ private struct DistrictRow: View {
                 .foregroundStyle(Theme.textSecondary)
                 .frame(width: 66, alignment: .trailing)
                 .padding(.top, 1)
+        }
+        .padding(.vertical, 9)
+        .overlay(alignment: .bottom) { Rectangle().fill(Theme.borderSoft).frame(height: 1) }
+    }
+}
+
+
+/// One movement since the last scan.
+private struct DriftRow: View {
+    let entry: Drift.Entry
+    let note: String
+
+    /// Structural regressions take the upstream ink, improvements the
+    /// downstream one, and plain growth is set in plain ink. The same two
+    /// colours as everywhere else, doing the same job: pointing a direction.
+    private var ink: Color {
+        if entry.isRegression { return Theme.inkMagentaDeep }
+        if entry.isImprovement { return Theme.inkCyanDeep }
+        return Theme.textPrimary
+    }
+
+    private var figure: String {
+        entry.kind == .newCycle ? "+1"
+            : (entry.delta > 0 ? "+\(entry.delta)" : "\u{2212}\(abs(entry.delta))")
+    }
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 14) {
+            Text(figure)
+                .font(.system(size: 17, weight: .semibold, design: .serif).monospacedDigit())
+                .foregroundStyle(ink)
+                .frame(width: 46, alignment: .trailing)
+
+            VStack(alignment: .leading, spacing: 1) {
+                if !entry.subject.isEmpty {
+                    Text(entry.subject)
+                        .font(Theme.Font.mono.weight(.medium))
+                        .foregroundStyle(Theme.textPrimary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                Text(note)
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
         }
         .padding(.vertical, 9)
         .overlay(alignment: .bottom) { Rectangle().fill(Theme.borderSoft).frame(height: 1) }

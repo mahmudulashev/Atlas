@@ -149,6 +149,89 @@ struct CodeGraph: Sendable {
         return seen.count - 1
     }
 
+
+    /// How execution reaches a symbol: a path down to it from somewhere the
+    /// program actually starts.
+    ///
+    /// Answers the question a reader has when they land in the middle of a
+    /// codebase — "how did we get here?" — which neither the caller list nor
+    /// the route can answer on its own. Breadth-first backwards from the
+    /// target, so the path returned is the shortest one, and preferring
+    /// callers with no callers of their own means it climbs to a real entry
+    /// point rather than stopping at the first hub.
+    func chain(to id: Int, maxDepth: Int = 8) -> [Int] {
+        guard id >= 0, id < nodes.count else { return [] }
+        if incoming[id].isEmpty { return [id] }
+
+        var cameFrom: [Int: Int] = [:]
+        var seen: Set<Int> = [id]
+        var frontier = [id]
+        var best: Int? = nil
+
+        for _ in 0..<maxDepth {
+            var next: [Int] = []
+            for current in frontier {
+                for caller in incoming[current] where !nodes[caller].isExternal {
+                    guard seen.insert(caller).inserted else { continue }
+                    cameFrom[caller] = current
+                    if incoming[caller].isEmpty { best = caller; break }
+                    next.append(caller)
+                }
+                if best != nil { break }
+            }
+            if best != nil { break }
+            if next.isEmpty { break }
+            frontier = next
+        }
+
+        // No true root within reach — take the furthest caller we did find, so
+        // the chain still shows something rather than nothing.
+        let start = best ?? cameFrom.keys.max { (cameFrom[$0] ?? 0) < (cameFrom[$1] ?? 0) }
+        guard var walk = start else { return [id] }
+
+        var path = [walk]
+        while let next = cameFrom[walk] {
+            path.append(next)
+            walk = next
+            if walk == id { break }
+            if path.count > maxDepth + 1 { break }
+        }
+        if path.last != id { path.append(id) }
+        return path
+    }
+
+    /// Everything a change here could reach, within `hops` calls.
+    ///
+    /// Blast radius rather than fan-out: fan-out is one step, and the honest
+    /// answer to "what breaks if I change this" is several. Returned as both
+    /// symbols and the files they sit in, because the file count is what tells
+    /// you whether a change is local or not.
+    func blast(from id: Int, hops: Int = 2) -> (symbols: [Int], files: Set<Int>) {
+        guard id >= 0, id < nodes.count else { return ([], []) }
+        var seen: Set<Int> = [id]
+        var frontier = [id]
+        var result: [Int] = []
+
+        for _ in 0..<max(hops, 1) {
+            var next: [Int] = []
+            for current in frontier {
+                for callee in outgoing[current] where !nodes[callee].isExternal {
+                    guard seen.insert(callee).inserted else { continue }
+                    result.append(callee)
+                    next.append(callee)
+                }
+            }
+            if next.isEmpty { break }
+            frontier = next
+        }
+
+        var files = Set<Int>()
+        for symbol in result where nodes[symbol].fileIndex >= 0 {
+            files.insert(nodes[symbol].fileIndex)
+        }
+        return (result, files)
+    }
+
     func neighbours(of id: Int) -> (callers: [Int], callees: [Int]) {
         guard id >= 0 && id < nodes.count else { return ([], []) }
         return (incoming[id], outgoing[id])

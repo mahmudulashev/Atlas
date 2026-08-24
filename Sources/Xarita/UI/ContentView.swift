@@ -41,6 +41,8 @@ struct ContentView: View {
                 Divider().overlay(Theme.border)
                 CallTreeView()
                 Divider().overlay(Theme.border)
+                CallChainView()
+                Divider().overlay(Theme.border)
                 SourceView()
                     .frame(maxHeight: .infinity)
             }

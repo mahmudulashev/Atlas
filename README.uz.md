@@ -210,7 +210,7 @@ xcode-select --install
 ```
 
 ```bash
-git clone https://github.com/<sen>/xarita.git && cd xarita && ./Scripts/build.sh run
+git clone https://github.com/mahmudulashev/Xarita.git && cd Xarita && ./Scripts/build.sh run
 ```
 
 ```bash

@@ -1,9 +1,9 @@
 #!/bin/bash
-# Packages Xarita.app into a distributable disk image.
+# Packages Atlas.app into a distributable disk image.
 #
 #   ./Scripts/make-dmg.sh
 #
-# Produces Xarita-<version>.dmg in the project root: drag-to-Applications
+# Produces Atlas-<version>.dmg in the project root: drag-to-Applications
 # layout, custom background, compressed.
 set -euo pipefail
 
@@ -11,10 +11,10 @@ cd "$(dirname "$0")/.."
 source Scripts/env.sh
 
 VERSION="${VERSION:-1.0}"
-VOLUME_NAME="Xarita"
+VOLUME_NAME="Atlas"
 STAGE="$BUILD_ROOT/dmg-stage"
-RAW_DMG="$BUILD_ROOT/Xarita-raw.dmg"
-FINAL_DMG="$SRC_ROOT/Xarita-$VERSION.dmg"
+RAW_DMG="$BUILD_ROOT/Atlas-raw.dmg"
+FINAL_DMG="$SRC_ROOT/Atlas-$VERSION.dmg"
 MOUNT_POINT="/Volumes/$VOLUME_NAME"
 
 # ---- 1. Fresh build -----------------------------------------------------
@@ -61,7 +61,7 @@ tell application "Finder"
     set arrangement of viewOptions to not arranged
     set icon size of viewOptions to 104
     set background picture of viewOptions to file ".background:background.png"
-    set position of item "Xarita.app" of container window to {150, 195}
+    set position of item "Atlas.app" of container window to {150, 195}
     set position of item "Applications" of container window to {450, 195}
     close
     open

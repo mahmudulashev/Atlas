@@ -6,7 +6,7 @@ import WidgetKit
 /// Set as the opening page of a printed chart — a masthead, a row of figures,
 /// then the two things a newcomer actually needs: an ordered way in, and a
 /// sense of how the codebase is divided.
-struct AtlasView: View {
+struct OverviewView: View {
     @EnvironmentObject private var state: AppState
     @EnvironmentObject private var loc: Localization
     @EnvironmentObject private var explainer: Explainer
@@ -253,7 +253,7 @@ struct AtlasView: View {
     }
 
     private func widgetTile(width: CGFloat, height: CGFloat, family: WidgetFamily) -> some View {
-        XaritaWidgetView(entry: WidgetSnapshotEntry(date: Date(),
+        AtlasWidgetView(entry: WidgetSnapshotEntry(date: Date(),
                                                     snapshot: state.widgetSnapshot),
                          familyOverride: family)
             .padding(14)

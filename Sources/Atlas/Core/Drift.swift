@@ -2,7 +2,7 @@ import Foundation
 
 /// What changed in the graph since the last time this project was scanned.
 ///
-/// Everything else in Xarita describes a codebase as it is now. Drift is the
+/// Everything else in Atlas describes a codebase as it is now. Drift is the
 /// only view with a memory, and it is the one that answers the question a
 /// returning developer actually has — not "what is this project" but "what
 /// moved while I was away". A snapshot of the measurements is written after

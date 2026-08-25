@@ -24,7 +24,7 @@ enum SharedPaths {
         realHome
             .appendingPathComponent("Library", isDirectory: true)
             .appendingPathComponent("Application Support", isDirectory: true)
-            .appendingPathComponent("Xarita", isDirectory: true)
+            .appendingPathComponent("Atlas", isDirectory: true)
     }
 
     static var snapshotFile: URL {

@@ -28,8 +28,8 @@ enum Notifier {
     }
 
     static var isEnabled: Bool {
-        get { UserDefaults.standard.object(forKey: "uz.xarita.notify") as? Bool ?? true }
-        set { UserDefaults.standard.set(newValue, forKey: "uz.xarita.notify") }
+        get { UserDefaults.standard.object(forKey: "uz.overview.notify") as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: "uz.overview.notify") }
     }
 
     static func requestAuthorization() {
@@ -49,7 +49,7 @@ enum Notifier {
     static func analysisFinished(project: String, symbols: Int, seconds: Double) {
         guard hasBundle, isEnabled else { return }
 
-        let language = AppLanguage(rawValue: UserDefaults.standard.string(forKey: "uz.xarita.language") ?? "")
+        let language = AppLanguage(rawValue: UserDefaults.standard.string(forKey: "uz.overview.language") ?? "")
             ?? .systemDefault
         let t = L10n(language: language)
 
@@ -65,7 +65,7 @@ enum Notifier {
     }
 }
 
-/// Asks for the banner even when Xarita is the active application.
+/// Asks for the banner even when Atlas is the active application.
 private final class ForegroundPresenter: NSObject, UNUserNotificationCenterDelegate {
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 willPresent notification: UNNotification)

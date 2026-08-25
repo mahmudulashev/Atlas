@@ -53,8 +53,8 @@ struct L10n {
     // MARK: - Welcome
 
     var welcomeTitle: String      { s("Loyihani tanlang", "Open a project") }
-    var welcomeBody: String       { s("Papkani bu yerga tashlang yoki tanlang. Xarita kodni oʻqib, funksiyalar oʻrtasidagi bogʻlanishlar xaritasini chizadi.",
-                                      "Drop a folder here, or choose one. Xarita reads the code and draws the map of how its functions connect.") }
+    var welcomeBody: String       { s("Papkani bu yerga tashlang yoki tanlang. Atlas kodni oʻqib, funksiyalar oʻrtasidagi bogʻlanishlar atlassini chizadi.",
+                                      "Drop a folder here, or choose one. Atlas reads the code and draws the map of how its functions connect.") }
     var chooseFolder: String      { s("Papka tanlash", "Choose folder…") }
     var dropHere: String          { s("Papkani tashlang", "Drop folder here") }
     var recentProjects: String    { s("Yaqinda ochilganlar", "Recent projects") }
@@ -66,7 +66,7 @@ struct L10n {
     var stageScanning: String     { s("Fayllar qidirilmoqda", "Scanning files") }
     var stageParsing: String      { s("Kod oʻqilmoqda", "Parsing code") }
     var stageResolving: String    { s("Bogʻlanishlar aniqlanmoqda", "Resolving references") }
-    var stageLaying: String       { s("Xarita joylashtirilmoqda", "Laying out map") }
+    var stageLaying: String       { s("Atlas joylashtirilmoqda", "Laying out map") }
     var analysisFailed: String    { s("Tahlil qilib boʻlmadi", "Analysis failed") }
     var noSourceFiles: String     { s("Bu papkada tanish kod fayllari topilmadi",
                                       "No recognised source files in this folder") }
@@ -127,13 +127,13 @@ struct L10n {
     /// The two languages take different routes through the model, so the note
     /// that explains what just happened differs too.
     var onDeviceNote: String {
-        s("Model kodni tasnifladi, gapni Xarita yozdi — hech narsa internetga chiqmaydi",
+        s("Model kodni tasnifladi, gapni Atlas yozdi — hech narsa internetga chiqmaydi",
           "Apple's on-device model — nothing leaves your Mac")
     }
 
     var englishFallbackNote: String {
-        s("Apple modeli oʻzbekcha yoza olmaydi, shuning uchun u faqat kodni tasniflaydi — gapni Xarita oʻzi yozadi.",
-          "Apple's model classifies the code; the sentence itself is written by Xarita.")
+        s("Apple modeli oʻzbekcha yoza olmaydi, shuning uchun u faqat kodni tasniflaydi — gapni Atlas oʻzi yozadi.",
+          "Apple's model classifies the code; the sentence itself is written by Atlas.")
     }
 
     var aiOffTitle: String        { s("AI tushuntirish yoqilmagan", "AI explanations are off") }
@@ -216,12 +216,12 @@ struct L10n {
 
     // MARK: - Tabs
 
-    var tabAtlas: String          { s("Atlas", "Atlas") }
+    var tabOverview: String       { s("Umumiy", "Overview") }
     var tabMap: String            { s("Xarita", "Map") }
     var tabRead: String           { s("Oʻqish", "Read") }
     var tabReview: String         { s("Koʻrib chiqish", "Review") }
 
-    var tabAtlasHint: String      { s("shakli", "the shape") }
+    var tabOverviewHint: String      { s("shakli", "the shape") }
     var tabMapHint: String        { s("grafi", "the graph") }
     func tabReadHint(_ n: Int) -> String  { s("\(n) bosqich", "\(n) steps") }
     func tabReviewHint(_ n: Int) -> String { s("\(n) topilma", "\(n) findings") }
@@ -437,7 +437,7 @@ struct L10n {
 
     // MARK: - Widget
 
-    var widgetName: String        { s("Kod xaritasi", "Code map") }
+    var widgetName: String        { s("Kod atlassi", "Code map") }
     var widgetDescription: String { s("Oxirgi tahlil qilingan loyiha holati",
                                       "Status of your most recently analysed project") }
     var widgetEmpty: String       { s("Hali loyiha ochilmagan", "No project analysed yet") }
@@ -461,13 +461,13 @@ struct L10n {
 @MainActor
 final class Localization: ObservableObject {
     @Published var language: AppLanguage {
-        didSet { UserDefaults.standard.set(language.rawValue, forKey: "uz.xarita.language") }
+        didSet { UserDefaults.standard.set(language.rawValue, forKey: "uz.overview.language") }
     }
 
     var t: L10n { L10n(language: language) }
 
     init() {
-        if let raw = UserDefaults.standard.string(forKey: "uz.xarita.language"),
+        if let raw = UserDefaults.standard.string(forKey: "uz.overview.language"),
            let saved = AppLanguage(rawValue: raw) {
             language = saved
         } else {

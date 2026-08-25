@@ -34,7 +34,7 @@ enum WidgetColor {
 
 // MARK: - Views
 
-struct XaritaWidgetView: View {
+struct AtlasWidgetView: View {
     /// The size WidgetKit chose, when the extension is hosting the view.
     @Environment(\.widgetFamily) private var environmentFamily
 

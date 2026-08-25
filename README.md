@@ -1,6 +1,6 @@
 <div align="center">
 
-# Xarita
+# Atlas
 
 **Read a codebase you have never seen.**
 
@@ -97,7 +97,7 @@ scanning, tokenising, parsing and cross-file resolution.
 ### Are the answers right?
 
 Speed only matters if the analysis is correct. Asked for the most-called
-functions in Redis, Xarita returns `sdslen`, `sdsfree`, `zfree`, `zmalloc`,
+functions in Redis, Atlas returns `sdslen`, `sdsfree`, `zfree`, `zmalloc`,
 `sdsempty` — its string library and allocator, which is what anyone familiar
 with the codebase would name. In Flask it surfaces `Scaffold.route`,
 `Flask.url_for` and `render_template`.
@@ -169,7 +169,7 @@ spaghetti; depth puts callers left of callees. Meaning survives as colour.
 Each function gets a plain-language description. Where Apple Intelligence is
 enabled, Apple's **on-device** model is asked to classify the code along eight
 axes — what it does, what it acts on, what goes in and comes out, when it runs,
-whether it can fail, whether it changes state, whether it loops. Xarita writes
+whether it can fail, whether it changes state, whether it loops. Atlas writes
 the sentences from those choices.
 
 That indirection exists for a reason. The model refuses to generate Uzbek at
@@ -205,14 +205,14 @@ xcode-select --install
 ```
 
 ```bash
-git clone https://github.com/mahmudulashev/Xarita.git && cd Xarita && ./Scripts/build.sh run
+git clone https://github.com/mahmudulashev/Atlas.git && cd Atlas && ./Scripts/build.sh run
 ```
 
 ```bash
 ./Scripts/make-dmg.sh
 ```
 
-Builds are written to `~/Library/Caches/uz.xarita.build`, deliberately outside
+Builds are written to `~/Library/Caches/uz.atlas.build`, deliberately outside
 the repo: this project is developed in an iCloud-synced folder, and iCloud stamps
 `com.apple.FinderInfo` onto files, which makes `codesign` fail with *"resource
 fork, Finder information, or similar detritus not allowed."*
@@ -248,9 +248,9 @@ highlighting and diagram rendering are all written here.
 
 ---
 
-## Why "Xarita"
+## Why "Atlas"
 
-*Xarita* is Uzbek for **map**. The interface ships in Uzbek and English.
+*Atlas* is Uzbek for **map**. The interface ships in Uzbek and English.
 
 ## License
 

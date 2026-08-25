@@ -1,6 +1,6 @@
 import Foundation
 
-/// A source language Xarita can read.
+/// A source language Atlas can read.
 ///
 /// Each case carries the lexical rules the tokenizer needs (comment markers,
 /// string delimiters) plus the declaration shapes the parser looks for. Adding

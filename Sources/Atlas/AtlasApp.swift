@@ -2,7 +2,7 @@ import SwiftUI
 import AppKit
 
 @main
-struct XaritaApp: App {
+struct AtlasApp: App {
 
     @StateObject private var state = AppState()
     @StateObject private var loc = Localization()
@@ -72,7 +72,7 @@ struct XaritaApp: App {
             Button(loc.t.prevStepLabel) { state.previousStep() }
                 .keyboardShortcut(.leftArrow, modifiers: [.command, .shift])
                 .disabled(!state.canGoPreviousStep)
-            Button(loc.t.backToOverview) { state.showAtlas() }
+            Button(loc.t.backToOverview) { state.showOverview() }
                 .keyboardShortcut("0", modifiers: .command)
                 .disabled(state.graph == nil)
             Divider()

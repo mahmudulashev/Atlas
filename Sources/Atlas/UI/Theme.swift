@@ -1,7 +1,7 @@
 import SwiftUI
 import AppKit
 
-/// The visual language of Xarita — "Broadsheet".
+/// The visual language of Atlas — "Broadsheet".
 ///
 /// The app is set as a printed chart rather than a dark developer tool: ink on
 /// paper, one serif, and the process inks carrying meaning rather than

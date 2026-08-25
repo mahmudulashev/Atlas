@@ -18,7 +18,7 @@ struct ContentView: View {
                     ModeBar()
                     Divider().overlay(Theme.border)
                     switch state.mode {
-                    case .atlas:  AtlasView()
+                    case .overview:  OverviewView()
                     case .map:
                         switch state.mapView {
                         case .ladder: LadderView()
@@ -227,7 +227,7 @@ struct ModeBar: View {
 
     var body: some View {
         HStack(alignment: .bottom, spacing: 26) {
-            tab(loc.t.tabAtlas,  hint: loc.t.tabAtlasHint, mode: .atlas)  { state.showAtlas() }
+            tab(loc.t.tabOverview,  hint: loc.t.tabOverviewHint, mode: .overview)  { state.showOverview() }
             tab(loc.t.tabMap,    hint: loc.t.tabMapHint,   mode: .map)    { state.showMap() }
             tab(loc.t.tabRead,   hint: loc.t.tabReadHint(state.route.steps.count),
                 mode: .read) { state.beginReading() }

@@ -52,7 +52,7 @@ func render(scaleFactor: Int) -> Data? {
     ctx.fillPath()
 
     // Wordmark
-    let title = NSAttributedString(string: "Xarita", attributes: [
+    let title = NSAttributedString(string: "Atlas", attributes: [
         .font: NSFont(descriptor: NSFont.systemFont(ofSize: 25 * s, weight: .semibold)
                     .fontDescriptor.withDesign(.serif) ?? NSFont.systemFont(ofSize: 25 * s).fontDescriptor,
                     size: 25 * s) ?? NSFont.systemFont(ofSize: 25 * s, weight: .semibold),

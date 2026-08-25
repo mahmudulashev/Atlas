@@ -11,7 +11,7 @@ final class AppState: ObservableObject {
     /// whole, or the reading view for a single step. Opening straight into a
     /// function was the old behaviour and it is precisely what leaves a
     /// newcomer with no idea where they are.
-    enum Mode { case atlas, map, review, read }
+    enum Mode { case overview, map, review, read }
 
     /// Two drawings of the same dependency data. The ladder shows direction as
     /// arrows and reads well while a project is small; the matrix has no lines
@@ -19,7 +19,7 @@ final class AppState: ObservableObject {
     enum MapView: String { case ladder, matrix }
 
     @Published private(set) var graph: CodeGraph?
-    @Published private(set) var mode: Mode = .atlas
+    @Published private(set) var mode: Mode = .overview
     @Published private(set) var route: Route = Route(steps: [])
     @Published private(set) var fileGraph = FileGraph()
     @Published private(set) var diagram = DiagramLayout(graph: FileGraph())
@@ -61,7 +61,7 @@ final class AppState: ObservableObject {
     /// cached text no longer matches what is on screen.
     private var pendingExplanation = false
 
-    private let recentsKey = "uz.xarita.recents"
+    private let recentsKey = "uz.overview.recents"
 
     init() { loadRecents() }
 
@@ -117,7 +117,7 @@ final class AppState: ObservableObject {
         projectKind = ProjectKind.heuristic(for: result)
         rebuildDiagram()
         updateDrift(for: result)
-        mode = .atlas
+        mode = .overview
         selection = route.nodeIDs.first
 
         Notifier.analysisFinished(project: result.projectName,
@@ -141,7 +141,7 @@ final class AppState: ObservableObject {
         fileGraph = FileGraph()
         diagram = DiagramLayout(graph: FileGraph())
         issues = []
-        mode = .atlas
+        mode = .overview
     }
 
     /// Refines the heuristic guess with the on-device model, when available.
@@ -221,7 +221,7 @@ final class AppState: ObservableObject {
         mode = .read
     }
 
-    func showAtlas() { mode = .atlas }
+    func showOverview() { mode = .overview }
 
     func openStep(_ index: Int) {
         guard index >= 0, index < route.steps.count else { return }
@@ -249,7 +249,7 @@ final class AppState: ObservableObject {
 
     func select(_ id: Int?) {
         selection = id
-        if mode == .atlas { mode = .read }
+        if mode == .overview { mode = .read }
     }
 
     private func pushHistory(_ id: Int?) {
@@ -309,7 +309,7 @@ final class AppState: ObservableObject {
     }
 
     private var understoodKey: String {
-        "uz.xarita.understood." + (graph?.rootPath ?? "none")
+        "uz.overview.understood." + (graph?.rootPath ?? "none")
     }
 
     private func saveUnderstood() {

@@ -29,18 +29,18 @@ struct Provider: TimelineProvider {
 
 // MARK: - Widget
 
-struct XaritaWidget: Widget {
+struct AtlasWidget: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "uz.xarita.CodeMap", provider: Provider()) { entry in
-            XaritaWidgetView(entry: entry)
+        StaticConfiguration(kind: "uz.overview.CodeMap", provider: Provider()) { entry in
+            AtlasWidgetView(entry: entry)
         }
-        .configurationDisplayName("Xarita")
+        .configurationDisplayName("Atlas")
         .description("Oxirgi tahlil qilingan loyiha holati.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
 
 @main
-struct XaritaWidgetBundle: WidgetBundle {
-    var body: some Widget { XaritaWidget() }
+struct AtlasWidgetBundle: WidgetBundle {
+    var body: some Widget { AtlasWidget() }
 }

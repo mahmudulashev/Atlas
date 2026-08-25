@@ -22,7 +22,7 @@ struct WelcomeView: View {
                 MarkGlyph(size: 76)
 
                 VStack(spacing: 6) {
-                    Text("Xarita")
+                    Text("Atlas")
                         .font(Theme.Font.display)
                         .foregroundStyle(Theme.textPrimary)
                     Text(loc.t.appTagline)

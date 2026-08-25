@@ -38,7 +38,7 @@ struct RouteRail: View {
     // MARK: - Header
 
     private var header: some View {
-        Button { state.showAtlas() } label: {
+        Button { state.showOverview() } label: {
             HStack(spacing: 9) {
                 MarkGlyph(size: 20)
                 VStack(alignment: .leading, spacing: 1) {

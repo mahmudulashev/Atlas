@@ -1,6 +1,6 @@
 <div align="center">
 
-# Xarita
+# Atlas
 
 **Hech koʻrmagan kodni oʻqi.**
 
@@ -42,7 +42,7 @@ freymvork nimaligi ham tushuntiriladi. Keyin raqamlar, tartibli kirish yoʻli,
 loyihaning mahallalarga boʻlinishi va **Drift** — oxirgi skandan beri nima
 oʻzgargani.
 
-### Xarita — grafi
+### Atlas — grafi
 
 Bir xil maʼlumotning ikki xil chizmasi.
 
@@ -75,8 +75,8 @@ tashiydi:
 
 | | Maʼnosi | Qayerda |
 |---|---|---|
-| **Siyan** | quyi oqim — bu nimani chaqiradi | xarita chiziqlari, jadval qatorlari, zanjir strelkalari, taʼsir doirasi |
-| **Magenta** | yuqori oqim — buni kim chaqiradi | xarita chiziqlari, jadval ustunlari, chaqiruvchilar, Drift'dagi yangi aylanmalar |
+| **Siyan** | quyi oqim — bu nimani chaqiradi | atlas chiziqlari, jadval qatorlari, zanjir strelkalari, taʼsir doirasi |
+| **Magenta** | yuqori oqim — buni kim chaqiradi | atlas chiziqlari, jadval ustunlari, chaqiruvchilar, Drift'dagi yangi aylanmalar |
 
 Bu juftlik hech qachon oʻzgarmagani uchun yoʻnalishni tushuntirishga izoh kerak
 emas. "Shu yerdasiz" esa uchinchi rang bilan emas, **siyoh ogʻirligi** bilan
@@ -174,7 +174,7 @@ Har bir funksiya odam tilida tavsif oladi. Apple Intelligence yoqilgan boʻlsa,
 Apple'ning **qurilma ichidagi** modelidan kodni sakkizta oʻlchov boʻyicha
 tasniflash soʻraladi: nima qiladi, nimaga tegadi, nima kiradi va nima chiqadi,
 qachon ishlaydi, xato beradimi, holatni oʻzgartiradimi, takrorlanadimi. Gaplarni
-esa Xarita oʻzi yozadi.
+esa Atlas oʻzi yozadi.
 
 Bu aylanma yoʻlning sababi bor. Model oʻzbek tilida umuman yoza olmaydi, Apple
 Translate'da esa oʻzbek juftligi yoʻq. Mashina tarjimasi koʻrib chiqildi va rad
@@ -210,14 +210,14 @@ xcode-select --install
 ```
 
 ```bash
-git clone https://github.com/mahmudulashev/Xarita.git && cd Xarita && ./Scripts/build.sh run
+git clone https://github.com/mahmudulashev/Atlas.git && cd Atlas && ./Scripts/build.sh run
 ```
 
 ```bash
 ./Scripts/make-dmg.sh
 ```
 
-Build repo ichiga emas, `~/Library/Caches/uz.xarita.build` ichiga yoziladi. Bu
+Build repo ichiga emas, `~/Library/Caches/uz.atlas.build` ichiga yoziladi. Bu
 ataylab: loyiha iCloud bilan sinxronlanadigan papkada turadi, iCloud esa
 fayllarga `com.apple.FinderInfo` belgisini qoʻshadi va `codesign` *"resource
 fork, Finder information, or similar detritus not allowed"* xatosini beradi.
@@ -255,9 +255,9 @@ ranglash va diagramma chizish — hammasi shu yerda yozilgan.
 
 ---
 
-## Nega "Xarita"?
+## Nega "Atlas"?
 
-*Xarita* — bu soʻzning maʼnosining oʻzi. Interfeys oʻzbek va ingliz tillarida.
+*Atlas* — bu soʻzning maʼnosining oʻzi. Interfeys oʻzbek va ingliz tillarida.
 
 ## Litsenziya
 

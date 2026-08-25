@@ -68,7 +68,7 @@ enum Layer: String, CaseIterable, Sendable {
         for marker in ["main.", "index.", "app.", "__main__", "cli.", "bin/", "cmd/", "entry"]
         where last.hasPrefix(marker) || p.contains("/" + marker) { return .entry }
 
-        // Apple projects name the launch file after the app — XaritaApp.swift,
+        // Apple projects name the launch file after the app — AtlasApp.swift,
         // MyThingApp.swift — and it never matches a prefix rule.
         let stem = (last as NSString).deletingPathExtension
         if stem.hasSuffix("app") || stem.hasSuffix("main") || stem.hasSuffix("delegate") {

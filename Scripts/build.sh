@@ -1,5 +1,5 @@
 #!/bin/bash
-# Builds Xarita.app from source using the Command Line Tools toolchain.
+# Builds Atlas.app from source using the Command Line Tools toolchain.
 #
 #   ./Scripts/build.sh          build + sign
 #   ./Scripts/build.sh run      build + sign + launch
@@ -23,7 +23,7 @@ mkdir -p "$CONTENTS/MacOS" "$CONTENTS/Resources"
 
 # ---- Compile -----------------------------------------------------------
 SOURCES=()
-while IFS= read -r f; do SOURCES+=("$f"); done < <(find Sources/Xarita Sources/Shared -name '*.swift' | sort)
+while IFS= read -r f; do SOURCES+=("$f"); done < <(find Sources/Atlas Sources/Shared -name '*.swift' | sort)
 echo "▸ Compiling ${#SOURCES[@]} files…"
 
 xcrun swiftc \
@@ -71,7 +71,7 @@ fi
 # at a file on disk rather than through an App Group (which an ad-hoc signed
 # build cannot obtain).
 SDK_VERSION="$(xcrun --show-sdk-version)"
-APPEX="$CONTENTS/PlugIns/XaritaWidget.appex"
+APPEX="$CONTENTS/PlugIns/AtlasWidget.appex"
 WIDGET_CONTENTS="$APPEX/Contents"
 mkdir -p "$WIDGET_CONTENTS/MacOS" "$WIDGET_CONTENTS/Resources"
 
@@ -82,21 +82,21 @@ xcrun swiftc \
   -parse-as-library \
   -O -whole-module-optimization \
   -framework SwiftUI -framework WidgetKit \
-  -o "$WIDGET_CONTENTS/MacOS/XaritaWidget" \
-  Sources/XaritaWidget/XaritaWidget.swift \
+  -o "$WIDGET_CONTENTS/MacOS/AtlasWidget" \
+  Sources/AtlasWidget/AtlasWidget.swift \
   Sources/Shared/WidgetViews.swift \
-  Sources/Xarita/Core/Snapshot.swift \
-  Sources/Xarita/Core/SharedPaths.swift
+  Sources/Atlas/Core/Snapshot.swift \
+  Sources/Atlas/Core/SharedPaths.swift
 
 cat > "$WIDGET_CONTENTS/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CFBundleName</key><string>XaritaWidget</string>
-  <key>CFBundleDisplayName</key><string>Xarita</string>
+  <key>CFBundleName</key><string>AtlasWidget</string>
+  <key>CFBundleDisplayName</key><string>Atlas</string>
   <key>CFBundleIdentifier</key><string>$WIDGET_ID</string>
-  <key>CFBundleExecutable</key><string>XaritaWidget</string>
+  <key>CFBundleExecutable</key><string>AtlasWidget</string>
   <key>CFBundlePackageType</key><string>XPC!</string>
   <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
   <key>CFBundleDevelopmentRegion</key><string>en</string>

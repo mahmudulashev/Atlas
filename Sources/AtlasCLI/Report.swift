@@ -43,6 +43,7 @@ struct Report: Encodable {
         var root: String
         var kind: String            // ProjectKind.rawValue — stable key
         var kindLabel: String       // the same, in the requested language
+        var kindExplanation: String // what that kind of thing *is*, in prose
         var fileCount: Int
         var lineCount: Int
         var symbolCount: Int
@@ -216,6 +217,7 @@ extension Report {
             root: graph.rootPath,
             kind: kind.rawValue,
             kindLabel: language == .uz ? kind.uz : kind.en,
+            kindExplanation: kind.explanation(language: language),
             fileCount: graph.files.count,
             lineCount: graph.totalLines,
             symbolCount: graph.nodes.count,

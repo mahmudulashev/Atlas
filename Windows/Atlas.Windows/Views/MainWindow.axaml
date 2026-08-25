@@ -1,0 +1,11 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Atlas.Windows.Views.MainWindow"
+        Title="Atlas"
+        Width="1280" Height="820"
+        MinWidth="1040" MinHeight="640">
+  <!-- The window is one sheet: the ruled ground, and whatever is printed on
+       it. Everything above the background is built in code, the way the
+       SwiftUI version composes its views. -->
+  <Panel Name="Root" />
+</Window>

@@ -75,3 +75,7 @@ testrepos/
 *.log
 .env
 .env.local
+
+# .NET build output (Windows client)
+[Bb]in/
+[Oo]bj/

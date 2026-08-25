@@ -13,6 +13,7 @@ atlas-engine — Atlas's code analysis engine, headless.
 
 USAGE
   atlas-engine analyze <path> [options]
+  atlas-engine strings [--lang <uz|en>] [--pretty]
   atlas-engine version
   atlas-engine help
 
@@ -77,6 +78,38 @@ case "version", "--version", "-v":
     exit(0)
 case "help", "--help", "-h":
     print(usage)
+    exit(0)
+case "strings":
+    // Every interface string, for a client that cannot link L10n.
+    var stringsLanguage = AppLanguage.en
+    var stringsPretty = false
+    var i = 0
+    while i < arguments.count {
+        switch arguments[i] {
+        case "--lang":
+            i += 1
+            guard i < arguments.count,
+                  let parsed = AppLanguage(rawValue: arguments[i]) else {
+                fail("--lang must be 'uz' or 'en'", code: 1)
+            }
+            stringsLanguage = parsed
+        case "--pretty":
+            stringsPretty = true
+        default:
+            fail("unknown option '\(arguments[i])'", code: 1)
+        }
+        i += 1
+    }
+    let stringsEncoder = JSONEncoder()
+    stringsEncoder.outputFormatting = stringsPretty
+        ? [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        : [.sortedKeys, .withoutEscapingSlashes]
+    guard let stringsData = try? stringsEncoder
+        .encode(Strings.table(L10n(language: stringsLanguage))) else {
+        fail("could not encode the strings", code: 2)
+    }
+    FileHandle.standardOutput.write(stringsData)
+    FileHandle.standardOutput.write(Data([0x0A]))
     exit(0)
 case "analyze":
     break

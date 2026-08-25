@@ -95,13 +95,21 @@ jobs:
           digest = hashlib.sha256(
               json.dumps(report, sort_keys=True).encode()).hexdigest()
           print(digest)
-          open("fingerprint.txt", "w").write(digest + "\n")
+          # newline="" keeps Python's text mode from turning this "\n" into
+          # "\r\n" on Windows, which would make the file differ from the
+          # others by an invisible byte and fail the comparison below.
+          with open("fingerprint.txt", "w", newline="") as handle:
+              handle.write(digest + "\n")
           PY
 
       - uses: actions/upload-artifact@v4
         with:
           name: fingerprint-${{ matrix.name }}
-          path: fingerprint.txt
+          # The report travels with the fingerprint, so a disagreement can be
+          # diffed rather than only detected.
+          path: |
+            fingerprint.txt
+            fixture.json
 
       - name: Package the engine
         if: runner.os == 'Windows'
@@ -120,11 +128,13 @@ jobs:
           pattern: fingerprint-*
       - name: Compare
         run: |
+          # tr -d '\r' so a stray carriage return cannot masquerade as a
+          # different analysis.
           found=$(find . -name fingerprint.txt | sort)
           echo "$found" | while read -r f; do
-            printf '%-28s %s\n' "$(basename "$(dirname "$f")")" "$(cat "$f")"
+            printf '%-28s %s\n' "$(basename "$(dirname "$f")")" "$(tr -d '\r' < "$f")"
           done
-          if [ "$(cat $found | sort -u | wc -l)" -ne 1 ]; then
+          if [ "$(cat $found | tr -d '\r' | sort -u | wc -l)" -ne 1 ]; then
             echo "::error::the platforms produced different analyses of the same files"
             exit 1
           fi

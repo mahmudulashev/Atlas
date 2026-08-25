@@ -166,23 +166,35 @@ def check_python_fixture(engine):
 
 
 def check_line_endings(engine):
-    """A Windows checkout and a Unix one must analyse the same."""
+    """A Windows checkout and a Unix one must analyse the same.
+
+    Both copies are written deliberately rather than trusting whatever the
+    checkout happened to produce: on a Windows runner git has already turned
+    these files into CRLF, so converting "in place" would have produced
+    \r\r\n and measured nothing useful.
+    """
     source = ROOT / "Tests" / "Fixtures" / "python-package"
     if not source.is_dir():
         fail("fixture Tests/Fixtures/python-package is missing")
         return
 
-    unix = run(engine, source)
-    if unix is None:
-        return
+    def to_lf(data):
+        return data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
 
     with tempfile.TemporaryDirectory() as tmp:
+        unix_copy = Path(tmp) / "lf"
         windows_copy = Path(tmp) / "crlf"
+        shutil.copytree(source, unix_copy)
         shutil.copytree(source, windows_copy)
+        for path in unix_copy.rglob("*.py"):
+            path.write_bytes(to_lf(path.read_bytes()))
         for path in windows_copy.rglob("*.py"):
-            path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
+            path.write_bytes(to_lf(path.read_bytes()).replace(b"\n", b"\r\n"))
+
+        unix = run(engine, unix_copy)
         windows = run(engine, windows_copy)
-    if windows is None:
+
+    if unix is None or windows is None:
         return
 
     if not check(unix["project"]["lineCount"] == windows["project"]["lineCount"],

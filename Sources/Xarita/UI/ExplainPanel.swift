@@ -26,6 +26,7 @@ struct ExplainPanel: View {
                         aiSection(node: node, graph: graph)
                         questionsSection(node: node, graph: graph)
                         difficultySection(node: node)
+                        blastSection
                         factsSection(node: node, graph: graph)
                         glossarySection(node: node, graph: graph)
                         detailsSection(node: node, graph: graph)
@@ -214,6 +215,45 @@ struct ExplainPanel: View {
                 }
                 .padding(.horizontal, 14)
             }
+        }
+    }
+
+    // MARK: - Blast radius
+
+    /// What a change here could reach. Fan-out answers one step; the honest
+    /// answer to "what breaks if I touch this" is several, and the file count
+    /// is what says whether the change stays local.
+    private var blastSection: some View {
+        let radius = state.blastRadius
+        return VStack(alignment: .leading, spacing: 7) {
+            HStack(spacing: 8) {
+                Rule(loc.t.blastTitle)
+                HStack(spacing: 3) {
+                    ForEach([1, 2, 3], id: \.self) { hops in
+                        Button { state.blastHops = hops } label: {
+                            Text("\(hops)")
+                                .font(Theme.Font.micro.monospacedDigit())
+                                .foregroundStyle(state.blastHops == hops
+                                                 ? Theme.background : Theme.textSecondary)
+                                .frame(width: 17, height: 15)
+                                .background(state.blastHops == hops
+                                            ? Theme.inkCyan : Color.clear)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .overlay(Rectangle().strokeBorder(Theme.border, lineWidth: 1))
+                .fixedSize()
+            }
+            .padding(.horizontal, 14)
+
+            Text(loc.t.blastBody(symbols: radius.symbols, files: radius.files,
+                                 hops: state.blastHops))
+                .font(Theme.Font.caption)
+                .foregroundStyle(radius.files > 4 ? Theme.inkCyanDeep : Theme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 14)
         }
     }
 

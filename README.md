@@ -13,6 +13,17 @@ newcomer actually has: what is this, how is it wired, and where do I start.
 [![Size](https://img.shields.io/badge/app-3.8%20MB-d6006c)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
 
+<br/>
+
+<a href="https://github.com/mahmudulashev/Xarita/releases/latest/download/Atlas-1.0.dmg">
+  <img src="https://img.shields.io/badge/Download%20Atlas.dmg-Apple%20Silicon%20(macOS)-0088b0?style=for-the-badge&logo=apple&logoColor=white" alt="Download Atlas DMG" />
+</a>
+<a href="https://github.com/mahmudulashev/Xarita/releases">
+  <img src="https://img.shields.io/github/v/release/mahmudulashev/Xarita?style=for-the-badge&color=d6006c&label=Releases" alt="Latest Releases" />
+</a>
+
+<br/><br/>
+
 [O'zbekcha →](README.uz.md)
 
 </div>
@@ -195,19 +206,35 @@ Adding one means adding a case to `Language.swift`.
 
 ---
 
-## Building
+## Installation
 
-Requires macOS 14+ on Apple Silicon and the Xcode Command Line Tools. Full Xcode
-is **not** needed.
+### Option 1: Direct Download (DMG)
+
+1. Download the latest **[Atlas-1.0.dmg](https://github.com/mahmudulashev/Xarita/releases/latest/download/Atlas-1.0.dmg)** (or browse [all releases](https://github.com/mahmudulashev/Xarita/releases)).
+2. Open `Atlas-1.0.dmg` and drag **Atlas** into the **Applications** folder.
+3. Launch **Atlas** from Applications or Spotlight.
+
+> [!TIP]
+> **First-time launch (Gatekeeper)**: Since Atlas is currently ad-hoc signed, macOS may ask for confirmation on first launch. If blocked, right-click (or Control-click) `Atlas.app` in Finder and select **Open**, or run this one-liner in Terminal:
+> ```bash
+> xattr -cr /Applications/Atlas.app
+> ```
+
+---
+
+## Building from Source
+
+Requires macOS 14+ on Apple Silicon and the Xcode Command Line Tools. Full Xcode is **not** needed.
 
 ```bash
 xcode-select --install
 ```
 
 ```bash
-git clone https://github.com/mahmudulashev/Atlas.git && cd Atlas && ./Scripts/build.sh run
+git clone https://github.com/mahmudulashev/Xarita.git && cd Xarita && ./Scripts/build.sh run
 ```
 
+To package a distributable `.dmg` installer:
 ```bash
 ./Scripts/make-dmg.sh
 ```

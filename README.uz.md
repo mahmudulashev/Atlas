@@ -13,6 +13,17 @@ uchta savolga javob beradi: bu nima, qanday ulangan, va qayerdan boshlash kerak.
 [![Hajm](https://img.shields.io/badge/ilova-3.8%20MB-d6006c)]()
 [![Litsenziya](https://img.shields.io/badge/litsenziya-MIT-green)]()
 
+<br/>
+
+<a href="https://github.com/mahmudulashev/Xarita/releases/latest/download/Atlas-1.0.dmg">
+  <img src="https://img.shields.io/badge/Atlas.dmg%20yuklab%20olish-Apple%20Silicon%20(macOS)-0088b0?style=for-the-badge&logo=apple&logoColor=white" alt="Atlas DMG yuklab olish" />
+</a>
+<a href="https://github.com/mahmudulashev/Xarita/releases">
+  <img src="https://img.shields.io/github/v/release/mahmudulashev/Xarita?style=for-the-badge&color=d6006c&label=Versiyalar" alt="So'nggi versiyalar" />
+</a>
+
+<br/><br/>
+
 [English →](README.md)
 
 </div>
@@ -200,19 +211,35 @@ Yangi til qoʻshish uchun `Language.swift` ga bitta case qoʻshiladi.
 
 ---
 
-## Yigʻish
+## Oʻrnatish
 
-macOS 14+ va Apple Silicon, hamda Xcode Command Line Tools kerak. Toʻliq Xcode
-**shart emas**.
+### 1-usul: Tayyor DMG faylini yuklab olish (Tavsiya etiladi)
+
+1. Eng soʻnggi **[Atlas-1.0.dmg](https://github.com/mahmudulashev/Xarita/releases/latest/download/Atlas-1.0.dmg)** faylini yuklab oling (yoki barcha [versiyalarni koʻring](https://github.com/mahmudulashev/Xarita/releases)).
+2. `Atlas-1.0.dmg` faylini oching va **Atlas** ilovasini **Applications** papkasiga torting.
+3. Spotlight yoki Applications papkasidan **Atlas**ni ishga tushiring.
+
+> [!TIP]
+> **Birinchi marta ochishda (Gatekeeper ogohlantirishi)**: Ilova hozirda ad-hoc imzolangani sababli, macOS birinchi ochilishda ogohlantirishi mumkin. Agar ochilmasa, Finder'da `Atlas.app` ustiga oʻng tugmani (yoki Control-click) bosib **Open (Ochish)** ni tanlang, yoki Terminal'da quyidagi bitta qator buyruqni bering:
+> ```bash
+> xattr -cr /Applications/Atlas.app
+> ```
+
+---
+
+## Koddan Yigʻish
+
+macOS 14+ va Apple Silicon, hamda Xcode Command Line Tools kerak. Toʻliq Xcode **shart emas**.
 
 ```bash
 xcode-select --install
 ```
 
 ```bash
-git clone https://github.com/mahmudulashev/Atlas.git && cd Atlas && ./Scripts/build.sh run
+git clone https://github.com/mahmudulashev/Xarita.git && cd Xarita && ./Scripts/build.sh run
 ```
 
+Tarqatish uchun `.dmg` paketini yaratish:
 ```bash
 ./Scripts/make-dmg.sh
 ```

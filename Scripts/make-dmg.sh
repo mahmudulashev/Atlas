@@ -4,7 +4,7 @@
 #   ./Scripts/make-dmg.sh
 #
 # Produces Atlas-<version>.dmg in the project root: drag-to-Applications
-# layout, custom background, compressed.
+# layout, custom Retina background, custom volume icon, and UDZO compression.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -23,8 +23,14 @@ echo "▸ Building app…"
 
 [ -d "$APP_BUNDLE" ] || { echo "✗ no app bundle at $APP_BUNDLE"; exit 1; }
 
-# ---- 2. Stage the contents ---------------------------------------------
-echo "▸ Staging…"
+# ---- 2. Background assets -----------------------------------------------
+if [ ! -f Resources/dmg-background.png ] || [ Scripts/make-dmg-background.swift -nt Resources/dmg-background.png ]; then
+  echo "▸ Rendering DMG background assets…"
+  swift Scripts/make-dmg-background.swift > /dev/null
+fi
+
+# ---- 3. Stage the contents ----------------------------------------------
+echo "▸ Staging DMG contents…"
 hdiutil detach "$MOUNT_POINT" -quiet 2>/dev/null || true
 rm -rf "$STAGE" "$RAW_DMG"
 mkdir -p "$STAGE/.background"
@@ -34,21 +40,34 @@ ln -s /Applications "$STAGE/Applications"
 cp Resources/dmg-background.png "$STAGE/.background/background.png"
 cp Resources/dmg-background@2x.png "$STAGE/.background/background@2x.png"
 
-# ---- 3. Read-write image, so Finder can record the layout ---------------
+# Custom disk volume icon
+if [ -f Resources/AppIcon.icns ]; then
+  cp Resources/AppIcon.icns "$STAGE/.VolumeIcon.icns"
+fi
+
+# ---- 4. Read-write image for Finder layout ------------------------------
 SIZE_KB=$(du -sk "$STAGE" | cut -f1)
-SIZE_MB=$(( SIZE_KB / 1024 + 24 ))
-echo "▸ Creating image (${SIZE_MB}MB)…"
+SIZE_MB=$(( SIZE_KB / 1024 + 28 ))
+echo "▸ Creating read-write image (${SIZE_MB}MB)…"
 hdiutil create -srcfolder "$STAGE" -volname "$VOLUME_NAME" -fs HFS+ \
   -format UDRW -size "${SIZE_MB}m" "$RAW_DMG" -quiet
 
 hdiutil attach "$RAW_DMG" -mountpoint "$MOUNT_POINT" -nobrowse -quiet
 sleep 1
 
-# ---- 4. Window layout ---------------------------------------------------
-# Finder scripting needs Automation permission. If it is refused the image is
-# still perfectly usable, just without the arranged window, so a failure here
-# is reported and shrugged off rather than aborting the build.
-echo "▸ Arranging window…"
+# ---- 5. Volume Icon & Attributes ---------------------------------------
+if command -v SetFile >/dev/null 2>&1; then
+  if [ -f "$MOUNT_POINT/.VolumeIcon.icns" ]; then
+    SetFile -c icnC "$MOUNT_POINT/.VolumeIcon.icns" 2>/dev/null || true
+    SetFile -a C "$MOUNT_POINT" 2>/dev/null || true
+    SetFile -a V "$MOUNT_POINT/.VolumeIcon.icns" 2>/dev/null || true
+  fi
+  SetFile -a V "$MOUNT_POINT/.background" 2>/dev/null || true
+fi
+
+# ---- 6. Window layout ---------------------------------------------------
+# Finder scripting arranges window size, icons, and background image.
+echo "▸ Arranging Finder layout…"
 if osascript <<APPLESCRIPT 2>/dev/null
 tell application "Finder"
   tell disk "$VOLUME_NAME"
@@ -56,13 +75,13 @@ tell application "Finder"
     set current view of container window to icon view
     set toolbar visible of container window to false
     set statusbar visible of container window to false
-    set the bounds of container window to {200, 140, 800, 540}
+    set the bounds of container window to {200, 120, 860, 540}
     set viewOptions to the icon view options of container window
     set arrangement of viewOptions to not arranged
-    set icon size of viewOptions to 104
+    set icon size of viewOptions to 120
     set background picture of viewOptions to file ".background:background.png"
-    set position of item "Atlas.app" of container window to {150, 195}
-    set position of item "Applications" of container window to {450, 195}
+    set position of item "Atlas.app" of container window to {165, 205}
+    set position of item "Applications" of container window to {495, 205}
     close
     open
     update without registering applications
@@ -71,22 +90,23 @@ tell application "Finder"
 end tell
 APPLESCRIPT
 then
-  echo "  ✓ layout applied"
+  echo "  ✓ Layout applied successfully"
 else
   echo "  ! Finder automation unavailable — image built without arranged layout"
 fi
 
 sync
-hdiutil detach "$MOUNT_POINT" -quiet || hdiutil detach "$MOUNT_POINT" -force -quiet
+sleep 1
+hdiutil detach "$MOUNT_POINT" -quiet || (sleep 2 && hdiutil detach "$MOUNT_POINT" -force -quiet)
 
-# ---- 5. Compress --------------------------------------------------------
-echo "▸ Compressing…"
+# ---- 7. Compress --------------------------------------------------------
+echo "▸ Compressing DMG (UDZO)…"
 rm -f "$FINAL_DMG"
 hdiutil convert "$RAW_DMG" -format UDZO -imagekey zlib-level=9 -o "$FINAL_DMG" -quiet
 rm -f "$RAW_DMG"
 rm -rf "$STAGE"
 
-# ---- 6. Verify ----------------------------------------------------------
+# ---- 8. Verify & Checksum -----------------------------------------------
 hdiutil verify "$FINAL_DMG" -quiet && echo "▸ Image verified"
 FINAL_SIZE=$(du -h "$FINAL_DMG" | cut -f1)
-echo "✓ $FINAL_DMG ($FINAL_SIZE)"
+echo "✓ Generated: $FINAL_DMG ($FINAL_SIZE)"

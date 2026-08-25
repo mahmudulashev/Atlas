@@ -20,6 +20,7 @@ DerivedData/
 *.dmg
 *.pkg
 *.zip
+*.sha256
 Xarita.app/
 dist/
 

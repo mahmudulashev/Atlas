@@ -257,7 +257,12 @@ ranglash va diagramma chizish — hammasi shu yerda yozilgan.
 
 ## Nega "Atlas"?
 
-*Atlas* — bu soʻzning maʼnosining oʻzi. Interfeys oʻzbek va ingliz tillarida.
+Atlas — bitta xarita emas, **xaritalar toʻplami**, va har biri oʻz savoliga mos
+masshtabda chizilgan. Ilovaning shakli ham shunday: bitta loyiha — umumiy
+koʻrinish, zina, jadval, yoʻnalish va topilmalar roʻyxati sifatida.
+
+Interfeys oʻzbek va ingliz tillarida, xarita koʻrinishi esa oʻz nomini saqlab
+qoldi: *xarita*.
 
 ## Litsenziya
 

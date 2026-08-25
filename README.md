@@ -250,7 +250,12 @@ highlighting and diagram rendering are all written here.
 
 ## Why "Atlas"
 
-*Atlas* is Uzbek for **map**. The interface ships in Uzbek and English.
+An atlas is not one map — it is a bound collection of them, each drawn at the
+scale its question needs. That is the shape of this app: the same codebase as an
+overview, as a ladder, as a matrix, as a route, as a list of findings.
+
+The interface ships in Uzbek and English, and the map view keeps its Uzbek name:
+*xarita*.
 
 ## License
 

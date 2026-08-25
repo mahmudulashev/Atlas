@@ -437,22 +437,3 @@ struct L10n {
         v < 1 ? String(format: "%.0f ms", v * 1000) : String(format: "%.2f s", v)
     }
 }
-
-/// Observable holder so a language switch re-renders the whole interface.
-@MainActor
-final class Localization: ObservableObject {
-    @Published var language: AppLanguage {
-        didSet { UserDefaults.standard.set(language.rawValue, forKey: "uz.overview.language") }
-    }
-
-    var t: L10n { L10n(language: language) }
-
-    init() {
-        if let raw = UserDefaults.standard.string(forKey: "uz.overview.language"),
-           let saved = AppLanguage(rawValue: raw) {
-            language = saved
-        } else {
-            language = .systemDefault
-        }
-    }
-}

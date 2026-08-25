@@ -186,7 +186,7 @@ struct SettingsView: View {
             // only symptom of a denied prompt is silence.
             LabeledContent(loc.t.notifications) {
                 HStack(spacing: 6) {
-                    Text(loc.t.authorizationName(authorization))
+                    Text(loc.t.authorizationName(.init(authorization)))
                         .foregroundStyle(authorization == .authorized
                                          ? Theme.inkCyanDeep : Theme.textSecondary)
                     if authorization == .denied {

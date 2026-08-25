@@ -88,3 +88,17 @@ enum WidgetRefresher {
         WidgetCenter.shared.reloadAllTimelines()
     }
 }
+
+/// Bridges the platform's permission status onto the string table's own
+/// spelling. Lives here, with the rest of the notification code, because
+/// `L10n` ships to builds that have no `UserNotifications` framework.
+extension L10n.NotificationPermission {
+    init(_ status: UNAuthorizationStatus?) {
+        switch status {
+        case .authorized, .provisional: self = .allowed
+        case .denied:                   self = .denied
+        case .notDetermined:            self = .notAsked
+        default:                        self = .unknown
+        }
+    }
+}

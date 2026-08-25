@@ -26,6 +26,12 @@ on:
       - '.github/workflows/engine.yml'
   workflow_dispatch:
 
+# Kept in one place, and deliberately the same version the macOS app is built
+# with. Swift 6.0.3 could not build here at all: its module maps disagree with
+# the Windows SDK on the runner and `ucrt` ends up importing itself.
+env:
+  SWIFT_VERSION: '6.3.3'
+
 jobs:
   engine:
     name: ${{ matrix.name }}
@@ -53,7 +59,7 @@ jobs:
       - name: Install Swift
         uses: SwiftyLab/setup-swift@latest
         with:
-          swift-version: '6.0.3'
+          swift-version: ${{ env.SWIFT_VERSION }}
 
       # Guarantees `python` exists under that name on all three runners.
       - uses: actions/setup-python@v5

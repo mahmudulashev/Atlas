@@ -1,6 +1,4 @@
 import Foundation
-import SwiftUI
-import UserNotifications
 
 /// UI language. Independent of the system locale: a developer working in an
 /// English toolchain may still want the interface in Uzbek, so the choice is
@@ -286,12 +284,21 @@ struct L10n {
     }
     var hops: String              { s("qadam", "hops") }
 
-    func authorizationName(_ status: UNAuthorizationStatus?) -> String {
+    /// Whether the user has allowed notifications.
+    ///
+    /// Spelled out here rather than taking `UNAuthorizationStatus`, so the
+    /// string table stays free of frameworks that only exist on Apple
+    /// platforms. The app maps the real status onto this.
+    enum NotificationPermission: Sendable {
+        case allowed, denied, notAsked, unknown
+    }
+
+    func authorizationName(_ status: NotificationPermission) -> String {
         switch status {
-        case .authorized, .provisional: return s("ruxsat berilgan", "allowed")
-        case .denied:                   return s("rad etilgan", "denied")
-        case .notDetermined:            return s("hali soʻralmagan", "not asked yet")
-        default:                        return s("nomaʼlum", "unknown")
+        case .allowed:  return s("ruxsat berilgan", "allowed")
+        case .denied:   return s("rad etilgan", "denied")
+        case .notAsked: return s("hali soʻralmagan", "not asked yet")
+        case .unknown:  return s("nomaʼlum", "unknown")
         }
     }
 

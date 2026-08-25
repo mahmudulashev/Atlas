@@ -10,7 +10,7 @@ uchta savolga javob beradi: bu nima, qanday ulangan, va qayerdan boshlash kerak.
 [![Platforma](https://img.shields.io/badge/platforma-macOS%2014%2B-1a1a1a)]()
 [![Til](https://img.shields.io/badge/Swift-6.3-orange)]()
 [![Arxitektura](https://img.shields.io/badge/Apple%20Silicon-arm64-0088b0)]()
-[![Hajm](https://img.shields.io/badge/ilova-3.8%20MB-d6006c)]()
+[![Hajm](https://img.shields.io/badge/ilova-3.1%20MB-d6006c)]()
 [![Litsenziya](https://img.shields.io/badge/litsenziya-MIT-green)]()
 
 <br/>

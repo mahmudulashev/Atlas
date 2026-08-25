@@ -10,7 +10,7 @@ newcomer actually has: what is this, how is it wired, and where do I start.
 [![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-1a1a1a)]()
 [![Language](https://img.shields.io/badge/Swift-6.3-orange)]()
 [![Architecture](https://img.shields.io/badge/Apple%20Silicon-arm64-0088b0)]()
-[![Size](https://img.shields.io/badge/app-3.8%20MB-d6006c)]()
+[![Size](https://img.shields.io/badge/app-3.1%20MB-d6006c)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
 
 <br/>

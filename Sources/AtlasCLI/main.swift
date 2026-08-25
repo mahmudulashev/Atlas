@@ -38,10 +38,24 @@ EXIT
 
 // MARK: - Output helpers
 
-/// stderr, unbuffered enough to interleave sensibly with a progress stream.
-func note(_ line: String) {
-    fputs(line + "\n", stderr)
+/// stderr, serialised.
+///
+/// Progress ticks arrive from every parsing thread at once, so the write is
+/// locked — two half-written lines are worse than none. Goes through
+/// `FileHandle` rather than `fputs` because the C `stderr` global needs a
+/// different module import on each platform, and Foundation does not.
+enum Err {
+    private static let lock = NSLock()
+
+    static func write(_ line: String) {
+        guard let data = (line + "\n").data(using: .utf8) else { return }
+        lock.lock()
+        defer { lock.unlock() }
+        FileHandle.standardError.write(data)
+    }
 }
+
+func note(_ line: String) { Err.write(line) }
 
 func fail(_ message: String, code: Int32) -> Never {
     note("atlas-engine: \(message)")
@@ -134,11 +148,16 @@ guard isDirectory.boolValue else { fail("not a directory: \(target)", code: 1) }
     }
 }
 
+// Top-level `var`s belong to the main actor; the callback below runs on
+// every parsing thread. Only this flag crosses over, so it crosses as a
+// `let`.
+let reportProgress = emitProgress
+
 let graph = Analyzer.analyze(
     root: root,
     options: Analyzer.Options(includeExternal: includeExternal, includeTests: includeTests)
 ) { progress in
-    guard emitProgress else { return }
+    guard reportProgress else { return }
     // Hand-written rather than encoded: this runs on every parsed file from
     // several threads at once, and a JSONEncoder per tick would cost more
     // than the parsing it reports on.

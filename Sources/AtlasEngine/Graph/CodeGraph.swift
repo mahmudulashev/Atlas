@@ -348,7 +348,15 @@ struct GraphBuilder {
         var outgoing = [[Int]](repeating: [], count: nodes.count)
         var incoming = [[Int]](repeating: [], count: nodes.count)
 
-        for (key, count) in edgeMap {
+        // Materialised in key order, not the dictionary's own. Swift seeds its
+        // hashing per process, so iterating `edgeMap` directly lays the edges
+        // down in a different order on every run — and that order is inherited
+        // by the neighbour lists, by `chain(to:)`, and by the Map's connector
+        // routing, so an unchanged project redrew differently each time it was
+        // scanned. The packed key orders by caller then callee, which is both
+        // stable and meaningful.
+        for key in edgeMap.keys.sorted() {
+            guard let count = edgeMap[key] else { continue }
             let from = Int(key >> 32)
             let to = Int(Int32(truncatingIfNeeded: key))
             guard from >= 0, from < nodes.count, to >= 0, to < nodes.count else { continue }

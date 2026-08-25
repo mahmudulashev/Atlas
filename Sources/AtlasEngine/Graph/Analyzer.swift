@@ -86,19 +86,29 @@ enum Analyzer {
             return empty
         }
 
-        // ---- 2. Parse in parallel ---------------------------------------
-        progress(Progress(stage: .parsing, current: 0, total: paths.count))
+        // Collection is finished. Binding it immutably lets the compiler see
+        // that the parallel pass below only reads.
+        //
+        // Sorted, because the order files arrive in is the filesystem's
+        // business and not ours — APFS, NTFS and ext4 each answer
+        // differently, and that order becomes every file index in the graph.
+        // Without this the same project analysed on Windows and on macOS
+        // produces two reports that mean the same thing and match nowhere.
+        let scanned = paths.sorted { $0.relative < $1.relative }
 
-        let box = ResultBox(count: paths.count)
+        // ---- 2. Parse in parallel ---------------------------------------
+        progress(Progress(stage: .parsing, current: 0, total: scanned.count))
+
+        let box = ResultBox(count: scanned.count)
         let counter = Counter()
 
-        DispatchQueue.concurrentPerform(iterations: paths.count) { index in
-            let entry = paths[index]
+        DispatchQueue.concurrentPerform(iterations: scanned.count) { index in
+            let entry = scanned[index]
             guard let data = try? Data(contentsOf: entry.url),
                   let source = String(data: data, encoding: .utf8)
                             ?? String(data: data, encoding: .isoLatin1) else {
                 let done = counter.increment()
-                if done % 64 == 0 { progress(Progress(stage: .parsing, current: done, total: paths.count)) }
+                if done % 64 == 0 { progress(Progress(stage: .parsing, current: done, total: scanned.count)) }
                 return
             }
 
@@ -125,20 +135,20 @@ enum Analyzer {
 
             let done = counter.increment()
             if done % 64 == 0 {
-                progress(Progress(stage: .parsing, current: done, total: paths.count))
+                progress(Progress(stage: .parsing, current: done, total: scanned.count))
             }
         }
 
         // ---- 3. Resolve -------------------------------------------------
-        progress(Progress(stage: .resolving, current: paths.count, total: paths.count))
+        progress(Progress(stage: .resolving, current: scanned.count, total: scanned.count))
 
-        let results = box.collect(defaultPaths: paths.map { ($0.relative, $0.language) })
+        let results = box.collect(defaultPaths: scanned.map { ($0.relative, $0.language) })
         var graph = GraphBuilder.build(from: results,
                                        rootPath: rootPath,
                                        projectName: root.lastPathComponent,
                                        includeExternal: options.includeExternal)
         graph.parseSeconds = Date().timeIntervalSince(started)
-        progress(Progress(stage: .done, current: paths.count, total: paths.count))
+        progress(Progress(stage: .done, current: scanned.count, total: scanned.count))
         return graph
     }
 }

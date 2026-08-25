@@ -1,0 +1,125 @@
+# Builds and checks atlas-engine on every platform it is meant to run on.
+#
+# The macOS app is built by release.yml; this workflow is about the half that
+# is supposed to be portable. Windows is the one that matters — the Windows
+# client depends on this binary existing — but Linux is built too, because it
+# is free and it catches anything Apple's Foundation is quietly forgiving of.
+name: Engine
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Sources/AtlasEngine/**'
+      - 'Sources/AtlasCLI/**'
+      - 'Tests/Fixtures/**'
+      - 'Scripts/verify-engine.py'
+      - 'Package.swift'
+      - '.github/workflows/engine.yml'
+  pull_request:
+    paths:
+      - 'Sources/AtlasEngine/**'
+      - 'Sources/AtlasCLI/**'
+      - 'Tests/Fixtures/**'
+      - 'Scripts/verify-engine.py'
+      - 'Package.swift'
+      - '.github/workflows/engine.yml'
+  workflow_dispatch:
+
+jobs:
+  engine:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows
+            os: windows-latest
+            binary: .build/release/atlas-engine.exe
+          - name: macOS
+            os: macos-15
+            binary: .build/release/atlas-engine
+          - name: Linux
+            os: ubuntu-latest
+            binary: .build/release/atlas-engine
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Package.swift is swift-tools-version 6.0 and the target asks for the
+      # Swift 6 language mode, so every platform needs a 6.x toolchain. The
+      # macOS runner's default Xcode is new enough; the others are not.
+      - name: Install Swift
+        uses: SwiftyLab/setup-swift@latest
+        with:
+          swift-version: '6.0.3'
+
+      # Guarantees `python` exists under that name on all three runners.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Report toolchain
+        shell: bash
+        run: swift --version
+
+      - name: Build
+        shell: bash
+        run: swift build -c release
+
+      - name: Verify
+        shell: bash
+        run: python Scripts/verify-engine.py ${{ matrix.binary }}
+
+      # Proves the platforms agree, not merely that each one is self-consistent.
+      # A parser that reads a file differently on Windows would pass every
+      # check above and still make the two clients disagree.
+      - name: Fingerprint the analysis
+        shell: bash
+        run: |
+          "${{ matrix.binary }}" analyze Tests/Fixtures/python-package \
+            --out fixture.json --no-drift
+          python - <<'PY'
+          import hashlib, json
+          report = json.load(open("fixture.json"))
+          report["project"].pop("parseSeconds")
+          report["project"].pop("analysedAt")
+          report["project"].pop("root")          # absolute, differs per runner
+          digest = hashlib.sha256(
+              json.dumps(report, sort_keys=True).encode()).hexdigest()
+          print(digest)
+          open("fingerprint.txt", "w").write(digest + "\n")
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fingerprint-${{ matrix.name }}
+          path: fingerprint.txt
+
+      - name: Package the engine
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-engine-windows-x64
+          path: ${{ matrix.binary }}
+
+  agree:
+    name: Platforms agree
+    needs: engine
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: fingerprint-*
+      - name: Compare
+        run: |
+          found=$(find . -name fingerprint.txt | sort)
+          echo "$found" | while read -r f; do
+            printf '%-28s %s\n' "$(basename "$(dirname "$f")")" "$(cat "$f")"
+          done
+          if [ "$(cat $found | sort -u | wc -l)" -ne 1 ]; then
+            echo "::error::the platforms produced different analyses of the same files"
+            exit 1
+          fi
+          echo "all platforms produced the same analysis"

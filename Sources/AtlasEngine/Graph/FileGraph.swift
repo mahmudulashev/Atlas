@@ -242,7 +242,13 @@ struct FileGraph: Sendable {
         // the shape of the system while leaving a picture that can be read.
         // Weight is the number of distinct call sites, so what survives is what
         // the files actually lean on.
-        let ranked = edgeWeights.sorted { $0.value > $1.value }.prefix(maxEdges)
+        // Ties break on the key, not on chance. Sorting by weight alone left
+        // equally-weighted edges in the dictionary's own order, which Swift
+        // reseeds per process — so which dependencies survived the cut, and
+        // the order of those that did, changed between runs of the same scan.
+        let ranked = edgeWeights
+            .sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }
+            .prefix(maxEdges)
 
         result.outgoing = Array(repeating: [], count: result.nodes.count)
         result.incoming = Array(repeating: [], count: result.nodes.count)

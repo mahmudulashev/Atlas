@@ -102,7 +102,19 @@ struct OverviewView: View {
 
     private var startHere: some View {
         Group {
-            if let graph = state.graph, !state.route.isEmpty {
+            if state.graph != nil, state.route.isEmpty {
+                // A project with no clear entry point is a real outcome, not an
+                // error — say so instead of hiding the section.
+                VStack(alignment: .leading, spacing: 8) {
+                    Rule(loc.t.startHere)
+                    Text(loc.t.routeEmpty)
+                        .font(Theme.Font.caption)
+                        .foregroundStyle(Theme.textTertiary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: 520, alignment: .leading)
+                }
+                .padding(.top, 34)
+            } else if let graph = state.graph, !state.route.isEmpty {
                 VStack(alignment: .leading, spacing: 10) {
                     Rule(loc.t.startHere)
                     Text(loc.t.startHereBlurb)
@@ -118,6 +130,8 @@ struct OverviewView: View {
                                      node: graph.nodes[step.nodeID],
                                      where_: place(step.nodeID, graph),
                                      reach: graph.reach(of: step.nodeID),
+                                     isCurrent: state.selection == step.nodeID,
+                                     isRead: state.isUnderstood(step.nodeID),
                                      isLast: index == min(3, state.route.steps.count - 1))
                                 .onTapGesture { state.openStep(index) }
                         }
@@ -292,6 +306,8 @@ private struct EntryRow: View {
     let node: GraphNode
     let where_: String
     let reach: Int
+    let isCurrent: Bool
+    let isRead: Bool
     let isLast: Bool
     @State private var hovering = false
 
@@ -299,15 +315,34 @@ private struct EntryRow: View {
         HStack(alignment: .firstTextBaseline, spacing: 14) {
             Text("\(number)")
                 .font(.system(size: 22, weight: .semibold, design: .serif))
-                .foregroundStyle(Theme.textTertiary)
+                .foregroundStyle(isCurrent ? Theme.textPrimary : Theme.textTertiary)
                 .frame(width: 22, alignment: .trailing)
 
             VStack(alignment: .leading, spacing: 1) {
-                Text(node.displayName)
-                    .font(Theme.Font.mono.weight(.medium))
-                    .foregroundStyle(Theme.textPrimary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+                HStack(spacing: 8) {
+                    Text(node.displayName)
+                        .font(Theme.Font.mono.weight(isCurrent ? .semibold : .medium))
+                        .foregroundStyle(Theme.textPrimary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+
+                    // Position is set in ink weight and a ruled label, never a
+                    // hue: both process inks already mean a direction.
+                    if isCurrent {
+                        Text(loc.t.youAreHere.uppercased())
+                            .font(Theme.Font.micro.weight(.bold))
+                            .tracking(0.9)
+                            .foregroundStyle(Theme.textPrimary)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1)
+                            .overlay(Rectangle().strokeBorder(Theme.textPrimary, lineWidth: 1))
+                    }
+                    if isRead {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 8.5, weight: .bold))
+                            .foregroundStyle(Theme.textTertiary)
+                    }
+                }
                 Text(where_)
                     .font(Theme.Font.micro.weight(.regular))
                     .foregroundStyle(Theme.textTertiary)
@@ -325,6 +360,10 @@ private struct EntryRow: View {
                 .foregroundStyle(hovering ? Theme.inkCyan : Theme.textTertiary)
         }
         .padding(.vertical, 9)
+        .padding(.leading, isCurrent ? 8 : 0)
+        .overlay(alignment: .leading) {
+            if isCurrent { Rectangle().fill(Theme.textPrimary).frame(width: 2) }
+        }
         .overlay(alignment: .bottom) {
             if !isLast { Rectangle().fill(Theme.borderSoft).frame(height: 1) }
         }

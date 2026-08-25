@@ -332,29 +332,9 @@ struct GraphBuilder {
                     if includeExternal, !call.calleeName.isEmpty {
                         target = externalNode(named: call.calleeName, language: result.language)
                     }
-                } else if candidates.count == 1 {
-                    target = candidates[0]
                 } else {
-                    // a) receiver names a known type → prefer its member
-                    if let recv = call.receiver, typeNames.contains(recv),
-                       let hit = candidates.first(where: { nodes[$0].container == recv }) {
-                        target = hit
-                    }
-                    // b) same container as the caller
-                    if target == nil {
-                        let callerContainer = nodes[fromID].container
-                        if let c = callerContainer,
-                           let hit = candidates.first(where: { nodes[$0].container == c }) {
-                            target = hit
-                        }
-                    }
-                    // c) same file
-                    if target == nil,
-                       let hit = candidates.first(where: { nodes[$0].fileIndex == fileIdx }) {
-                        target = hit
-                    }
-                    // d) give up gracefully: most-connected candidate
-                    if target == nil { target = candidates.first }
+                    target = resolve(call: call, among: candidates, callerID: fromID,
+                                     fileIndex: fileIdx, nodes: nodes, typeNames: typeNames)
                 }
 
                 guard let toID = target, toID != fromID else { continue }
@@ -405,5 +385,48 @@ struct GraphBuilder {
         graph.outgoing = outgoing
         graph.incoming = incoming
         return graph
+    }
+
+    /// Picks which declaration a call refers to, or none.
+    ///
+    /// The hard case is a method call on a variable — `tokens.append(…)`. The
+    /// receiver is not a type the project declares, so the callee is almost
+    /// always the standard library; but if the project happens to declare
+    /// *any* method of that name, a naive resolver binds to it and invents a
+    /// dependency between two unrelated files. That single mistake is enough
+    /// to draw a dependency cycle, which is the most alarming thing this tool
+    /// reports — so a call whose receiver cannot be placed is left unresolved
+    /// rather than guessed.
+    private static func resolve(call: RawCall, among candidates: [Int], callerID: Int,
+                                fileIndex: Int, nodes: [GraphNode],
+                                typeNames: Set<String>) -> Int? {
+        // `self` and `this` are not receivers in any meaningful sense.
+        let receiver = (call.receiver == "self" || call.receiver == "this") ? nil : call.receiver
+
+        if let receiver {
+            if typeNames.contains(receiver) {
+                // A known type: the callee must be one of its members.
+                return candidates.first { nodes[$0].container == receiver }
+            }
+            // A variable of unknown type. Only trust a same-file match, and
+            // only when it is unambiguous.
+            let local = candidates.filter { nodes[$0].fileIndex == fileIndex }
+            return local.count == 1 ? local[0] : nil
+        }
+
+        if candidates.count == 1 { return candidates[0] }
+
+        // A bare call: the caller's own type first, then its file.
+        if let container = nodes[callerID].container,
+           let hit = candidates.first(where: { nodes[$0].container == container }) {
+            return hit
+        }
+        let sameFile = candidates.filter { nodes[$0].fileIndex == fileIndex }
+        if sameFile.count == 1 { return sameFile[0] }
+        if let hit = sameFile.first { return hit }
+
+        // Nothing placed it. Two or three same-named functions across the
+        // project is a coin toss worth taking; a dozen is not.
+        return candidates.count <= 3 ? candidates.first : nil
     }
 }

@@ -32,6 +32,24 @@ enum WidgetColor {
     static let good      = Color(.sRGB, red: 0.400, green: 0.753, blue: 0.541)
 }
 
+/// The widget's own strings.
+///
+/// It cannot reach the app's `L10n` — a different process, and `Localization`
+/// pulls in AppKit — so the handful of words it needs live here, keyed off the
+/// language recorded in the snapshot.
+private struct WidgetWords {
+    let uz: Bool
+    init(_ snapshot: Snapshot?) { uz = (snapshot?.language ?? "en") == "uz" }
+
+    var symbols: String  { uz ? "funksiya" : "symbols" }
+    var files: String    { uz ? "fayl" : "files" }
+    var route: String    { uz ? "Yoʻnalish" : "Route" }
+    var mostCalled: String { uz ? "ENG KOʻP CHAQIRILGAN" : "MOST CALLED" }
+    var important: String { uz ? "muhim" : "important" }
+    var notes: String    { uz ? "eslatma" : "findings" }
+    var empty: String    { uz ? "Hali loyiha ochilmagan" : "No project analysed yet" }
+}
+
 // MARK: - Views
 
 struct AtlasWidgetView: View {
@@ -39,6 +57,8 @@ struct AtlasWidgetView: View {
     @Environment(\.widgetFamily) private var environmentFamily
 
     let entry: WidgetSnapshotEntry
+
+    private var words: WidgetWords { WidgetWords(entry.snapshot) }
 
     /// Set when the app renders the view itself: `widgetFamily` is read-only in
     /// the environment, so a preview has to say which size it wants.
@@ -84,7 +104,7 @@ struct AtlasWidgetView: View {
                 .foregroundStyle(WidgetColor.inkLight)
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
-            Text("funksiya")
+            Text(words.symbols)
                 .font(.system(size: 9, weight: .medium))
                 .foregroundStyle(WidgetColor.dim)
 
@@ -119,8 +139,8 @@ struct AtlasWidgetView: View {
                 Spacer(minLength: 6)
 
                 HStack(alignment: .firstTextBaseline, spacing: 12) {
-                    stat(compact(snapshot.symbols), "funksiya")
-                    stat(compact(snapshot.files), "fayl")
+                    stat(compact(snapshot.symbols), words.symbols)
+                    stat(compact(snapshot.files), words.files)
                 }
 
                 Spacer(minLength: 6)
@@ -133,7 +153,7 @@ struct AtlasWidgetView: View {
             Divider().overlay(WidgetColor.dim.opacity(0.25))
 
             VStack(alignment: .leading, spacing: 5) {
-                Text("ENG KOʻP CHAQIRILGAN")
+                Text(words.mostCalled)
                     .font(.system(size: 8, weight: .bold))
                     .tracking(0.6)
                     .foregroundStyle(WidgetColor.dim)
@@ -178,7 +198,7 @@ struct AtlasWidgetView: View {
     private func progress(done: Int, total: Int) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 4) {
-                Text("Yoʻnalish")
+                Text(words.route)
                     .font(.system(size: 8, weight: .bold))
                     .tracking(0.5)
                     .foregroundStyle(WidgetColor.dim)
@@ -205,8 +225,8 @@ struct AtlasWidgetView: View {
                 .fill(snapshot.highIssueCount > 0 ? WidgetColor.marker : WidgetColor.good)
                 .frame(width: 5, height: 5)
             Text(snapshot.highIssueCount > 0
-                 ? "\(snapshot.highIssueCount) muhim"
-                 : "\(snapshot.issueCount) eslatma")
+                 ? "\(snapshot.highIssueCount) \(words.important)"
+                 : "\(snapshot.issueCount) \(words.notes)")
                 .font(.system(size: 9, weight: .medium))
                 .foregroundStyle(WidgetColor.dim)
         }
@@ -215,7 +235,7 @@ struct AtlasWidgetView: View {
     private var empty: some View {
         VStack(spacing: 6) {
             Mark(size: 20)
-            Text("Hali loyiha ochilmagan")
+            Text(words.empty)
                 .font(.system(size: 10))
                 .foregroundStyle(WidgetColor.dim)
                 .multilineTextAlignment(.center)

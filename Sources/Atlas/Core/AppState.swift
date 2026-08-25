@@ -123,8 +123,11 @@ final class AppState: ObservableObject {
         Notifier.analysisFinished(project: result.projectName,
                                   symbols: result.nodes.count,
                                   seconds: result.parseSeconds)
+        let chosen = AppLanguage(rawValue: UserDefaults.standard
+            .string(forKey: "uz.atlas.language") ?? "") ?? .systemDefault
         WidgetBridge.write(graph: result, issues: issues, kind: projectKind,
-                           routeSteps: route.steps.count, routeDone: routeProgress.done)
+                           routeSteps: route.steps.count, routeDone: routeProgress.done,
+                           language: chosen)
     }
 
     func reanalyze() {

@@ -6,7 +6,8 @@ extension WidgetBridge {
                       issues: [Issue] = [],
                       kind: ProjectKind = .library,
                       routeSteps: Int = 0,
-                      routeDone: Int = 0) {
+                      routeDone: Int = 0,
+                      language: AppLanguage = .en) {
         SharedPaths.ensureDirectory()
 
         let hubs = graph.hubs(limit: 3).map {
@@ -31,7 +32,8 @@ extension WidgetBridge {
                                 highIssueCount: issues.filter { $0.severity == .high }.count,
                                 kind: kind.rawValue,
                                 routeSteps: routeSteps,
-                                routeDone: routeDone)
+                                routeDone: routeDone,
+                                language: language.rawValue)
 
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         try? data.write(to: SharedPaths.snapshotFile, options: .atomic)

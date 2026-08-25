@@ -36,6 +36,8 @@ struct MatrixView: View {
             .padding(26)
         }
         .background(PaperBackground())
+        .onChange(of: state.fileGraph.nodes.count) { _, _ in selected = nil }
+        .onChange(of: state.graph?.rootPath) { _, _ in selected = nil }
     }
 
     // MARK: - Ordering

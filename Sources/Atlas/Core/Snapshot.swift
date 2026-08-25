@@ -26,6 +26,11 @@ struct Snapshot: Codable, Sendable {
     var routeSteps: Int
     var routeDone: Int
 
+    /// The interface language at the time of writing. The widget runs in its
+    /// own process and cannot read the app's settings, so the choice travels
+    /// with the data.
+    var language: String = "en"
+
     static let placeholder = Snapshot(
         projectName: "redis", projectPath: "~/code/redis",
         files: 333, lines: 241_121, symbols: 8_359, connections: 20_622,
@@ -35,7 +40,7 @@ struct Snapshot: Codable, Sendable {
                   .init(name: "zfree", callers: 370)],
         languages: ["C", "Python"],
         issueCount: 50, highIssueCount: 12,
-        kind: "server", routeSteps: 6, routeDone: 2)
+        kind: "server", routeSteps: 6, routeDone: 2, language: "en")
 }
 
 /// Reading is shared with the widget; writing is not, since it needs the

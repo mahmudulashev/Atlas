@@ -66,8 +66,6 @@ struct L10n {
     var stageScanning: String     { s("Fayllar qidirilmoqda", "Scanning files") }
     var stageParsing: String      { s("Kod oʻqilmoqda", "Parsing code") }
     var stageResolving: String    { s("Bogʻlanishlar aniqlanmoqda", "Resolving references") }
-    var stageLaying: String       { s("Atlas joylashtirilmoqda", "Laying out map") }
-    var analysisFailed: String    { s("Tahlil qilib boʻlmadi", "Analysis failed") }
     var noSourceFiles: String     { s("Bu papkada tanish kod fayllari topilmadi",
                                       "No recognised source files in this folder") }
 
@@ -76,18 +74,11 @@ struct L10n {
     var files: String             { s("Fayl", "Files") }
     var lines: String             { s("Qator", "Lines") }
     var symbols: String           { s("Funksiya", "Symbols") }
-    var connections: String       { s("Bogʻlanish", "Connections") }
-    var parseTime: String         { s("Oʻqish vaqti", "Parse time") }
-    var languagesLabel: String    { s("Tillar", "Languages") }
 
     // MARK: - Panels
 
-    var overview: String          { s("Umumiy", "Overview") }
-    var hubs: String              { s("Markazlar", "Hubs") }
     var hubsHint: String          { s("Eng koʻp chaqiriladigan funksiyalar — kod shu yerga toʻplanadi",
                                       "The most-called functions — where the code converges") }
-    var entryPoints: String       { s("Kirish nuqtalari", "Entry points") }
-    var unreachable: String       { s("Ishlatilmagan", "Unreachable") }
     var unreachableHint: String   { s("Hech kim chaqirmaydi. Bu shubha, isbot emas — framework orqali chaqirilgan boʻlishi mumkin.",
                                       "Nothing calls these. A hint, not proof — they may be invoked by a framework.") }
     var search: String            { s("Qidirish", "Search") }
@@ -103,8 +94,6 @@ struct L10n {
     var noCallers: String         { s("Chaqiruvchi yoʻq", "No callers") }
     var noCallees: String         { s("Hech nimani chaqirmaydi", "Calls nothing") }
     var openInEditor: String      { s("Muharrirda ochish", "Open in editor") }
-    var copyPath: String          { s("Yoʻlni nusxalash", "Copy path") }
-    var focusNode: String         { s("Shunga fokuslash", "Focus on this") }
 
     func kindName(_ k: SymbolKind) -> String {
         switch k {
@@ -152,8 +141,6 @@ struct L10n {
     // MARK: - Orientation
 
     var projectIs: String         { s("Bu —", "This is a") }
-    var beginReading: String      { s("Oʻqishni boshlash", "Start reading") }
-    var suggestedRoute: String    { s("Taklif qilingan yoʻnalish", "Suggested route") }
     var routeHint: String {
         s("Dastur ishini boshlagan joydan boshlanadi va chaqiruvlar boʻylab boradi. Har bir bosqichga oldingisidan yetib kelinadi.",
           "It starts where the program starts and follows the calls. Each step is reached by the one before it.")
@@ -180,9 +167,6 @@ struct L10n {
 
     // MARK: - Architecture
 
-    var architecture: String      { s("Tuzilma", "Architecture") }
-    var overviewTab: String       { s("Umumiy", "Overview") }
-    var readingTab: String        { s("Oʻqish", "Reading") }
     var cycles: String            { s("aylanma", "cycles") }
     var showTests: String         { s("Testlarni koʻrsatish", "Show tests") }
     var architectureHint: String {
@@ -192,7 +176,6 @@ struct L10n {
 
     // MARK: - Issues
 
-    var issuesTab: String         { s("Xatolar", "Findings") }
     var issuesTitle: String       { s("Eʼtibor talab qiladigan joylar", "Worth a second look") }
     var issuesHint: String {
         s("Bularning hammasi kod tahlilidan olingan — har biri aniq fayl va qatorni koʻrsatadi. Bu xato degani emas, bu «shu yerga qarab qoʻy» degani.",
@@ -248,10 +231,6 @@ struct L10n {
     var viewLadder: String        { s("Zina", "Ladder") }
     var viewMatrix: String        { s("Jadval", "Matrix") }
 
-    var matrixKeyForward: String  { s("oldinga bogʻliqlik", "forward dependency") }
-    var matrixKeyBackward: String { s("orqaga — aylanma boʻlishi mumkin", "backward — may be a cycle") }
-    var matrixKeyRow: String      { s("qator: nimani chaqiradi", "row: what it calls") }
-    var matrixKeyColumn: String   { s("ustun: kim chaqiradi", "column: what calls it") }
     var backward: String          { s("orqaga", "backward") }
 
     // MARK: - Drift
@@ -337,7 +316,6 @@ struct L10n {
     var matrixCallsKey: String    { s("chaqiradi", "calls") }
     var matrixCycleKey: String    { s("ikki tomonlama — aylanma", "both ways — a cycle") }
     var matrixSelfKey: String     { s("oʻzi", "itself") }
-    var matrixPullsIn: String     { s("nechta faylni tortib keladi", "how many files it pulls in") }
 
     var matrixTitle: String       { s("Kim kimga bogʻliq", "Who depends on whom") }
     var matrixHint: String {
@@ -405,14 +383,10 @@ struct L10n {
     var startHere: String         { s("Shu yerdan boshlang", "Start here") }
     var startHereHint: String     { s("Bu funksiyalar loyihaning koʻp qismini harakatga keltiradi — notanish kodni oʻqishni shulardan boshlash qulay.",
                                       "These drive most of the project — the easiest place to start reading unfamiliar code.") }
-    var browse: String            { s("Koʻrib chiqish", "Browse") }
 
     // MARK: - Canvas controls
 
     var fitToScreen: String       { s("Ekranga moslash", "Fit to screen")}
-    var resetLayout: String       { s("Qaytadan joylashtirish", "Re-run layout") }
-    var showLabels: String        { s("Nomlarni koʻrsatish", "Show labels") }
-    var showExternal: String      { s("Tashqi chaqiruvlar", "External calls") }
     var zoomIn: String            { s("Kattalashtirish", "Zoom in") }
     var zoomOut: String           { s("Kichraytirish", "Zoom out") }
 

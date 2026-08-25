@@ -48,6 +48,9 @@ struct LadderView: View {
             .onChange(of: state.graph?.rootPath) { _, _ in
                 selected = nil; didFit = false; fit(in: geo.size)
             }
+            .onChange(of: state.fileGraph.nodes.count) { _, _ in
+                selected = nil; fit(in: geo.size)
+            }
             .overlay(alignment: .top) { header.padding(.horizontal, 16).padding(.top, 12) }
             .overlay(alignment: .bottom) { legend.padding(14) }
             .overlay(alignment: .bottomTrailing) { controls(in: geo.size).padding(14) }
@@ -139,6 +142,11 @@ struct LadderView: View {
     /// Everything reachable from a file, in one direction.
     private func reach(_ index: Int, downstream: Bool) -> Set<Int> {
         let graph = state.fileGraph
+        // The selection is a file index, and the file graph is rebuilt whenever
+        // tests are shown or hidden. A selection made against the larger graph
+        // is out of range against the smaller one, so it has to be checked here
+        // rather than trusted.
+        guard index >= 0, index < graph.nodes.count else { return [] }
         var seen = Set<Int>()
         var frontier = [index]
         while !frontier.isEmpty {

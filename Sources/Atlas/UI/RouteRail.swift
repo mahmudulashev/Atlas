@@ -88,7 +88,16 @@ struct RouteRail: View {
 
     private var routeList: some View {
         Group {
-            if let graph = state.graph, !state.route.isEmpty {
+            if state.route.isEmpty {
+                VStack(alignment: .leading, spacing: 3) {
+                    RailLabel(loc.t.routeLabel)
+                    Text(loc.t.routeEmpty)
+                        .font(Theme.Font.micro.weight(.regular))
+                        .foregroundStyle(Theme.textTertiary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, 12)
+                }
+            } else if let graph = state.graph {
                 VStack(alignment: .leading, spacing: 2) {
                     RailLabel(loc.t.routeLabel)
                     ForEach(Array(state.route.steps.enumerated()), id: \.offset) { index, step in

@@ -37,6 +37,21 @@ struct WelcomeView: View {
                 .frame(maxWidth: 460)
                 .padding(.horizontal, 40)
 
+            // Until now `errorMessage` was set and never read: dropping a
+            // folder with nothing recognisable in it returned to this screen
+            // in silence, which reads as the app having ignored the gesture.
+            if state.errorMessage != nil {
+                HStack(spacing: 8) {
+                    Rectangle().fill(Theme.inkMagenta).frame(width: 2, height: 30)
+                    Text(loc.t.noSourceFiles)
+                        .font(Theme.Font.caption)
+                        .foregroundStyle(Theme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: 420, alignment: .leading)
+                .padding(.top, 14)
+            }
+
             Text(loc.t.welcomeBody)
                 .font(Theme.Font.caption)
                 .foregroundStyle(Theme.textTertiary)

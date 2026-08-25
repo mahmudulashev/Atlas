@@ -76,6 +76,13 @@ private final class ForegroundPresenter: NSObject, UNUserNotificationCenterDeleg
 
 /// Nudges WidgetKit after a fresh snapshot lands.
 enum WidgetRefresher {
+
+    /// Hands the engine its refresh hook. The engine writes the snapshot but
+    /// knows nothing about WidgetKit, so the app connects the two on launch.
+    static func install() {
+        WidgetBridge.didWrite = { reload() }
+    }
+
     static func reload() {
         guard Bundle.main.bundleIdentifier != nil else { return }
         WidgetCenter.shared.reloadAllTimelines()

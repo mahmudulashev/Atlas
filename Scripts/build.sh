@@ -23,7 +23,7 @@ mkdir -p "$CONTENTS/MacOS" "$CONTENTS/Resources"
 
 # ---- Compile -----------------------------------------------------------
 SOURCES=()
-while IFS= read -r f; do SOURCES+=("$f"); done < <(find Sources/Atlas Sources/Shared -name '*.swift' | sort)
+while IFS= read -r f; do SOURCES+=("$f"); done < <(find Sources/Atlas Sources/AtlasEngine Sources/Shared -name '*.swift' | sort)
 echo "▸ Compiling ${#SOURCES[@]} files…"
 
 xcrun swiftc \
@@ -85,8 +85,8 @@ xcrun swiftc \
   -o "$WIDGET_CONTENTS/MacOS/AtlasWidget" \
   Sources/AtlasWidget/AtlasWidget.swift \
   Sources/Shared/WidgetViews.swift \
-  Sources/Atlas/Core/Snapshot.swift \
-  Sources/Atlas/Core/SharedPaths.swift
+  Sources/AtlasEngine/Core/Snapshot.swift \
+  Sources/AtlasEngine/Core/SharedPaths.swift
 
 cat > "$WIDGET_CONTENTS/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>

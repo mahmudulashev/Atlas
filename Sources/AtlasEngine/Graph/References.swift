@@ -134,14 +134,14 @@ enum References {
     static func resolve(_ reference: String,
                         from filePath: String,
                         index: [String: Int]) -> Int? {
-        let directory = (filePath as NSString).deletingLastPathComponent
+        let directory = P.deletingLastComponent(filePath)
         var candidates: [String] = []
 
         let cleaned = reference.components(separatedBy: "?").first ?? reference
         if cleaned.hasPrefix("/") {
             candidates.append(String(cleaned.dropFirst()))
         } else {
-            candidates.append((directory as NSString).appendingPathComponent(cleaned))
+            candidates.append(P.join(directory, cleaned))
             candidates.append(cleaned)
         }
 
@@ -150,7 +150,7 @@ enum References {
         let indexForms = ["/index.js", "/index.ts", "/index.tsx", "/__init__.py"]
 
         for base in candidates {
-            let normalized = (base as NSString).standardizingPath
+            let normalized = P.standardizing(base)
             for ext in extensions {
                 if let hit = index[normalized + ext] { return hit }
             }

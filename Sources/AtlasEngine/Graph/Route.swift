@@ -85,7 +85,7 @@ struct Route {
     private static func directory(_ id: Int, in graph: CodeGraph) -> String {
         guard id >= 0, graph.nodes[id].fileIndex >= 0,
               graph.nodes[id].fileIndex < graph.files.count else { return "" }
-        return (graph.files[graph.nodes[id].fileIndex] as NSString).deletingLastPathComponent
+        return P.deletingLastComponent(graph.files[graph.nodes[id].fileIndex])
     }
 
     // MARK: - Scoring

@@ -56,7 +56,7 @@ enum Layer: String, CaseIterable, Sendable {
 
     static func classify(path: String, symbols: [String]) -> Layer {
         let p = path.lowercased()
-        let last = (p as NSString).lastPathComponent
+        let last = P.lastComponent(p)
 
         for marker in ["test", "spec", "__tests__", "fixture", "mock"]
         where p.contains(marker) { return .test }
@@ -70,7 +70,7 @@ enum Layer: String, CaseIterable, Sendable {
 
         // Apple projects name the launch file after the app — AtlasApp.swift,
         // MyThingApp.swift — and it never matches a prefix rule.
-        let stem = (last as NSString).deletingPathExtension
+        let stem = P.deletingExtension(last)
         if stem.hasSuffix("app") || stem.hasSuffix("main") || stem.hasSuffix("delegate") {
             return .entry
         }
@@ -207,8 +207,8 @@ struct FileGraph: Sendable {
             result.nodes.append(Node(
                 id: fileIndex,
                 path: path,
-                name: (path as NSString).lastPathComponent,
-                directory: (path as NSString).deletingLastPathComponent,
+                name: P.lastComponent(path),
+                directory: P.deletingLastComponent(path),
                 layer: Layer.classify(path: path, symbols: names),
                 language: language,
                 symbols: Array(symbols.prefix(8)),

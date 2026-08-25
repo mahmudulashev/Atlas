@@ -2,6 +2,16 @@ import Foundation
 
 /// Writes the snapshot the widget reads.
 extension WidgetBridge {
+
+    /// Called after every successful write.
+    ///
+    /// The macOS app points this at WidgetKit so a finished scan refreshes
+    /// the widget. Nothing else does: the Windows build has no widget, and
+    /// the headless engine has no UI to nudge. A hook rather than an `#if`
+    /// because the engine also builds standalone *on* macOS, where the app's
+    /// WidgetKit code is not linked in.
+    nonisolated(unsafe) static var didWrite: (() -> Void)?
+
     static func write(graph: CodeGraph,
                       issues: [Issue] = [],
                       kind: ProjectKind = .library,
@@ -37,6 +47,6 @@ extension WidgetBridge {
 
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         try? data.write(to: SharedPaths.snapshotFile, options: .atomic)
-        WidgetRefresher.reload()
+        didWrite?()
     }
 }

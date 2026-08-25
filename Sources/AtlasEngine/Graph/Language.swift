@@ -12,7 +12,7 @@ enum Language: String, CaseIterable, Codable, Sendable {
     // MARK: - Detection
 
     static func detect(path: String) -> Language? {
-        let ext = (path as NSString).pathExtension.lowercased()
+        let ext = P.pathExtension(path).lowercased()
         switch ext {
         case "swift":                       return .swift
         case "py", "pyw":                   return .python

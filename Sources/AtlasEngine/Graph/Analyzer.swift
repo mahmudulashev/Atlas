@@ -44,7 +44,7 @@ enum Analyzer {
 
         // ---- 1. Collect candidate files ---------------------------------
         var paths: [(url: URL, relative: String, language: Language)] = []
-        let rootPath = root.standardizedFileURL.path
+        let rootPath = P.normalize(root.standardizedFileURL.path)
         let fm = FileManager.default
 
         if let walker = fm.enumerator(at: root,
@@ -63,7 +63,7 @@ enum Analyzer {
                 guard let language = Language.detect(path: url.path) else { continue }
                 if let size = values?.fileSize, size > maxFileBytes { continue }
 
-                var relative = url.standardizedFileURL.path
+                var relative = P.normalize(url.standardizedFileURL.path)
                 if relative.hasPrefix(rootPath) {
                     relative = String(relative.dropFirst(rootPath.count))
                     if relative.hasPrefix("/") { relative.removeFirst() }

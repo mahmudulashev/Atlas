@@ -19,6 +19,7 @@ struct AtlasApp: App {
                 .background(Theme.background)
                 .onAppear {
                     Notifier.requestAuthorization()
+                    WidgetRefresher.install()
                     explainer.refreshAvailability()
                 }
                 .onChange(of: state.graph?.rootPath) { _, _ in

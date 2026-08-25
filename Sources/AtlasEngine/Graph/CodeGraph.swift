@@ -121,7 +121,7 @@ struct CodeGraph: Sendable {
                 for marker in ["test/", "tests/", "spec/", "specs/", "example/", "examples/",
                                "benchmark", "fixture", "mock", "demo/", "sample"]
                 where path.contains(marker) { return false }
-                let base = (path as NSString).lastPathComponent
+                let base = P.lastComponent(path)
                 if base.hasPrefix("test") || base.contains("_test.") || base.contains(".test.")
                     || base.contains(".spec.") { return false }
             }
@@ -365,7 +365,7 @@ struct GraphBuilder {
         // ---- 5. File-level references ----
         var pathIndex: [String: Int] = [:]
         for (index, path) in graph.files.enumerated() {
-            pathIndex[(path as NSString).standardizingPath] = index
+            pathIndex[P.standardizing(path)] = index
         }
         var seenReferences = Set<Int64>()
         for (fileIndex, result) in results.enumerated() {

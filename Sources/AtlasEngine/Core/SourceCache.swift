@@ -19,7 +19,7 @@ final class SourceCache {
         }
         lock.unlock()
 
-        guard let data = try? Data(contentsOf: URL(fileURLWithPath: path)),
+        guard let data = try? Data(contentsOf: P.url(path)),
               let text = String(data: data, encoding: .utf8)
                       ?? String(data: data, encoding: .isoLatin1) else { return nil }
 
@@ -40,8 +40,7 @@ final class SourceCache {
     func snippet(for node: GraphNode, in graph: CodeGraph, contextLines: Int = 0)
         -> (text: String, firstLine: Int)? {
         guard node.fileIndex >= 0, node.fileIndex < graph.files.count else { return nil }
-        let full = (graph.rootPath as NSString)
-            .appendingPathComponent(graph.files[node.fileIndex])
+        let full = P.join(graph.rootPath, graph.files[node.fileIndex])
         guard let all = lines(ofFile: full) else { return nil }
 
         let start = max(0, node.line - 1 - contextLines)
@@ -53,6 +52,6 @@ final class SourceCache {
 
     func absolutePath(for node: GraphNode, in graph: CodeGraph) -> String? {
         guard node.fileIndex >= 0, node.fileIndex < graph.files.count else { return nil }
-        return (graph.rootPath as NSString).appendingPathComponent(graph.files[node.fileIndex])
+        return P.join(graph.rootPath, graph.files[node.fileIndex])
     }
 }

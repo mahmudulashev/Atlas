@@ -44,6 +44,11 @@ struct DiagramLayout {
     static let margin: CGFloat = 48
     static let maxRowsShown = 6
 
+    /// Position in `Layer.allCases`, used to settle ties predictably.
+    private static func rank(_ layer: Layer) -> Int {
+        Layer.allCases.firstIndex(of: layer) ?? Layer.allCases.count
+    }
+
     static func cardHeight(symbols: Int) -> CGFloat {
         headerHeight + CGFloat(min(symbols, maxRowsShown)) * rowHeight + cardPadBottom
     }
@@ -109,7 +114,16 @@ struct DiagramLayout {
             maxHeight = max(maxHeight, y)
             var tally: [Layer: Int] = [:]
             for nodeIndex in column { tally[graph.nodes[nodeIndex].layer, default: 0] += 1 }
-            columnLabels.append((x: x, layer: tally.max { $0.value < $1.value }?.key ?? .logic))
+            // On a tie the earlier layer wins, rather than whichever the
+            // dictionary happened to yield first — Swift reseeds that per
+            // process, so a column of three views and three models was labelled
+            // differently on each run. `allCases` runs entry → util, so the tie
+            // goes to the layer nearer the start of the system, which is the
+            // more useful thing to call a column anyway.
+            let dominant = tally.max { a, b in
+                a.value != b.value ? a.value < b.value : Self.rank(a.key) > Self.rank(b.key)
+            }?.key ?? .logic
+            columnLabels.append((x: x, layer: dominant))
             x += Self.cardWidth + Self.columnGap
         }
 

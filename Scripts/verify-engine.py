@@ -18,11 +18,18 @@ Three things are checked, in order of how badly they hurt when broken:
   fixtures     a known project still yields the dependencies it is known to
                have. See Tests/Fixtures/README.md.
 
+  line endings the same project analysed with CRLF endings and with LF
+               endings gives the same answer. Swift treats "\r\n" as one
+               Character, so a Windows checkout used to read as a single
+               enormous line -- every file one line long, every import
+               after the first one lost.
+
 Exits non-zero on the first failure, with the reason on stderr.
 """
 
 import hashlib
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -158,6 +165,42 @@ def check_python_fixture(engine):
               f"python-package: lost the dependency {expected[0]} -> {expected[1]}")
 
 
+def check_line_endings(engine):
+    """A Windows checkout and a Unix one must analyse the same."""
+    source = ROOT / "Tests" / "Fixtures" / "python-package"
+    if not source.is_dir():
+        fail("fixture Tests/Fixtures/python-package is missing")
+        return
+
+    unix = run(engine, source)
+    if unix is None:
+        return
+
+    with tempfile.TemporaryDirectory() as tmp:
+        windows_copy = Path(tmp) / "crlf"
+        shutil.copytree(source, windows_copy)
+        for path in windows_copy.rglob("*.py"):
+            path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
+        windows = run(engine, windows_copy)
+    if windows is None:
+        return
+
+    if not check(unix["project"]["lineCount"] == windows["project"]["lineCount"],
+                 f"line endings: {unix['project']['lineCount']} lines with LF but "
+                 f"{windows['project']['lineCount']} with CRLF"):
+        return
+    check(digest_without_identity(unix) == digest_without_identity(windows),
+          "line endings: CRLF and LF gave different analyses of the same code")
+
+
+def digest_without_identity(report):
+    """A report's identity, ignoring where it ran and what the folder was called."""
+    trimmed = json.loads(json.dumps(report))
+    for key in ("parseSeconds", "analysedAt", "root", "name"):
+        trimmed["project"].pop(key, None)
+    return hashlib.sha256(json.dumps(trimmed, sort_keys=True).encode()).hexdigest()
+
+
 # ---- main ----------------------------------------------------------------
 
 def main():
@@ -184,6 +227,9 @@ def main():
 
     print("  fixtures    (python-package)")
     check_python_fixture(engine)
+
+    print("  line endings(CRLF vs LF)")
+    check_line_endings(engine)
 
     if failures:
         print(f"\n{len(failures)} check(s) failed", file=sys.stderr)

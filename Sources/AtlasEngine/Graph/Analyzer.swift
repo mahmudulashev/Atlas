@@ -105,12 +105,17 @@ enum Analyzer {
         DispatchQueue.concurrentPerform(iterations: scanned.count) { index in
             let entry = scanned[index]
             guard let data = try? Data(contentsOf: entry.url),
-                  let source = String(data: data, encoding: .utf8)
-                            ?? String(data: data, encoding: .isoLatin1) else {
+                  let raw = String(data: data, encoding: .utf8)
+                         ?? String(data: data, encoding: .isoLatin1) else {
                 let done = counter.increment()
                 if done % 64 == 0 { progress(Progress(stage: .parsing, current: done, total: scanned.count)) }
                 return
             }
+
+            // Every line-ending shape becomes `\n` before anything reads
+            // the text, so the line counting and scanning below can go on
+            // comparing against `"\n"` and mean it.
+            let source = raw.normalizedLineEndings
 
             // Stylesheets and markup have no callables; their structure is
             // rules and named elements, so they take a different route.

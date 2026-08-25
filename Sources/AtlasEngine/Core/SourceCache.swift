@@ -23,7 +23,7 @@ final class SourceCache {
               let text = String(data: data, encoding: .utf8)
                       ?? String(data: data, encoding: .isoLatin1) else { return nil }
 
-        let split = text.components(separatedBy: "\n")
+        let split = text.normalizedLineEndings.components(separatedBy: "\n")
 
         lock.lock()
         files[path] = split

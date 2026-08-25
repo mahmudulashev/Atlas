@@ -387,16 +387,32 @@ struct GraphBuilder {
         return graph
     }
 
-    /// Picks which declaration a call refers to, or none.
+    /// Method names that overwhelmingly belong to the standard library.
     ///
-    /// The hard case is a method call on a variable — `tokens.append(…)`. The
-    /// receiver is not a type the project declares, so the callee is almost
-    /// always the standard library; but if the project happens to declare
-    /// *any* method of that name, a naive resolver binds to it and invents a
-    /// dependency between two unrelated files. That single mistake is enough
-    /// to draw a dependency cycle, which is the most alarming thing this tool
-    /// reports — so a call whose receiver cannot be placed is left unresolved
-    /// rather than guessed.
+    /// `tokens.append(…)` is an array call, but if the project happens to
+    /// declare any method named `append`, a name-based resolver binds to it and
+    /// invents a dependency between two unrelated files — which then draws as a
+    /// dependency cycle, the most alarming thing this tool reports. Refusing to
+    /// resolve *these* names through an unrecognised receiver removes that
+    /// whole class of false edge.
+    ///
+    /// Kept deliberately narrow. An earlier attempt refused every call through
+    /// an unrecognised receiver: correct for Swift, catastrophic for Python,
+    /// where nearly every call reads `obj.method()`. Flask lost seventy per
+    /// cent of its edges and its real hubs with them.
+    private static let stdlibMethods: Set<String> = [
+        "append", "insert", "remove", "removeAll", "removeLast", "removeFirst",
+        "count", "index", "contains", "isEmpty", "first", "last", "sorted",
+        "sort", "reversed", "joined", "split", "prefix", "suffix", "dropFirst",
+        "dropLast", "reduce", "enumerated", "keys", "values", "items",
+        "reserveCapacity", "popLast", "min", "max", "hasPrefix", "hasSuffix",
+        "lowercased", "uppercased", "trimmingCharacters", "components",
+        "replacingOccurrences", "write", "encode", "decode", "strip", "lstrip",
+        "rstrip", "startswith", "endswith", "push", "pop", "shift", "slice",
+        "toString", "valueOf", "forEach", "includes", "indexOf", "concat",
+    ]
+
+    /// Picks which declaration a call refers to, or none.
     private static func resolve(call: RawCall, among candidates: [Int], callerID: Int,
                                 fileIndex: Int, nodes: [GraphNode],
                                 typeNames: Set<String>) -> Int? {
@@ -404,29 +420,29 @@ struct GraphBuilder {
         let receiver = (call.receiver == "self" || call.receiver == "this") ? nil : call.receiver
 
         if let receiver {
-            if typeNames.contains(receiver) {
-                // A known type: the callee must be one of its members.
-                return candidates.first { nodes[$0].container == receiver }
+            // A receiver naming a type the project declares is strong evidence.
+            if typeNames.contains(receiver),
+               let hit = candidates.first(where: { nodes[$0].container == receiver }) {
+                return hit
             }
-            // A variable of unknown type. Only trust a same-file match, and
-            // only when it is unambiguous.
-            let local = candidates.filter { nodes[$0].fileIndex == fileIndex }
-            return local.count == 1 ? local[0] : nil
+            // A standard-library name through an unrecognised receiver is
+            // almost certainly not this project's own function.
+            if stdlibMethods.contains(call.calleeName) {
+                let local = candidates.filter { nodes[$0].fileIndex == fileIndex }
+                return local.count == 1 ? local[0] : nil
+            }
         }
 
         if candidates.count == 1 { return candidates[0] }
 
-        // A bare call: the caller's own type first, then its file.
+        // The caller's own type first, then its file.
         if let container = nodes[callerID].container,
            let hit = candidates.first(where: { nodes[$0].container == container }) {
             return hit
         }
-        let sameFile = candidates.filter { nodes[$0].fileIndex == fileIndex }
-        if sameFile.count == 1 { return sameFile[0] }
-        if let hit = sameFile.first { return hit }
-
-        // Nothing placed it. Two or three same-named functions across the
-        // project is a coin toss worth taking; a dozen is not.
-        return candidates.count <= 3 ? candidates.first : nil
+        if let hit = candidates.first(where: { nodes[$0].fileIndex == fileIndex }) {
+            return hit
+        }
+        return candidates.first
     }
 }

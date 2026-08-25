@@ -19,9 +19,13 @@ struct ContentView: View {
                     Divider().overlay(Theme.border)
                     switch state.mode {
                     case .atlas:  AtlasView()
-                    case .map: ArchitectureView()
-                    case .review:       IssuesView()
-                    case .read:      reading
+                    case .map:
+                        switch state.mapView {
+                        case .ladder: LadderView()
+                        case .matrix: MatrixView()
+                        }
+                    case .review: IssuesView()
+                    case .read:   reading
                     }
                 }
             }

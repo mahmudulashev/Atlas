@@ -316,6 +316,44 @@ struct L10n {
         }
     }
 
+    // MARK: - Ladder
+
+    var ladderTitle: String       { s("Nima avval ishlaydi, nimaga tayanadi",
+                                      "What runs first, what it leans on") }
+    var ladderHint: String {
+        s("Ustunlar — bogʻliqlik chuqurligi: birinchi ustunni hech kim chaqirmaydi, oxirgisi hech nimani chaqirmaydi. Har bir chiziq chapdan oʻngga yuguradi, shuning uchun orqaga ketgani — aylanma bogʻliqlik.",
+          "Columns are dependency depth: nothing calls the first column, nothing in the last calls anything. Every link runs left to right, so a line going backwards is a cycle.")
+    }
+    func ladderSelection(up: Int, down: Int) -> String {
+        language == .uz ? "\(up) ta fayl unga yetadi · u \(down) taga yetadi"
+                        : "\(up) files reach it · it reaches \(down)"
+    }
+    var columnEntry: String       { s("KIRISH", "ENTRY") }
+    var columnFoundation: String  { s("POYDEVOR", "FOUNDATION") }
+    func columnDepth(_ n: Int) -> String { s("CHUQURLIK \(n)", "DEPTH \(n)") }
+    var reachesSelection: String  { s("tanlanganga yetadi", "reaches the selection") }
+    var selectionReaches: String  { s("tanlangan bunga yetadi", "the selection reaches it") }
+    var clickAnyFile: String      { s("Istalgan faylni bos", "Click any file") }
+    var matrixCallsKey: String    { s("chaqiradi", "calls") }
+    var matrixCycleKey: String    { s("ikki tomonlama — aylanma", "both ways — a cycle") }
+    var matrixSelfKey: String     { s("oʻzi", "itself") }
+    var matrixPullsIn: String     { s("nechta faylni tortib keladi", "how many files it pulls in") }
+
+    var matrixTitle: String       { s("Kim kimga bogʻliq", "Who depends on whom") }
+    var matrixHint: String {
+        s("Qatorlar ustunlarni chaqiradi. Hech qanday oʻlchamda chiziqlar kesishmaydi, shuning uchun toʻdalar, qatlamlar va aylanmalar toʻgʻridan-toʻgʻri panjaradan oʻqiladi.",
+          "Rows call columns. No crossing lines at any size, so clusters, layers and cycles are read directly off the grid.")
+    }
+    var selectedRow: String       { s("Tanlangan qator", "Selected row") }
+    func matrixCounts(out: Int, in inCount: Int) -> String {
+        language == .uz ? "\(out) chiqadi · \(inCount) kiradi"
+                        : "\(out) out · \(inCount) in"
+    }
+    var matrixFooter: String {
+        s("Har bir qator oxiridagi ustun — oʻsha fayl nechta boshqasini tortib kelishi. Ustun boʻylab pastga oʻqisang, baland ustunlar — hamma tayanadigan fayllar. Magenta kvadratlar esa ikki tomonlama chaqiradigan yagona juftliklar.",
+          "The bar at the end of each row is how many files it pulls in. Read down a column instead and the tall stacks are the files everything leans on. The magenta squares are the pairs that call both ways.")
+    }
+
     // MARK: - Difficulty
 
     var howHard: String           { s("Qanchalik qiyin", "How hard is this") }

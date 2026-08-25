@@ -2,15 +2,15 @@
 
 # Xarita
 
-**Kodning shaklini koʻr.**
+**Hech koʻrmagan kodni oʻqi.**
 
-macOS uchun native ilova. Loyihani oʻqib chiqadi va muharriring hech qachon koʻrsatmaydigan
-xaritani chizadi — qaysi funksiya qaysinisini chaqiradi, hammasi qayerga toʻplanadi va
-nimaga umuman hech kim tegmaydi.
+macOS uchun native ilova. Loyihani tahlil qilib, notanish odamda tugʻiladigan
+uchta savolga javob beradi: bu nima, qanday ulangan, va qayerdan boshlash kerak.
 
-[![Platforma](https://img.shields.io/badge/platforma-macOS%2014%2B-black)]()
+[![Platforma](https://img.shields.io/badge/platforma-macOS%2014%2B-1a1a1a)]()
 [![Til](https://img.shields.io/badge/Swift-6.3-orange)]()
-[![Arxitektura](https://img.shields.io/badge/Apple%20Silicon-arm64-blue)]()
+[![Arxitektura](https://img.shields.io/badge/Apple%20Silicon-arm64-0088b0)]()
+[![Hajm](https://img.shields.io/badge/ilova-3.8%20MB-d6006c)]()
 [![Litsenziya](https://img.shields.io/badge/litsenziya-MIT-green)]()
 
 [English →](README.md)
@@ -21,63 +21,91 @@ nimaga umuman hech kim tegmaydi.
 
 ## Muammo
 
-Muharriring senga **fayllarni** koʻrsatadi. Lekin kod fayl boʻlib ishlamaydi — u **graf** boʻlib
-ishlaydi.
+Muharriring senga **fayllarni** koʻrsatadi. Lekin kod fayl boʻlib ishlamaydi —
+u **graf** boʻlib ishlaydi. Fayllar daraxti bitta dasturchi fayllarni diskda
+qanday joylashtirganini aytadi, xolos. Nima nimani chaqirishi haqida hech narsa
+demaydi. Shuning uchun har safar notanish loyihani ochganingda, oʻsha grafni
+bittalab `go to definition` bosib, oʻz miyangda qurasan. Inson xotirasi esa bir
+vaqtda taxminan yettita narsani ushlab tura oladi.
 
-Fayllar daraxti faqat bitta dasturchi fayllarni diskda qanday joylashtirganini koʻrsatadi.
-Nima nimani chaqirishi haqida esa hech narsa demaydi. Shuning uchun har safar notanish loyihani
-ochganingda, oʻsha grafni oʻz miyangda, bittalab `go to definition` bosib qayta qurasan. Inson
-xotirasi esa bir vaqtda taxminan yettita narsani ushlab tura oladi.
-
-Bu dastur ilgari bor edi — [Sourcetrail](https://github.com/CoatiSoftware/Sourcetrail) deb atalgan,
-dasturchilar uni yaxshi koʻrishardi, lekin 2021-yilda yopildi. macOS uchun uning oʻrnini bosadigan
-native dastur chiqmadi.
-
-**Xarita — oʻsha gʻoya, Apple Silicon uchun qaytadan yozilgan.**
+[Sourcetrail](https://github.com/CoatiSoftware/Sourcetrail) buni hal qilgandi va
+2021-yilda yopildi. macOS uchun uning oʻrnini bosadigan native dastur chiqmadi.
 
 ---
 
-## Qanday savollarga javob beradi
+## Loyihaga toʻrt xil qarash
 
-| Savol | Xarita qanday javob beradi |
-|---|---|
-| *Katta loyihani ochdim, adashib qoldim.* | Xarita shaklni darrov koʻrsatadi — qayerdan boshlanadi, markaz qayerda, va qaysi 80% eʼtiborga olmasa ham boʻladi. |
-| *Bu funksiyaga qanday yetib kelindi?* | Teskari chaqiruv grafi, bir necha qavat chuqurlikda, bir bosishda. `grep` kerak emas. |
-| *Buni oʻzgartirsam, nima buziladi?* | Taʼsir doirasi — unga bogʻliq hamma narsa ajratib koʻrsatiladi. |
-| *Bu kod hali ishlatiladimi?* | Hech kim chaqirmaydigan funksiyalar yolgʻiz orol boʻlib koʻrinadi. |
+### Atlas — shakli
+
+Ochilishi bilan odam tilida javob beradi: `flask` — bu **veb-freymvork**, va
+freymvork nimaligi ham tushuntiriladi. Keyin raqamlar, tartibli kirish yoʻli,
+loyihaning mahallalarga boʻlinishi va **Drift** — oxirgi skandan beri nima
+oʻzgargani.
+
+### Xarita — grafi
+
+Bir xil maʼlumotning ikki xil chizmasi.
+
+**Zina** har bir faylni bogʻliqlik chuqurligi boʻyicha ustunga qoʻyadi, shuning
+uchun strelkalar chapdan oʻngga yuguradi va orqaga ketgan strelka — aylanma
+bogʻliqlik. **Jadval** esa kim kimga bogʻliqligini **umuman chiziqsiz** koʻrsatadi:
+har bir fayl bir vaqtda qator ham, ustun ham; *(qator, ustun)* dagi belgi qator
+faylning oʻsha ustun fayliga bogʻliqligini bildiradi. U yomonlashmaydi — olti yuz
+fayl oltitasi kabi oʻqiladi — va **aylanma bogʻliqlik diagonal boʻyicha aks etgan
+juft belgi** boʻlib koʻrinadi, izlash shart emas.
+
+### Oʻqish — yoʻnalish
+
+Kod boʻylab raqamlangan yoʻl: dastur boshlanadigan joydan boshlanib, chaqiruvlar
+boʻylab boradi, shuning uchun har bir bosqichga oldingisidan yetib kelinadi. Kod
+ustida **chaqiruv zanjiri** turadi: dastur sen qarab turgan qatorga aslida qanday
+yetib keladi.
+
+### Koʻrib chiqish — topilmalar
+
+Olti xil topilma, hammasi grafdan olingan, har biri aniq fayl va qatorni
+koʻrsatadi. Bironta ham til modeli tomonidan oʻylab topilmagan.
+
+---
+
+## Ikki siyoh
+
+Interfeys bosma jadval kabi tuzilgan, va ikkita bosma siyoh bezak emas, **maʼno**
+tashiydi:
+
+| | Maʼnosi | Qayerda |
+|---|---|---|
+| **Siyan** | quyi oqim — bu nimani chaqiradi | xarita chiziqlari, jadval qatorlari, zanjir strelkalari, taʼsir doirasi |
+| **Magenta** | yuqori oqim — buni kim chaqiradi | xarita chiziqlari, jadval ustunlari, chaqiruvchilar, Drift'dagi yangi aylanmalar |
+
+Bu juftlik hech qachon oʻzgarmagani uchun yoʻnalishni tushuntirishga izoh kerak
+emas. "Shu yerdasiz" esa uchinchi rang bilan emas, **siyoh ogʻirligi** bilan
+belgilanadi — shunda ikki siyoh sof qoladi.
 
 ---
 
 ## Oʻlchangan natijalar
 
-**MacBook Air M4 (16 GB)** — hozirgi eng kichik Apple Silicon kompyuterda, `-O` optimizatsiya bilan
-oʻlchandi. Vaqt ichiga fayllarni topish, tokenizatsiya, parsing va fayllararo bogʻlash kiradi.
+**MacBook Air M4 (16 GB)**, `-O` bilan. Vaqt ichiga fayllarni topish,
+tokenizatsiya, parsing va fayllararo bogʻlash kiradi.
 
 | Loyiha | Til | Fayl | Qator | Simvol | Chaqiruv | Vaqt |
 |---|---|--:|--:|--:|--:|--:|
 | [redis](https://github.com/redis/redis) | C | 333 | 241 121 | 8 359 | 20 622 | **0.05 s** |
 | [express](https://github.com/expressjs/express) | JavaScript | 141 | 21 616 | 335 | 255 | 0.02 s |
-| [flask](https://github.com/pallets/flask) | Python | 83 | 18 428 | 1 622 | 1 283 | 0.01 s |
-
-Joylashtirish algoritmi **8 359 ta nuqtada bir qadamga 7.4 ms** sarflaydi — taxminan 135 fps.
-Buni Barnes–Hut yaqinlashtirishi taʼminlaydi.
+| [flask](https://github.com/pallets/flask) | Python | 83 | 18 428 | 1 622 | 1 459 | 0.01 s |
+| statik sayt | HTML/CSS/JS | 3 | 1 240 | 214 | 2 | 2 ms |
 
 ### Javoblar toʻgʻrimi?
 
-Tezlik faqat javob toʻgʻri boʻlsa maʼnoga ega. Redis'da eng koʻp chaqirilgan funksiyalarni
-soʻrasang, Xarita shuni qaytaradi:
+Tezlik faqat tahlil toʻgʻri boʻlsagina maʼnoga ega. Redis'da eng koʻp
+chaqiriladigan funksiyalar deb `sdslen`, `sdsfree`, `zfree`, `zmalloc`,
+`sdsempty` chiqadi — bular uning satrlar kutubxonasi va xotira ajratuvchisi,
+yaʼni Redis kodini bilgan odam aynan shularni aytadi. Flask'da esa
+`Scaffold.route`, `Flask.url_for` va `render_template`.
 
-```
-sdslen      476 ta chaqiruv    src/sds.h:98
-sdsfree     423 ta chaqiruv    src/sds.c:221
-zfree       370 ta chaqiruv    src/zmalloc.c:585
-zmalloc     273 ta chaqiruv    src/zmalloc.c:284
-sdsempty    201 ta chaqiruv    src/sds.c:205
-```
-
-Bular Redis'ning satrlar kutubxonasi va xotira ajratuvchisi — Redis kodini bilgan odam aynan
-shularni aytadi. Flask'da `Scaffold.route`, `Flask.url_for` va `render_template` chiqadi;
-Express'da esa `res.send` va `app.set`.
+Oʻz kodiga qaratilganda `Parser.parse` ni eng murakkab funksiya deb koʻrsatadi —
+80 ta shart, 5 qavat ichma-ichlik, 327 qator. Bu rost.
 
 ---
 
@@ -87,122 +115,149 @@ Express'da esa `res.send` va `app.set`.
 flowchart LR
     A[Fayllarni topish] --> B[Tokenizer]
     B --> C[Parser]
+    B --> S[Uslub parseri]
     C --> D[Graf qurish]
-    D --> E[Barnes–Hut joylashtirish]
-    E --> F[Ekranga chizish]
-
-    style A fill:#1e293b,stroke:#475569,color:#e2e8f0
-    style B fill:#1e293b,stroke:#475569,color:#e2e8f0
-    style C fill:#1e293b,stroke:#475569,color:#e2e8f0
-    style D fill:#1e293b,stroke:#475569,color:#e2e8f0
-    style E fill:#1e293b,stroke:#475569,color:#e2e8f0
-    style F fill:#1e293b,stroke:#475569,color:#e2e8f0
+    S --> D
+    R[Havolalar skaneri] --> D
+    D --> E[Fayllar grafi]
+    E --> F[Zina / Jadval]
+    D --> G[Yoʻnalish · Topilmalar · Drift]
 ```
 
-**1 · Tokenizer** — bayt darajasidagi lekser. `Character` emas, toʻgʻridan-toʻgʻri UTF-8 baytlar
-bilan ishlaydi, chunki kod deyarli butunlay ASCII, va yuz minglab qatorli faylda grapheme
-hisoblash bekorga sarflangan vaqt. Izohlar va satr ichidagi matnni yutib yuboradi — shuning uchun
-satr ichidagi `(` hech qachon soxta chaqiruv yasay olmaydi. Ichma-ich izohlar, uch tirnoqli satrlar
-va template literal'lar har bir til qoidasi boʻyicha hisobga olinadi.
+**Tokenizer** — bayt darajasidagi lekser. `Character` emas, UTF-8 baytlar bilan
+ishlaydi, chunki kod deyarli butunlay ASCII, va yuz minglab qatorli faylda
+grapheme hisoblash bekorga sarflangan vaqt. Izohlar va satr ichidagi matnni
+yutib yuboradi — shuning uchun satr ichidagi `(` hech qachon soxta chaqiruv
+yasay olmaydi. Sintaksis ranglagich **xuddi shu lekserni** ishlatadi, faqat
+izohlarni ham qaytaradigan rejimda — shu sababli rang ajratish va parsing satr
+qayerda tugashi haqida hech qachon zid kelmaydi.
 
-**2 · Parser** — bu tip tekshiruvchi emas, **shakl** taniydigan parser. U eʼlonning sintaktik
-koʻrinishini taniydi (`func name(`, `def name(`, `Type name(args) {`, `name: function`, Go
-qabul qiluvchilari, Rust `impl` bloklari, JS strelka funksiyalari) va chaqiruvning `name(`
-shaklini. Qamrovni tilga qarab qavs chuqurligi yoki chekinish boʻyicha kuzatadi.
+**Parser** — tip tekshiruvchi emas, **shakl** taniydigan parser. Eʼlonning
+sintaktik koʻrinishini va chaqiruvning `name(` shaklini taniydi, qamrovni tilga
+qarab qavs chuqurligi yoki chekinish boʻyicha kuzatadi. Shu bilan birga har bir
+eʼlonning shartlar soni va ichma-ich chuqurligini oʻlchaydi — oʻqish qiyinligi
+shundan chiqadi.
 
-**3 · Graf qurish** — har bir chaqiruvni eʼlonga bogʻlaydi. `foo.bar()` uchun avval `foo` nomli
-tipdagi `bar` metodini qidiradi, keyin chaqiruvchining oʻz tipidagisini, keyin oʻsha fayldagisini,
-oxirida butun loyihada yagona mos kelganini. Topilmagan nomlar tashqi tugun boʻlib qoladi — shunda
-uchinchi tomon kutubxonalari koʻrinmay qolmaydi.
+**Uslub parseri** — CSS va HTML'da funksiya yoʻq, shuning uchun alohida oʻtish
+CSS qoidalarini, `@mixin`/`@include` larni va HTML sahifasining nomlangan
+elementlarini oʻqiydi. Usiz sof frontend loyiha butunlay boʻsh koʻrinardi.
 
-**4 · Joylashtirish** — kuchga asoslangan joylashtirish: tugunlar bir-birini itaradi, bogʻlanishlar
-prujina kabi tortadi, tizim sekin sovib joyiga oʻtiradi. Oddiy usul har qadamda O(n²) va ikki ming
-tugundan keyin ishlamay qoladi. Xarita esa har qadamda **Barnes–Hut kvadrant daraxtini** quradi:
-yetarlicha uzoqdagi butun bir toʻda (`oʻlcham / masofa < θ`) bitta ogʻirlik markazi bilan
-almashtiriladi. Natijada har qadam O(n log n) boʻladi va yigirma ming tugunli graf ham silliq
-ishlaydi. Tugunlar boshida fayllar boʻyicha guruhlanib, filotaksis spirali boʻylab joylashtiriladi —
-bu tasodifiy boshlashdan ancha tez yigʻiladi.
+**Havolalar skaneri** — `import`, `require`, `#include`, `<script src>`,
+`<link href>`, `@import`, `url()`. Faqat funksiya chaqiruvlari frontend
+loyihaning haqiqiy tuzilishini koʻrsata olmaydi.
 
-### Nega toʻliq parser emas?
+**Graf qurish** — har bir chaqiruvni qamrovga qarab bogʻlaydi: avval qabul
+qiluvchi tipdagi metod, keyin chaqiruvchining oʻz tipidagisi, keyin oʻsha
+fayldagisi, oxirida butun loyihada yagona mos kelgani.
 
-Har bir til uchun toʻliq kompilyator old qismini yozish aniqroq boʻlardi — va oʻn uchta shunday
-qismni saqlab yurishni anglatardi. Xarita tanlagan yoʻl (Sourcetrail ham xuddi shunday qilgan)
-kodni oʻqish uchun muhimroq boʻlgan uchta narsani beradi:
+**Fayllar grafi** — simvollar grafi bir daraja yuqoriga umumlashtiriladi, chunki
+odamlar aynan fayl darajasida oʻylaydi va fayllar ikki tartib kam. Fayllar yoʻl
+va mazmuniga qarab qatlamlarga ajratiladi, aylanma bogʻliqliklar Tarjan
+algoritmi bilan topiladi.
 
-- **kompilyatsiya boʻlmaydigan** yoki kutubxonalari yetishmaydigan loyihada ham ishlaydi
-- bitta implementatsiya bilan **oʻn uch tilni** qamrab oladi
-- **chorak million qatorni 50 millisekundda** oʻqiydi
+**Zina joylashuvi** — ustunlar maʼno boʻyicha emas, **bogʻliqlik chuqurligi**
+boʻyicha. Avval maʼno boʻyicha qilingandi va chiziqlarning 70% i orqaga qaytgandi
+— bu spagetti boʻlib chizilardi. Chuqurlik esa chaqiruvchini chaqirilganning
+chap tomoniga qoʻyadi. Maʼno esa rangda qoldi.
 
-Evaziga overload va dinamik chaqiruvlarda aniqlik yoʻqoladi. Pastdagi [Cheklovlar](#cheklovlar)ga qara.
-
----
-
-## Qoʻllab-quvvatlanadigan tillar
-
-Swift · Python · JavaScript · TypeScript · C · C++ · Go · Java · Rust · Ruby · C# · PHP · Kotlin
-
-Yangi til qoʻshish uchun `Language.swift` fayliga bitta case qoʻshiladi — leksik qoidalar va eʼlon
-shakllari oʻsha yerda, quvurning qolgan qismi oʻzgarmaydi.
+| | Maʼno boʻyicha ustunlar | Chuqurlik boʻyicha |
+|---|--:|--:|
+| flask | 200 / 283 | **25 / 75** |
+| express | 73 / 100 | **3 / 39** |
+| redis | 764 / 1003 | **2 / 130** |
 
 ---
 
-## Holat
+## Tushuntirishlar
 
-| Qism | Holati |
-|---|---|
-| Build quvuri — bundle, imzo, ishga tushirish | ✅ Ishlaydi |
-| Tokenizer, parser, graf bogʻlash | ✅ Ishlaydi, oʻlchandi |
-| Barnes–Hut joylashtirish | ✅ Ishlaydi, oʻlchandi |
-| Dizayn tizimi, ikki til (uz/en) | 🚧 Jarayonda |
-| Interaktiv xarita | 🚧 Jarayonda |
-| Kod paneli, qidiruv, inspektor | ⬜ Rejada |
-| Bildirishnoma markazi widget'i | ⬜ Rejada |
-| Bildirishnomalar | ⬜ Rejada |
-| Imzolangan `.dmg` | ⬜ Rejada |
+Har bir funksiya odam tilida tavsif oladi. Apple Intelligence yoqilgan boʻlsa,
+Apple'ning **qurilma ichidagi** modelidan kodni sakkizta oʻlchov boʻyicha
+tasniflash soʻraladi: nima qiladi, nimaga tegadi, nima kiradi va nima chiqadi,
+qachon ishlaydi, xato beradimi, holatni oʻzgartiradimi, takrorlanadimi. Gaplarni
+esa Xarita oʻzi yozadi.
+
+Bu aylanma yoʻlning sababi bor. Model oʻzbek tilida umuman yoza olmaydi, Apple
+Translate'da esa oʻzbek juftligi yoʻq. Mashina tarjimasi koʻrib chiqildi va rad
+etildi: NLLB-200 oʻzbekchani qoʻllab-quvvatlaydi, lekin u oddiy matnlarda
+oʻrgatilgan va aynan bu yerda muhim boʻlgan atamalarni soʻzma-soʻz, notoʻgʻri
+tarjima qiladi — *thread* kiyim tikadigan **ip** boʻlib qoladi. Modeldan faqat
+**tanlash** soʻrab, har bir soʻzni oʻzimiz yozganimizda esa oʻzbekcha tabiiy
+chiqadi, hech narsa yuklab olinmaydi va atamalar toʻgʻri qoladi. Tasniflash
+aniqligi ~85% oʻlchandi; pastdagi aniq maʼlumot esa parserdan keladi va har doim
+toʻgʻri.
+
+Modelsiz ham hammasi ishlaydi: statik tushuntirish, 44 ta atamali lugʻat va har
+bir funksiya turi uchun boshlovchiga maslahat — hammasi mahalliy.
+
+---
+
+## Tillar
+
+Swift · Python · JavaScript · TypeScript · C · C++ · Go · Java · Rust · Ruby ·
+C# · PHP · Kotlin · HTML · CSS · SCSS · Vue · Svelte
+
+Yangi til qoʻshish uchun `Language.swift` ga bitta case qoʻshiladi.
 
 ---
 
 ## Yigʻish
 
-macOS 14+ va Apple Silicon kerak, hamda Xcode Command Line Tools. Toʻliq Xcode **shart emas**.
+macOS 14+ va Apple Silicon, hamda Xcode Command Line Tools kerak. Toʻliq Xcode
+**shart emas**.
 
 ```bash
 xcode-select --install
 ```
 
 ```bash
-git clone https://github.com/<sen>/xarita.git && cd xarita && ./Scripts/build.sh
+git clone https://github.com/<sen>/xarita.git && cd xarita && ./Scripts/build.sh run
 ```
 
-Build repo ichiga emas, `~/Library/Caches/uz.xarita.build` ichiga yoziladi. Bu ataylab qilingan:
-loyiha iCloud bilan sinxronlanadigan papkada turadi, iCloud esa fayllarga `com.apple.FinderInfo`
-belgisini qoʻshadi, natijada `codesign` *"resource fork, Finder information, or similar detritus
-not allowed"* xatosini beradi. Sinxronlanadigan papkadan tashqarida yigʻish buni butunlay hal qiladi.
+```bash
+./Scripts/make-dmg.sh
+```
+
+Build repo ichiga emas, `~/Library/Caches/uz.xarita.build` ichiga yoziladi. Bu
+ataylab: loyiha iCloud bilan sinxronlanadigan papkada turadi, iCloud esa
+fayllarga `com.apple.FinderInfo` belgisini qoʻshadi va `codesign` *"resource
+fork, Finder information, or similar detritus not allowed"* xatosini beradi.
+
+Ilova ikonkasi ham, disk obrazining foni ham kodda chiziladi
+(`Scripts/make-icon.swift`, `Scripts/make-dmg-background.swift`) — shuning uchun
+butun build faqat manba kodidan qayta yigʻiladi, birorta ham tayyor rasm
+saqlanmaydi.
 
 ---
 
 ## Cheklovlar
 
-Ochiq aytilgan, chunki imkoniyatini oshirib koʻrsatadigan dastur — umuman yoʻq dasturdan yomonroq:
+- **Nom boʻyicha bogʻlash.** Bir xil nomli ikki funksiya birlashib ketishi
+  mumkin. Funksiya koʻrsatkichlari, dekoratorlar, refleksiya yoki router orqali
+  chaqiruvlar koʻrinmaydi.
+- **"Ishlatilmagan" degani "oʻlik" degani emas.** Nol chaqiruv — bu ishora.
+  Framework callback'larining koʻrinadigan chaqiruvchisi boʻlmasligi tabiiy.
+- **Tip chiqarish yoʻq.** `a.render()` va `b.render()` tip boʻyicha emas, nom va
+  qamrov boʻyicha bogʻlanadi.
+- **Widget koʻrinmaydi.** U yozilgan, yigʻilgan va ilova ichiga joylashtirilgan,
+  lekin macOS uchinchi tomon kengaytmalarini faqat Apple Developer ID bilan
+  imzolangan boʻlsa roʻyxatga oladi. Shuning uchun ilova widget'ni oʻzi chizib
+  koʻrsatadi.
+- **Ad-hoc imzo.** Gatekeeper birinchi ochilishda ogohlantiradi.
 
-- **Nom boʻyicha bogʻlash.** Bir xil nomli ikki funksiya birlashib ketishi mumkin. Funksiya
-  koʻrsatkichlari, dekoratorlar, refleksiya yoki router orqali chaqiruvlar koʻrinmaydi.
-- **"Ishlatilmagan" degani "oʻlik" degani emas.** Nol chaqiruv — bu faqat ishora. Framework
-  callback'lari va dinamik kirish nuqtalarining koʻrinadigan chaqiruvchisi boʻlmasligi tabiiy.
-  Shuning uchun test fayllari, misollar va kirish nuqtasiga oʻxshash nomlar roʻyxatdan chiqarilgan —
-  lekin baribir oʻzing tekshirishing kerak.
-- **Tip chiqarish yoʻq.** `a.render()` va `b.render()` tip boʻyicha emas, nom va qamrov boʻyicha
-  bogʻlanadi.
-- **Ad-hoc imzo.** `codesign -s -` bilan imzolanadi, shuning uchun Gatekeeper birinchi ochilishda
-  ogohlantiradi — buni yoʻqotish uchun pullik Developer ID va notarizatsiya kerak.
+---
+
+## Nimadan qurilgan
+
+Swift 6.3 · SwiftUI · AppKit · WidgetKit · UserNotifications · FoundationModels
+
+Tashqi kutubxona yoʻq. Parser, graf, joylashtirish algoritmlari, sintaksis
+ranglash va diagramma chizish — hammasi shu yerda yozilgan.
 
 ---
 
 ## Nega "Xarita"?
 
-*Xarita* — bu soʻzning maʼnosining oʻzi. Ilova interfeysi oʻzbek va ingliz tillarida.
-
----
+*Xarita* — bu soʻzning maʼnosining oʻzi. Interfeys oʻzbek va ingliz tillarida.
 
 ## Litsenziya
 

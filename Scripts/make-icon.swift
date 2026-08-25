@@ -50,8 +50,8 @@ func render(px: Int) -> Data? {
     ctx.clip()
 
     let colors = [
-        CGColor(red: 0.086, green: 0.114, blue: 0.161, alpha: 1),  // #161D29
-        CGColor(red: 0.043, green: 0.059, blue: 0.090, alpha: 1),  // #0B0F17
+        CGColor(red: 0.976, green: 0.973, blue: 0.973, alpha: 1),  // #F9F8F8
+        CGColor(red: 0.918, green: 0.914, blue: 0.914, alpha: 1),  // #EAE9E9
     ] as CFArray
     if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
                                  colors: colors, locations: [0, 1]) {
@@ -62,10 +62,10 @@ func render(px: Int) -> Data? {
     }
     ctx.restoreGState()
 
-    // Hairline rim so the plate reads against a dark desktop.
+    // A printed sheet has an edge. Ink hairline, not a light rim.
     ctx.addPath(platePath)
-    ctx.setStrokeColor(CGColor(red: 1, green: 1, blue: 1, alpha: 0.10))
-    ctx.setLineWidth(max(1, size * 0.006))
+    ctx.setStrokeColor(CGColor(red: 0.125, green: 0.118, blue: 0.114, alpha: 0.22))
+    ctx.setLineWidth(max(1, size * 0.007))
     ctx.strokePath()
 
     // ---- Edges ----
@@ -75,12 +75,20 @@ func render(px: Int) -> Data? {
     }
 
     ctx.setLineCap(.round)
-    ctx.setLineWidth(max(1, size * 0.019))
-    ctx.setStrokeColor(CGColor(red: 0.247, green: 0.780, blue: 0.745, alpha: 0.55))
-    for (a, b) in edges {
+    ctx.setLineWidth(max(1.2, size * 0.021))
+
+    // Downstream, in cyan: the direction the program runs.
+    ctx.setStrokeColor(CGColor(red: 0.0, green: 0.533, blue: 0.690, alpha: 0.85))   // #0088B0
+    for (a, b) in edges where !(a == 1 && b == 2) {
         ctx.move(to: point(nodes[a]))
         ctx.addLine(to: point(nodes[b]))
     }
+    ctx.strokePath()
+
+    // One edge running back up, in magenta — the other half of the pairing.
+    ctx.setStrokeColor(CGColor(red: 0.839, green: 0.0, blue: 0.424, alpha: 0.85))   // #D6006C
+    ctx.move(to: point(nodes[2]))
+    ctx.addLine(to: point(nodes[1]))
     ctx.strokePath()
 
     // ---- Nodes ----
@@ -90,14 +98,17 @@ func render(px: Int) -> Data? {
         let rect = CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2)
 
         if index == 0 {
-            // Root: gold, with a soft halo so it reads as the focus.
-            ctx.setFillColor(CGColor(red: 0.878, green: 0.647, blue: 0.227, alpha: 0.22))
-            ctx.fillEllipse(in: rect.insetBy(dx: -r * 0.55, dy: -r * 0.55))
-            ctx.setFillColor(CGColor(red: 0.878, green: 0.647, blue: 0.227, alpha: 1))
+            // The entry point is printed solid; the rest are outlined. Weight,
+            // not hue — the two inks are spoken for.
+            ctx.setFillColor(CGColor(red: 0.125, green: 0.118, blue: 0.114, alpha: 1)) // #201E1D
+            ctx.fillEllipse(in: rect)
         } else {
-            ctx.setFillColor(CGColor(red: 0.247, green: 0.780, blue: 0.745, alpha: 1))
+            ctx.setFillColor(CGColor(red: 0.957, green: 0.953, blue: 0.953, alpha: 1))
+            ctx.fillEllipse(in: rect)
+            ctx.setStrokeColor(CGColor(red: 0.125, green: 0.118, blue: 0.114, alpha: 1))
+            ctx.setLineWidth(max(1.2, size * 0.017))
+            ctx.strokeEllipse(in: rect.insetBy(dx: size * 0.008, dy: size * 0.008))
         }
-        ctx.fillEllipse(in: rect)
     }
 
     guard let image = ctx.makeImage() else { return nil }

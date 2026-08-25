@@ -19,11 +19,11 @@ func render(scaleFactor: Int) -> Data? {
     ctx.setAllowsAntialiasing(true)
 
     // Ground
-    ctx.setFillColor(CGColor(red: 0.937, green: 0.945, blue: 0.961, alpha: 1))   // #EFF1F5
+    ctx.setFillColor(CGColor(red: 0.953, green: 0.949, blue: 0.949, alpha: 1))   // #F3F2F2
     ctx.fill(CGRect(x: 0, y: 0, width: CGFloat(w), height: CGFloat(h)))
 
     // Drafting grid
-    ctx.setStrokeColor(CGColor(red: 0.890, green: 0.910, blue: 0.945, alpha: 1)) // #E3E8F1
+    ctx.setStrokeColor(CGColor(red: 0.906, green: 0.894, blue: 0.894, alpha: 1)) // #E7E4E4
     ctx.setLineWidth(1 * s)
     let step: CGFloat = 26 * s
     var x: CGFloat = 0
@@ -34,7 +34,7 @@ func render(scaleFactor: Int) -> Data? {
 
     // Arrow from the app icon towards the Applications alias.
     let arrowY = CGFloat(h) * 0.52
-    ctx.setStrokeColor(CGColor(red: 0.169, green: 0.298, blue: 0.529, alpha: 0.45)) // #2B4C87
+    ctx.setStrokeColor(CGColor(red: 0.0, green: 0.533, blue: 0.690, alpha: 0.55)) // #0088B0
     ctx.setLineWidth(2 * s)
     ctx.setLineCap(.round)
     ctx.setLineDash(phase: 0, lengths: [7 * s, 6 * s])
@@ -44,7 +44,7 @@ func render(scaleFactor: Int) -> Data? {
     ctx.setLineDash(phase: 0, lengths: [])
 
     let tip = CGPoint(x: CGFloat(w) * 0.615, y: arrowY)
-    ctx.setFillColor(CGColor(red: 0.169, green: 0.298, blue: 0.529, alpha: 0.6))
+    ctx.setFillColor(CGColor(red: 0.0, green: 0.533, blue: 0.690, alpha: 0.7))
     ctx.move(to: tip)
     ctx.addLine(to: CGPoint(x: tip.x - 11 * s, y: arrowY + 6 * s))
     ctx.addLine(to: CGPoint(x: tip.x - 11 * s, y: arrowY - 6 * s))
@@ -53,12 +53,16 @@ func render(scaleFactor: Int) -> Data? {
 
     // Wordmark
     let title = NSAttributedString(string: "Xarita", attributes: [
-        .font: NSFont.systemFont(ofSize: 25 * s, weight: .semibold),
-        .foregroundColor: NSColor(srgbRed: 0.055, green: 0.086, blue: 0.149, alpha: 1),
+        .font: NSFont(descriptor: NSFont.systemFont(ofSize: 25 * s, weight: .semibold)
+                    .fontDescriptor.withDesign(.serif) ?? NSFont.systemFont(ofSize: 25 * s).fontDescriptor,
+                    size: 25 * s) ?? NSFont.systemFont(ofSize: 25 * s, weight: .semibold),
+        .foregroundColor: NSColor(srgbRed: 0.125, green: 0.118, blue: 0.114, alpha: 1),
     ])
     let subtitle = NSAttributedString(string: "Kodning shaklini ko\u{2bb}r", attributes: [
-        .font: NSFont.systemFont(ofSize: 12.5 * s, weight: .regular),
-        .foregroundColor: NSColor(srgbRed: 0.290, green: 0.337, blue: 0.420, alpha: 1),
+        .font: NSFont(descriptor: NSFont.systemFont(ofSize: 12.5 * s).fontDescriptor
+                    .withDesign(.serif) ?? NSFont.systemFont(ofSize: 12.5 * s).fontDescriptor,
+                    size: 12.5 * s) ?? NSFont.systemFont(ofSize: 12.5 * s),
+        .foregroundColor: NSColor(srgbRed: 0.376, green: 0.365, blue: 0.365, alpha: 1),
     ])
 
     let graphics = NSGraphicsContext(cgContext: ctx, flipped: false)

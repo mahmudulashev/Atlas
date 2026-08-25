@@ -1,4 +1,6 @@
 import SwiftUI
+import AppKit
+import UserNotifications
 
 struct ContentView: View {
     @EnvironmentObject private var state: AppState
@@ -161,6 +163,7 @@ struct SettingsView: View {
     @EnvironmentObject private var loc: Localization
     @EnvironmentObject private var explainer: Explainer
     @State private var notify = Notifier.isEnabled
+    @State private var authorization: UNAuthorizationStatus?
 
     var body: some View {
         Form {
@@ -174,6 +177,25 @@ struct SettingsView: View {
             Toggle(loc.t.notifyOnFinish, isOn: $notify)
                 .onChange(of: notify) { _, value in Notifier.isEnabled = value }
 
+            // Whether macOS actually granted permission is invisible from
+            // inside the app unless it is asked for and shown; without this the
+            // only symptom of a denied prompt is silence.
+            LabeledContent(loc.t.notifications) {
+                HStack(spacing: 6) {
+                    Text(loc.t.authorizationName(authorization))
+                        .foregroundStyle(authorization == .authorized
+                                         ? Theme.inkCyanDeep : Theme.textSecondary)
+                    if authorization == .denied {
+                        Button(loc.t.openSettings) {
+                            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.notifications") {
+                                NSWorkspace.shared.open(url)
+                            }
+                        }
+                        .buttonStyle(.link)
+                    }
+                }
+            }
+
             LabeledContent(loc.t.whatThisDoes) {
                 Text(explainer.modelState.canGenerate ? "✓" : "—")
                     .foregroundStyle(explainer.modelState.canGenerate
@@ -181,8 +203,9 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 400)
+        .frame(width: 430)
         .padding(.vertical, 6)
+        .task { authorization = await Notifier.authorizationStatus() }
     }
 }
 

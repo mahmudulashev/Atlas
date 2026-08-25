@@ -14,6 +14,19 @@ enum Notifier {
         Bundle.main.bundleIdentifier != nil
     }
 
+    /// Kept alive for the process lifetime: `UNUserNotificationCenter.delegate`
+    /// is a weak reference, and a delegate that deallocates simply stops being
+    /// consulted — silently.
+    private static let presenter = ForegroundPresenter()
+
+    /// Whether the user has actually granted permission, for the settings pane.
+    @MainActor
+    static func authorizationStatus() async -> UNAuthorizationStatus {
+        guard hasBundle else { return .denied }
+        return await UNUserNotificationCenter.current().notificationSettings()
+            .authorizationStatus
+    }
+
     static var isEnabled: Bool {
         get { UserDefaults.standard.object(forKey: "uz.xarita.notify") as? Bool ?? true }
         set { UserDefaults.standard.set(newValue, forKey: "uz.xarita.notify") }
@@ -21,8 +34,16 @@ enum Notifier {
 
     static func requestAuthorization() {
         guard hasBundle else { return }
-        UNUserNotificationCenter.current()
-            .requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        let center = UNUserNotificationCenter.current()
+
+        // Without a delegate, macOS delivers notifications posted while the app
+        // is frontmost straight to Notification Centre and shows no banner —
+        // which is exactly when this app posts, since an analysis finishes
+        // while the user is looking at the window. The delegate is what asks
+        // for the banner anyway.
+        center.delegate = presenter
+
+        center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
     }
 
     static func analysisFinished(project: String, symbols: Int, seconds: Double) {
@@ -41,6 +62,15 @@ enum Notifier {
                                             content: content,
                                             trigger: nil)
         UNUserNotificationCenter.current().add(request)
+    }
+}
+
+/// Asks for the banner even when Xarita is the active application.
+private final class ForegroundPresenter: NSObject, UNUserNotificationCenterDelegate {
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification)
+        async -> UNNotificationPresentationOptions {
+        [.banner, .sound, .list]
     }
 }
 

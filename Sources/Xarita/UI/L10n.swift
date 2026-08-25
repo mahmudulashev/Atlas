@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import UserNotifications
 
 /// UI language. Independent of the system locale: a developer working in an
 /// English toolchain may still want the interface in Uzbek, so the choice is
@@ -305,6 +306,15 @@ struct L10n {
             : "\(symbols) symbols across \(files) files, within \(hops) hops."
     }
     var hops: String              { s("qadam", "hops") }
+
+    func authorizationName(_ status: UNAuthorizationStatus?) -> String {
+        switch status {
+        case .authorized, .provisional: return s("ruxsat berilgan", "allowed")
+        case .denied:                   return s("rad etilgan", "denied")
+        case .notDetermined:            return s("hali soʻralmagan", "not asked yet")
+        default:                        return s("nomaʼlum", "unknown")
+        }
+    }
 
     // MARK: - Difficulty
 

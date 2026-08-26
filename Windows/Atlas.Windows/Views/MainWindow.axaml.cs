@@ -3,6 +3,7 @@ using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using Atlas.Windows.Engine;
 
 namespace Atlas.Windows.Views;
@@ -15,6 +16,9 @@ public partial class MainWindow : Window
     private EngineRunner? _engine;
     private Strings _strings = new(new Dictionary<string, string>(), "en");
     private Report? _report;
+    private Settings _settings = Settings.Load();
+    private string? _complaint;
+    private string _screen = "overview";
 
     public MainWindow()
     {
@@ -44,7 +48,8 @@ public partial class MainWindow : Window
         _engine = new EngineRunner(located);
         try
         {
-            _strings = new Strings(await _engine.StringsAsync(), "en");
+            _strings = new Strings(await _engine.StringsAsync(_settings.Language),
+                                   _settings.Language);
         }
         catch (EngineException error)
         {
@@ -73,48 +78,37 @@ public partial class MainWindow : Window
             Screenshot.CaptureAndExit(_root, new Avalonia.Size(Width, Height));
     }
 
-    private void ShowWelcome()
-    {
-        var title = new TextBlock
-        {
-            Text = _strings["welcomeTitle"],
-            FontFamily = Broadsheet.Fonts.Serif,
-            FontSize = Broadsheet.Fonts.Display,
-            FontWeight = FontWeight.SemiBold,
-            Foreground = Broadsheet.Brush(Broadsheet.TextPrimary),
-            HorizontalAlignment = HorizontalAlignment.Center,
-        };
-        var body = new TextBlock
-        {
-            Text = _strings["welcomeBody"],
-            FontFamily = Broadsheet.Fonts.Serif,
-            FontSize = Broadsheet.Fonts.Body,
-            Foreground = Broadsheet.Brush(Broadsheet.TextSecondary),
-            TextWrapping = TextWrapping.Wrap,
-            TextAlignment = TextAlignment.Center,
-            MaxWidth = 460,
-            LineHeight = 21,
-        };
-        var choose = new Button
-        {
-            Content = _strings["chooseFolder"],
-            FontFamily = Broadsheet.Fonts.Serif,
-            FontSize = Broadsheet.Fonts.Body,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Padding = new Avalonia.Thickness(18, 8),
-        };
-        choose.Click += async (_, _) => await ChooseAsync();
+    private void ShowWelcome() =>
+        Show(new WelcomeView(_strings, _settings,
+                             open: AnalyzeAsync,
+                             chooseFolder: () => _ = ChooseAsync(),
+                             setLanguage: SwitchLanguage,
+                             complaint: _complaint));
 
-        var stack = new StackPanel
+    /// <summary>
+    /// Swaps the interface language.
+    ///
+    /// The strings come from the engine, so this refetches them rather than
+    /// holding both tables in memory — and it re-analyses any open project,
+    /// because a report carries its own wording: issue titles, drift notes and
+    /// explanations were all written in the language it was asked for.
+    /// </summary>
+    private void SwitchLanguage(string language)
+    {
+        if (language == _strings.Language || _engine is null) return;
+        _settings.Language = language;
+        _settings.Save();
+
+        _ = Task.Run(async () =>
         {
-            Spacing = 18,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        stack.Children.Add(title);
-        stack.Children.Add(body);
-        stack.Children.Add(choose);
-        Show(stack);
+            var table = await _engine.StringsAsync(language);
+            await Dispatcher.UIThread.InvokeAsync(async () =>
+            {
+                _strings = new Strings(table, language);
+                if (_report is not null) await AnalyzeAsync(_report.Project.Root);
+                else ShowWelcome();
+            });
+        });
     }
 
     private async Task ChooseAsync()
@@ -165,11 +159,17 @@ public partial class MainWindow : Window
         try
         {
             _report = await _engine!.AnalyzeAsync(path, _strings.Language, progress);
-            ShowProject(Screenshot.Screen);
+            _complaint = null;
+            _settings.Remember(Path.GetFullPath(path));
+            ShowProject(_screen == "overview" ? Screenshot.Screen : _screen);
         }
         catch (EngineException error)
         {
-            Show(Message(_strings["noSourceFiles"], error.Message));
+            // Back to the welcome screen with the reason, rather than a dead
+            // end: the next thing the reader wants is another folder.
+            _complaint = error.Message;
+            _report = null;
+            ShowWelcome();
         }
     }
 
@@ -183,6 +183,7 @@ public partial class MainWindow : Window
     private void ShowProject(string screen)
     {
         if (_report is null) return;
+        _screen = screen;
 
         var tabs = new StackPanel
         {

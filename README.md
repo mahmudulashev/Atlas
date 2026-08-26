@@ -322,8 +322,9 @@ swift build -c release                 # the engine
 dotnet publish Windows/Atlas.Windows -c Release -r win-x64
 ```
 
-Or `Scripts/package-windows.sh`, which does both and puts them together. That
-needs Windows: the engine is Swift and does not cross-compile there.
+Or `Scripts/package.sh windows`, which does both and puts them together —
+`linux` for the other one. Each needs the platform it is for: the engine is
+Swift and does not cross-compile.
 
 ## License
 

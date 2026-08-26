@@ -326,9 +326,9 @@ swift build -c release                 # engine
 dotnet publish Windows/Atlas.Windows -c Release -r win-x64
 ```
 
-Yoki `Scripts/package-windows.sh` — u ikkalasini qilib, bir joyga yig'adi. Buning
-uchun Windows kerak: engine Swift'da yozilgan va u yerga kross-kompilyatsiya
-qilinmaydi.
+Yoki `Scripts/package.sh windows` — u ikkalasini qilib, bir joyga yig'adi;
+Linux uchun `linux`. Har biri o'z platformasida qurilishi kerak: engine
+Swift'da yozilgan va kross-kompilyatsiya qilinmaydi.
 
 ## Litsenziya
 

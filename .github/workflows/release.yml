@@ -42,7 +42,7 @@ jobs:
 
       - name: Package
         shell: bash
-        run: bash Scripts/package-windows.sh "dist/Atlas-$VERSION-windows-x64"
+        run: bash Scripts/package.sh windows "dist/Atlas-$VERSION-windows-x64"
 
       # A package that builds is not a package that runs. Start it and have it
       # draw a screen before anyone is offered the download.
@@ -70,6 +70,62 @@ jobs:
         with:
           name: Atlas-windows-x64
           path: dist/Atlas-${{ env.VERSION }}-windows-x64.zip
+
+  linux:
+    name: Linux package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: SwiftyLab/setup-swift@latest
+        with:
+          swift-version: '6.3.3'
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: A display, and fonts to draw with
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb fonts-dejavu-core fonts-liberation
+
+      - name: Determine version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
+          elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "VERSION=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_ENV"
+          else
+            echo "VERSION=1.0" >> "$GITHUB_ENV"
+          fi
+
+      - name: Package
+        run: bash Scripts/package.sh linux "dist/Atlas-$VERSION-linux-x64"
+
+      # A package that builds is not a package that runs.
+      - name: Prove it runs
+        run: |
+          xvfb-run -a "./dist/Atlas-$VERSION-linux-x64/Atlas" \
+            --shot proof.png --project . --screen map
+          test -s proof.png || { echo "::error::the packaged app drew nothing"; exit 1; }
+
+      - name: Tar
+        run: |
+          cd dist && tar czf "Atlas-$VERSION-linux-x64.tar.gz" "Atlas-$VERSION-linux-x64"
+          sha256sum "Atlas-$VERSION-linux-x64.tar.gz" > "Atlas-$VERSION-linux-x64.tar.gz.sha256"
+
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          files: |
+            dist/Atlas-${{ env.VERSION }}-linux-x64.tar.gz
+            dist/Atlas-${{ env.VERSION }}-linux-x64.tar.gz.sha256
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Atlas-linux-x64
+          path: dist/Atlas-${{ env.VERSION }}-linux-x64.tar.gz
 
   build-and-release:
     runs-on: macos-14

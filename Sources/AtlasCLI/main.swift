@@ -14,7 +14,8 @@ atlas-engine — Atlas's code analysis engine, headless.
 USAGE
   atlas-engine analyze <path> [options]
   atlas-engine strings [--lang <uz|en>] [--pretty]
-  atlas-engine source <path> --file <relative> [--first N] [--last N] [--pretty]
+  atlas-engine source <path> --file <relative> [--first N] [--last N]
+                              [--lang <uz|en>] [--pretty]
   atlas-engine version
   atlas-engine help
 
@@ -89,6 +90,7 @@ case "source":
     var firstLine = 1
     var lastLine = Int.max
     var sourcePretty = false
+    var sourceLang = AppLanguage.en
     var si = 0
     while si < arguments.count {
         let argument = arguments[si]
@@ -102,6 +104,12 @@ case "source":
         case "--first":  firstLine = Int(next("--first")) ?? 1
         case "--last":   lastLine = Int(next("--last")) ?? Int.max
         case "--pretty": sourcePretty = true
+        case "--lang":
+            let raw = next("--lang")
+            guard let parsed = AppLanguage(rawValue: raw) else {
+                fail("--lang must be 'uz' or 'en', not '\(raw)'", code: 1)
+            }
+            sourceLang = parsed
         default:
             if argument.hasPrefix("-") { fail("unknown option '\(argument)'", code: 1) }
             if sourceRoot != nil { fail("more than one path given", code: 1) }
@@ -141,12 +149,22 @@ case "source":
         sourceSpans = [SourceSnippet.Span(o: 0, n: snippet.utf8.count, r: "plain")]
     }
 
+    let sourceWords = L10n(language: sourceLang)
+    let sourceGlossary = sourceLanguage.map { language in
+        Glossary.found(in: snippet, language: language).map {
+            SourceSnippet.Term(word: $0.key,
+                               title: Glossary.title($0, language: sourceWords.language),
+                               body: Glossary.body($0, language: sourceWords.language))
+        }
+    } ?? []
+
     let sourceOut = SourceSnippet(path: sourceFile,
                                   language: sourceLanguage?.rawValue ?? "",
                                   firstLine: start + 1,
                                   lineCount: end - start,
                                   text: snippet,
-                                  spans: sourceSpans)
+                                  spans: sourceSpans,
+                                  glossary: sourceGlossary)
 
     let sourceEncoder = JSONEncoder()
     sourceEncoder.outputFormatting = sourcePretty

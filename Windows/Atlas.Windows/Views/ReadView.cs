@@ -23,6 +23,7 @@ public sealed class ReadView : UserControl
     private readonly EngineRunner _engine;
     private readonly StackPanel _rail = new() { Spacing = 0 };
     private readonly ContentControl _stage = new();
+    private readonly ContentControl _inspector = new();
 
     private int _step;
 
@@ -42,9 +43,19 @@ public sealed class ReadView : UserControl
             Child = new ScrollViewer { Content = _rail },
         };
 
+        var inspectorColumn = new Border
+        {
+            Width = Broadsheet.Metric.InspectorWidth,
+            BorderThickness = new Thickness(1, 0, 0, 0),
+            BorderBrush = Broadsheet.Brush(Broadsheet.Border),
+            Child = _inspector,
+        };
+
         var shell = new DockPanel();
         DockPanel.SetDock(railColumn, Dock.Left);
+        DockPanel.SetDock(inspectorColumn, Dock.Right);
         shell.Children.Add(railColumn);
+        shell.Children.Add(inspectorColumn);
         shell.Children.Add(_stage);
         Content = shell;
 
@@ -147,6 +158,7 @@ public sealed class ReadView : UserControl
         if (_report.Route.Count == 0)
         {
             _stage.Content = Message(_t["routeEmpty"]);
+            _inspector.Content = new InspectorView(_report, _t, -1, null);
             return;
         }
 
@@ -164,6 +176,8 @@ public sealed class ReadView : UserControl
             var snippet = await _engine.SourceAsync(
                 _report.Project.Root, file.Path, symbol.Line, symbol.EndLine);
             _stage.Content = Code(symbol, file, snippet);
+            _inspector.Content = new InspectorView(
+                _report, _t, _report.Route[index].Symbol, snippet);
         }
         catch (EngineException error)
         {

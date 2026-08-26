@@ -83,6 +83,13 @@ struct Report: Encodable {
         var branches: Int
         var nesting: Int
         var difficulty: String      // easy | moderate | hard
+        /// What this declaration does, said from the graph alone.
+        ///
+        /// Carried for every symbol rather than fetched per click: it is a few
+        /// sentences, the inspector opens instantly, and the alternative is
+        /// re-analysing the whole project to answer one question about one
+        /// function.
+        var explanation: String
     }
 
     /// One call edge. Short keys because a large project has tens of
@@ -255,6 +262,7 @@ extension Report {
                       language: Language.detect(path: $0)?.rawValue ?? "")
         }
 
+        let words = L10n(language: language)
         let symbols = graph.nodes.map { node in
             SymbolEntry(name: node.name,
                         container: node.container,
@@ -269,13 +277,13 @@ extension Report {
                         external: node.isExternal,
                         branches: node.branches,
                         nesting: node.maxNesting,
-                        difficulty: label(node.difficulty))
+                        difficulty: label(node.difficulty),
+                        explanation: Explanation.fromGraph(node: node, graph: graph, t: words))
         }
 
         let calls = graph.edges.map { Call(f: $0.from, t: $0.to, n: $0.count) }
         let fileEdges = graph.fileReferences.map { FileEdge(f: $0.from, t: $0.to) }
 
-        let words = L10n(language: language)
         let issueEntries = issues.map {
             IssueEntry(id: $0.id,
                        kind: $0.kind.rawValue,
@@ -403,6 +411,15 @@ struct SourceSnippet: Encodable {
     var lineCount: Int
     var text: String
     var spans: [Span]
+    /// Terms from Atlas's glossary that appear in this snippet, in the order a
+    /// reader meets them. Free to collect here — the file is already open.
+    var glossary: [Term]
+
+    struct Term: Encodable {
+        var word: String
+        var title: String
+        var body: String
+    }
 
     /// Short names: a long file runs to thousands of these.
     struct Span: Encodable {

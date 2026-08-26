@@ -20,6 +20,15 @@ public sealed record SourceSnippet
     [JsonPropertyName("lineCount")] public int LineCount { get; init; }
     [JsonPropertyName("text")]      public string Text { get; init; } = "";
     [JsonPropertyName("spans")]     public IReadOnlyList<SourceSpan> Spans { get; init; } = [];
+    /// <summary>Glossary terms appearing here, in the order a reader meets them.</summary>
+    [JsonPropertyName("glossary")]  public IReadOnlyList<GlossaryTerm> Glossary { get; init; } = [];
+}
+
+public sealed record GlossaryTerm
+{
+    [JsonPropertyName("word")]  public string Word { get; init; } = "";
+    [JsonPropertyName("title")] public string Title { get; init; } = "";
+    [JsonPropertyName("body")]  public string Body { get; init; } = "";
 }
 
 /// <summary>

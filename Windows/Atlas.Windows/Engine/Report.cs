@@ -89,6 +89,8 @@ public sealed record SymbolEntry
     [JsonPropertyName("nesting")]    public int Nesting { get; init; }
     /// <summary>easy | moderate | hard</summary>
     [JsonPropertyName("difficulty")] public string Difficulty { get; init; } = "";
+    /// <summary>What this declaration does, said from the graph alone.</summary>
+    [JsonPropertyName("explanation")] public string Explanation { get; init; } = "";
 
     public int Span => Math.Max(1, EndLine - Line + 1);
 }

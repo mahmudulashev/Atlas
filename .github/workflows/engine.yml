@@ -138,27 +138,20 @@ jobs:
       # did not: the packaged app drew ten files where the engine had just
       # found seventy-three, and the only difference was how the path reached
       # it. Cheap to assert, and it would have caught that before it shipped.
-      - name: A path is a path
+      # The packaged app drew ten files where the engine, on the same runner
+      # and the same checkout, had just found seventy-three. Print what each
+      # copy of the engine actually walked, so the difference is visible rather
+      # than inferred.
+      - name: What the engine walked
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          look() {
-            "$1" analyze "$2" --no-drift --no-layout 2>/dev/null | python -c "
-import json, sys
-r = json.load(sys.stdin)
-paths = [f['path'] for f in r['files']]
-print(r['project']['fileCount'], 'files')
-for p in paths[:6]:
-    print('     ', p)
-kinds = {}
-for p in paths:
-    kinds[p.rsplit('.', 1)[-1]] = kinds.get(p.rsplit('.', 1)[-1], 0) + 1
-print('      by extension:', dict(sorted(kinds.items(), key=lambda kv: -kv[1])))
-"
-          }
-          echo "-- packaged engine, relative --"; look ./dist/Atlas-windows-x64/atlas-engine.exe .
-          echo "-- packaged engine, absolute --"; look ./dist/Atlas-windows-x64/atlas-engine.exe "$PWD"
-          echo "-- build-tree engine, absolute --"; look .build/release/atlas-engine.exe "$PWD"
+          echo "-- packaged engine, relative --"
+          python Scripts/engine-walk.py ./dist/Atlas-windows-x64/atlas-engine.exe .
+          echo "-- packaged engine, absolute --"
+          python Scripts/engine-walk.py ./dist/Atlas-windows-x64/atlas-engine.exe "$PWD"
+          echo "-- build-tree engine, absolute --"
+          python Scripts/engine-walk.py .build/release/atlas-engine.exe "$PWD"
 
       - name: Draw a screen with it
         if: runner.os == 'Windows'

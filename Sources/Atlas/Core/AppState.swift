@@ -22,7 +22,6 @@ final class AppState: ObservableObject {
     @Published private(set) var mode: Mode = .overview
     @Published private(set) var route: Route = Route(steps: [])
     @Published private(set) var fileGraph = FileGraph()
-    @Published private(set) var diagram = DiagramLayout(graph: FileGraph())
     @Published private(set) var issues: [Issue] = []
     @Published var mapView: MapView = .ladder
     @Published private(set) var drift = Drift()
@@ -142,7 +141,6 @@ final class AppState: ObservableObject {
         searchText = ""
         route = Route(steps: [])
         fileGraph = FileGraph()
-        diagram = DiagramLayout(graph: FileGraph())
         issues = []
         mode = .overview
     }
@@ -165,12 +163,10 @@ final class AppState: ObservableObject {
     private func rebuildDiagram() {
         guard let graph else {
             fileGraph = FileGraph()
-            diagram = DiagramLayout(graph: FileGraph())
-            issues = []
+                issues = []
             return
         }
         fileGraph = FileGraph.build(from: graph, includeTests: showTestsInDiagram)
-        diagram = DiagramLayout(graph: fileGraph)
         issues = IssueFinder.find(graph: graph, fileGraph: fileGraph)
     }
 

@@ -25,7 +25,7 @@ enum Analyzer {
         var current: Int
         var total: Int
 
-        enum Stage: Sendable { case scanning, parsing, resolving, laying, done }
+        enum Stage: Sendable { case scanning, parsing, resolving, done }
     }
 
     struct Options: Sendable {

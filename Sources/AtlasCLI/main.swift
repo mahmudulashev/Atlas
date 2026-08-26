@@ -176,7 +176,6 @@ guard isDirectory.boolValue else { fail("not a directory: \(target)", code: 1) }
     case .scanning:  return "scanning"
     case .parsing:   return "parsing"
     case .resolving: return "resolving"
-    case .laying:    return "laying"
     case .done:      return "done"
     }
 }

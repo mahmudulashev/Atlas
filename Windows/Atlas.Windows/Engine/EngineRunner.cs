@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace Atlas.Windows.Engine;
 
 /// <summary>How far along an analysis is. Mirrors Analyzer.Progress.</summary>
-/// <param name="Stage">scanning | parsing | resolving | laying | done</param>
+/// <param name="Stage">scanning | parsing | resolving | done</param>
 public readonly record struct AnalysisProgress(string Stage, int Current, int Total)
 {
     public double Fraction => Total > 0 ? Math.Clamp((double)Current / Total, 0, 1) : 0;

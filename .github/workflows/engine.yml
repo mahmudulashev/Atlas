@@ -142,16 +142,24 @@ jobs:
       # and the same checkout, had just found seventy-three. Print what each
       # copy of the engine actually walked, so the difference is visible rather
       # than inferred.
+      # The packaged app drew ten files where the engine, on the same runner
+      # and the same checkout, had just found seventy-three -- and the missing
+      # ones were whole directories, not a scattering. Pointing the engine at
+      # each of them separately says whether the walk is broken or whether
+      # something above is pruning it.
       - name: What the engine walked
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          echo "-- packaged engine, relative --"
-          python Scripts/engine-walk.py ./dist/Atlas-windows-x64/atlas-engine.exe .
-          echo "-- packaged engine, absolute --"
-          python Scripts/engine-walk.py ./dist/Atlas-windows-x64/atlas-engine.exe "$PWD"
-          echo "-- build-tree engine, absolute --"
-          python Scripts/engine-walk.py .build/release/atlas-engine.exe "$PWD"
+          walk() { python Scripts/engine-walk.py .build/release/atlas-engine.exe "$1"; }
+          echo "-- the whole repository --"; walk .
+          echo "-- Sources on its own --";    walk Sources
+          echo "-- Scripts on its own --";    walk Scripts
+          echo "-- the client's Engine/ --";  walk Windows/Atlas.Windows/Engine
+          echo "-- the client's Views/ --";   walk Windows/Atlas.Windows/Views
+          echo "-- what is actually there --"
+          find . -name '*.swift' -not -path './.build/*' | wc -l | xargs echo "     .swift on disk:"
+          find . -name '*.cs' -not -path '*/obj/*' -not -path '*/bin/*' | wc -l | xargs echo "     .cs on disk:"
 
       - name: Draw a screen with it
         if: runner.os == 'Windows'

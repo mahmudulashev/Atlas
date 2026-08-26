@@ -17,7 +17,8 @@ namespace Atlas.Windows.Views;
 /// </summary>
 public sealed class InspectorView : UserControl
 {
-    public InspectorView(Report report, Strings t, int symbolIndex, SourceSnippet? snippet)
+    public InspectorView(Report report, Strings t, int symbolIndex, SourceSnippet? snippet,
+                         Settings? settings = null, Action? onToggleRead = null)
     {
         var column = new StackPanel { Spacing = 18 };
 
@@ -29,13 +30,19 @@ public sealed class InspectorView : UserControl
         {
             var symbol = report.Symbols[symbolIndex];
             column.Children.Add(Section(t["whatThisDoes"],
-                Caption(symbol.Explanation, Broadsheet.TextSecondary)));
+                RichText.Block(symbol.Explanation, Broadsheet.Fonts.Caption,
+                               Broadsheet.TextSecondary)));
             column.Children.Add(Section(t["howHard"], Difficulty(symbol, t)));
             column.Children.Add(Section(t["theFacts"], Facts(report, t, symbolIndex, symbol)));
 
             if (snippet is { Glossary.Count: > 0 })
             {
                 column.Children.Add(Section(t["glossary"], Terms(snippet.Glossary)));
+            }
+
+            if (settings is not null && onToggleRead is not null)
+            {
+                column.Children.Add(ReadMark(report, t, symbolIndex, settings, onToggleRead));
             }
         }
 
@@ -45,6 +52,39 @@ public sealed class InspectorView : UserControl
             Content = new Border { Padding = new Thickness(16, 16), Child = column },
         };
         Background = Broadsheet.Brush(Broadsheet.Surface);
+    }
+
+    /// <summary>
+    /// Marking a declaration read. Progress a reader keeps themselves, rather
+    /// than the app guessing from what has been scrolled past.
+    /// </summary>
+    private static Control ReadMark(Report report, Strings t, int index,
+                                    Settings settings, Action onToggle)
+    {
+        string root = report.Project.Root;
+        string signature = Settings.Signature(report, index);
+        bool read = settings.IsUnderstood(root, signature);
+
+        var button = new Button
+        {
+            Content = new TextBlock
+            {
+                Text = read ? $"✓ {t["understoodMark"]}" : t["understood"],
+                FontFamily = Broadsheet.Fonts.Serif,
+                FontSize = Broadsheet.Fonts.Caption,
+                Foreground = Broadsheet.Brush(read ? Broadsheet.Accent : Broadsheet.TextSecondary),
+            },
+            Background = Broadsheet.Brush(read ? Broadsheet.AccentMuted : Broadsheet.SurfaceRaised),
+            BorderBrush = Broadsheet.Brush(read ? Broadsheet.Accent : Broadsheet.Border),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(Broadsheet.Metric.Radius),
+            Padding = new Thickness(12, 6),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            Margin = new Thickness(0, 6, 0, 0),
+        };
+        button.Click += (_, _) => { settings.ToggleUnderstood(root, signature); onToggle(); };
+        return button;
     }
 
     private static Control Section(string title, Control body)
@@ -202,7 +242,8 @@ public sealed class InspectorView : UserControl
                 FontWeight = FontWeight.Medium,
                 Foreground = Broadsheet.Brush(Broadsheet.TextPrimary),
             });
-            one.Children.Add(Caption(term.Body, Broadsheet.TextSecondary));
+            one.Children.Add(RichText.Block(term.Body, Broadsheet.Fonts.Caption,
+                                            Broadsheet.TextSecondary));
             stack.Children.Add(one);
         }
         return stack;

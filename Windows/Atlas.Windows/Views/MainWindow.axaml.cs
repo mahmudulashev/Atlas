@@ -271,7 +271,7 @@ public partial class MainWindow : Window
                     Child = new MatrixView(_report, _strings),
                 },
             },
-            "read" => new ReadView(_report, _strings, _engine!),
+            "read" => new ReadView(_report, _strings, _engine!, _settings),
             "review" => new IssuesView(_report, _strings),
             _ => new OverviewView(_report, _strings),
         };

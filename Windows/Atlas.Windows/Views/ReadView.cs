@@ -25,12 +25,16 @@ public sealed class ReadView : UserControl
     private readonly ContentControl _stage = new();
     private readonly ContentControl _inspector = new();
     private readonly StackPanel _list = new() { Spacing = 0 };
+    private readonly Settings _settings;
+    private readonly ContentControl _footer = new();
 
     private int _selected;
     private string _query = "";
 
-    public ReadView(Report report, Strings t, EngineRunner engine, int step = 0)
+    public ReadView(Report report, Strings t, EngineRunner engine,
+                    Settings settings, int step = 0)
     {
+        _settings = settings;
         _report = report;
         _t = t;
         _engine = engine;
@@ -47,7 +51,14 @@ public sealed class ReadView : UserControl
             Padding = new Thickness(20, 22),
             BorderThickness = new Thickness(0, 0, 1, 0),
             BorderBrush = Broadsheet.Brush(Broadsheet.Border),
-            Child = new ScrollViewer { Content = _rail },
+            Child = new DockPanel
+            {
+                Children =
+                {
+                    Footer(),
+                    new ScrollViewer { Content = _rail },
+                },
+            },
         };
 
         var inspectorColumn = new Border
@@ -68,6 +79,69 @@ public sealed class ReadView : UserControl
 
         BuildRail();
         _ = ShowAsync(_selected);
+    }
+
+    /// <summary>
+    /// How much of the route has been read. Docked to the bottom of the rail,
+    /// where it is answering "how far in am I" rather than competing with the
+    /// list for attention.
+    /// </summary>
+    private Control Footer()
+    {
+        DockPanel.SetDock(_footer, Dock.Bottom);
+        RefreshFooter();
+        return _footer;
+    }
+
+    private void RefreshFooter()
+    {
+        int total = _report.Route.Count;
+        if (total == 0) { _footer.Content = null; return; }
+
+        int done = _report.Route.Count(step =>
+            _settings.IsUnderstood(_report.Project.Root,
+                                   Settings.Signature(_report, step.Symbol)));
+
+        var head = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
+        var label = new TextBlock
+        {
+            Text = _t["readingProgress"].ToUpperInvariant(),
+            FontFamily = Broadsheet.Fonts.Serif,
+            FontSize = Broadsheet.Fonts.Micro,
+            LetterSpacing = 0.7,
+            Foreground = Broadsheet.Brush(Broadsheet.TextTertiary),
+        };
+        var count = new TextBlock
+        {
+            Text = $"{done} / {total}",
+            FontFamily = Broadsheet.Fonts.Mono,
+            FontSize = Broadsheet.Fonts.Micro,
+            Foreground = Broadsheet.Brush(Broadsheet.TextTertiary),
+        };
+        Grid.SetColumn(count, 1);
+        head.Children.Add(label);
+        head.Children.Add(count);
+
+        double share = Math.Clamp((double)done / total, 0, 1);
+        var bar = new Grid
+        {
+            Height = 3,
+            Margin = new Thickness(0, 5, 0, 0),
+            ColumnDefinitions = new ColumnDefinitions(string.Create(
+                System.Globalization.CultureInfo.InvariantCulture,
+                $"{share:0.####}*,{1 - share:0.####}*")),
+        };
+        var track = new Border { Background = Broadsheet.Brush(Broadsheet.Border) };
+        Grid.SetColumnSpan(track, 2);
+        var fill = new Border { Background = Broadsheet.Brush(Broadsheet.Accent) };
+        bar.Children.Add(track);
+        bar.Children.Add(fill);
+
+        _footer.Content = new Border
+        {
+            Padding = new Thickness(0, 12, 0, 0),
+            Child = new StackPanel { Children = { head, bar } },
+        };
     }
 
     // MARK: - The rail
@@ -142,6 +216,19 @@ public sealed class ReadView : UserControl
             Margin = new Thickness(0, 8, 0, 12),
         });
         for (int i = 0; i < _report.Route.Count; i++) _list.Children.Add(RailStep(i));
+
+        // The hubs the route does not pass through. A reader who has finished
+        // the route still wants to know what else the codebase leans on.
+        var onRoute = _report.Route.Select(step => step.Symbol).ToHashSet();
+        var others = _report.Hubs.Where(h => !onRoute.Contains(h)).Take(8).ToList();
+        if (others.Count == 0) return;
+
+        _list.Children.Add(new Border
+        {
+            Margin = new Thickness(0, 18, 0, 6),
+            Child = new Rule(_t["everythingElse"]),
+        });
+        foreach (int id in others) _list.Children.Add(Hit(id));
     }
 
     private Control Hit(int index)
@@ -187,13 +274,19 @@ public sealed class ReadView : UserControl
 
         // Position is set in weight, not a hue: both process inks already mean
         // a direction and a third colour would start competing with them.
+        bool read = _settings.IsUnderstood(
+            _report.Project.Root, Settings.Signature(_report, _report.Route[index].Symbol));
+
         var ordinal = new TextBlock
         {
-            Text = (index + 1).ToString(CultureInfo.InvariantCulture),
+            // A read step shows a tick where its number was.
+            Text = read ? "✓" : (index + 1).ToString(CultureInfo.InvariantCulture),
             FontFamily = Broadsheet.Fonts.Serif,
             FontSize = Broadsheet.Fonts.Caption,
             FontWeight = current ? FontWeight.Bold : FontWeight.Normal,
-            Foreground = Broadsheet.Brush(current ? Broadsheet.Marker : Broadsheet.TextTertiary),
+            Foreground = Broadsheet.Brush(read ? Broadsheet.Accent
+                                              : current ? Broadsheet.Marker
+                                                        : Broadsheet.TextTertiary),
             Width = 18,
             VerticalAlignment = VerticalAlignment.Center,
         };
@@ -260,7 +353,9 @@ public sealed class ReadView : UserControl
             var snippet = await _engine.SourceAsync(
                 _report.Project.Root, file.Path, symbol.Line, symbol.EndLine);
             _stage.Content = Code(index, symbol, file, snippet);
-            _inspector.Content = new InspectorView(_report, _t, index, snippet);
+            _inspector.Content = new InspectorView(
+                _report, _t, index, snippet, _settings,
+                onToggleRead: () => { RefreshList(); RefreshFooter(); _ = ShowAsync(index); });
         }
         catch (EngineException error)
         {

@@ -169,15 +169,8 @@ public sealed class IssuesView : UserControl
                 TextTrimming = TextTrimming.CharacterEllipsis,
             });
         }
-        body.Children.Add(new TextBlock
-        {
-            Text = issue.Advice,
-            FontFamily = Broadsheet.Fonts.Serif,
-            FontSize = Broadsheet.Fonts.Micro,
-            Foreground = Broadsheet.Brush(Broadsheet.TextSecondary),
-            TextWrapping = TextWrapping.Wrap,
-            LineHeight = 15,
-        });
+        body.Children.Add(RichText.Block(issue.Advice, Broadsheet.Fonts.Micro,
+                                         Broadsheet.TextSecondary, lineHeight: 15));
         if (issue.File.Length > 0)
         {
             body.Children.Add(new TextBlock

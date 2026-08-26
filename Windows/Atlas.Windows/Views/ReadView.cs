@@ -231,6 +231,16 @@ public sealed class ReadView : UserControl
         body.Children.Add(gutter);
         body.Children.Add(code);
 
+        // The neighbourhood sits under the code: who calls this, what it calls.
+        var tree = new Border
+        {
+            // No fixed height: the view measures itself from how many
+            // neighbours it has, and a fixed one clipped the last of them.
+            BorderThickness = new Thickness(0, 1, 0, 0),
+            BorderBrush = Broadsheet.Brush(Broadsheet.Border),
+            Child = new CallTreeView(_report, _t, _report.Route[_step].Symbol),
+        };
+
         var shell = new DockPanel();
         var top = new Border
         {
@@ -239,7 +249,9 @@ public sealed class ReadView : UserControl
             BorderBrush = Broadsheet.Brush(Broadsheet.Border),
         };
         DockPanel.SetDock(top, Dock.Top);
+        DockPanel.SetDock(tree, Dock.Bottom);
         shell.Children.Add(top);
+        shell.Children.Add(tree);
         shell.Children.Add(new ScrollViewer
         {
             HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,

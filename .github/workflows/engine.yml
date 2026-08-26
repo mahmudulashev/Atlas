@@ -70,7 +70,7 @@ jobs:
           swift-version: ${{ env.SWIFT_VERSION }}
 
       # Guarantees `python` exists under that name on all three runners.
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 

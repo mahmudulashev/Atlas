@@ -116,6 +116,8 @@ struct Report: Encodable {
         var columns: [[Int]]
         var edges: [Edge]
         var cycles: [[Int]]         // indices into `nodes`
+        /// The same dependency data arranged as a grid rather than a ladder.
+        var matrix: Matrix
 
         struct Size: Encodable { var w: Double; var h: Double }
 
@@ -148,6 +150,21 @@ struct Report: Encodable {
             var f: Int              // index into `map.nodes`
             var t: Int
             var weight: Int
+        }
+
+        /// Row and column order for the dependency matrix: rows call columns.
+        struct Matrix: Encodable {
+            /// Node indices, in the order they are laid out.
+            var order: [Int]
+            var districts: [District]
+
+            struct District: Encodable {
+                /// `interface`, `logic` or `data` — a key, so each client
+                /// prints it in its own language.
+                var key: String
+                /// Where this district starts in `order`.
+                var start: Int
+            }
         }
     }
 
@@ -338,7 +355,16 @@ extension Report {
                    edges: fileGraph.edges.map {
                        Map.Edge(f: $0.from, t: $0.to, weight: $0.weight)
                    },
-                   cycles: fileGraph.cycles)
+                   cycles: fileGraph.cycles,
+                   matrix: matrix(fileGraph: fileGraph))
+    }
+
+    private static func matrix(fileGraph: FileGraph) -> Map.Matrix {
+        let order = MatrixOrder(graph: fileGraph)
+        return Map.Matrix(order: order.indices,
+                          districts: order.districts.map {
+                              Map.Matrix.District(key: $0.key, start: $0.start)
+                          })
     }
 
     // Both enums are ordered rather than named in the model, because ordering

@@ -192,7 +192,7 @@ public partial class MainWindow : Window
         };
         foreach (var (key, name) in new[] { ("overview", "tabOverview"), ("map", "tabMap") })
         {
-            bool on = key == screen;
+            bool on = key == screen || (key == "map" && screen == "matrix");
             var tab = new Button
             {
                 Content = new TextBlock
@@ -218,9 +218,58 @@ public partial class MainWindow : Window
             tabs.Children.Add(tab);
         }
 
-        Control body = screen == "map"
-            ? new LadderView(_report, _strings)
-            : new OverviewView(_report, _strings);
+        // Ladder and Matrix are two drawings of the same dependency data, so
+        // they share a tab and switch between themselves.
+        if (screen is "map" or "matrix")
+        {
+            var views = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 14,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Avalonia.Thickness(24, 0, 0, 0),
+            };
+            foreach (var (key, name) in new[] { ("map", "viewLadder"), ("matrix", "viewMatrix") })
+            {
+                bool on = key == screen;
+                var pick = new Button
+                {
+                    Content = new TextBlock
+                    {
+                        Text = _strings[name],
+                        FontFamily = Broadsheet.Fonts.Serif,
+                        FontSize = Broadsheet.Fonts.Caption,
+                        Foreground = Broadsheet.Brush(on ? Broadsheet.TextPrimary
+                                                         : Broadsheet.TextTertiary),
+                    },
+                    Background = Brushes.Transparent,
+                    BorderThickness = new Avalonia.Thickness(0),
+                    Padding = new Avalonia.Thickness(0),
+                };
+                string target = key;
+                pick.Click += (_, _) => ShowProject(target);
+                views.Children.Add(pick);
+            }
+            tabs.Children.Add(views);
+        }
+
+        Control body = screen switch
+        {
+            "map" => new LadderView(_report, _strings),
+            // The grid is bigger than any window at a useful cell size, so it
+            // scrolls rather than zooms.
+            "matrix" => new ScrollViewer
+            {
+                HorizontalScrollBarVisibility =
+                    Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+                Content = new Border
+                {
+                    Padding = new Avalonia.Thickness(26),
+                    Child = new MatrixView(_report, _strings),
+                },
+            },
+            _ => new OverviewView(_report, _strings),
+        };
 
         var shell = new DockPanel();
         DockPanel.SetDock(tabs, Dock.Top);

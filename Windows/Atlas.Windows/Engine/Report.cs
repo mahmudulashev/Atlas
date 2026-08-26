@@ -130,6 +130,24 @@ public sealed record MapInfo
     [JsonPropertyName("edges")]   public IReadOnlyList<MapEdge> Edges { get; init; } = [];
     /// <summary>Indices into <see cref="Nodes"/>.</summary>
     [JsonPropertyName("cycles")]  public IReadOnlyList<IReadOnlyList<int>> Cycles { get; init; } = [];
+    /// <summary>The same dependency data arranged as a grid rather than a ladder.</summary>
+    [JsonPropertyName("matrix")]  public MatrixInfo Matrix { get; init; } = new();
+}
+
+/// <summary>Row and column order for the dependency matrix: rows call columns.</summary>
+public sealed record MatrixInfo
+{
+    /// <summary>Node indices, in the order they are laid out.</summary>
+    [JsonPropertyName("order")]     public IReadOnlyList<int> Order { get; init; } = [];
+    [JsonPropertyName("districts")] public IReadOnlyList<MatrixDistrict> Districts { get; init; } = [];
+}
+
+public sealed record MatrixDistrict
+{
+    /// <summary>interface | logic | data — a key, printed by the client.</summary>
+    [JsonPropertyName("key")]   public string Key { get; init; } = "";
+    /// <summary>Where this district starts in <see cref="MatrixInfo.Order"/>.</summary>
+    [JsonPropertyName("start")] public int Start { get; init; }
 }
 
 public sealed record CanvasSize

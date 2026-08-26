@@ -42,39 +42,30 @@ struct MatrixView: View {
 
     // MARK: - Ordering
 
-    private struct Ordered {
-        var indices: [Int] = []
-        var rank: [Int: Int] = [:]
-        var starts: [Int] = []
-        var labels: [String] = []
-        var inks: [Color] = []
-    }
+    /// Grouping and row order come from `MatrixOrder` in the engine, so the
+    /// Windows client lays out the same grid. Only the wording and the ink are
+    /// decided here.
+    private var ordered: MatrixOrder { MatrixOrder(graph: state.fileGraph) }
 
-    private var ordered: Ordered {
-        let graph = state.fileGraph
-        let buckets: [(String, Color, [Layer])] = [
-            (loc.t.districtInterface, Theme.inkCyan,       [.ui, .entry]),
-            (loc.t.districtLogic,     Theme.textSecondary, [.logic, .api, .util, .config]),
-            (loc.t.districtData,      Theme.inkMagenta,    [.data, .model, .test]),
-        ]
-        var result = Ordered()
-        for (label, ink, layers) in buckets {
-            let members = graph.nodes.indices
-                .filter { layers.contains(graph.nodes[$0].layer) }
-                .sorted { graph.nodes[$0].symbolCount > graph.nodes[$1].symbolCount }
-            guard !members.isEmpty else { continue }
-            result.starts.append(result.indices.count)
-            result.labels.append(label)
-            result.inks.append(ink)
-            result.indices.append(contentsOf: members)
+    private func label(_ district: MatrixOrder.District) -> String {
+        switch district.key {
+        case "interface": return loc.t.districtInterface
+        case "data":      return loc.t.districtData
+        default:          return loc.t.districtLogic
         }
-        for (rank, node) in result.indices.enumerated() { result.rank[node] = rank }
-        return result
     }
 
-    private func position(_ rank: Int, in order: Ordered) -> CGFloat {
+    private func ink(_ district: MatrixOrder.District) -> Color {
+        switch district.key {
+        case "interface": return Theme.inkCyan
+        case "data":      return Theme.inkMagenta
+        default:          return Theme.textSecondary
+        }
+    }
+
+    private func position(_ rank: Int, in order: MatrixOrder) -> CGFloat {
         var gaps = 0
-        for start in order.starts.dropFirst() where rank >= start { gaps += 1 }
+        for district in order.districts.dropFirst() where rank >= district.start { gaps += 1 }
         return CGFloat(rank) * cell + CGFloat(gaps) * gap
     }
 
@@ -174,12 +165,12 @@ struct MatrixView: View {
         }
 
         // ---- District marks, below the grid ----
-        for (i, start) in order.starts.enumerated() {
-            let text = Text(order.labels[i].uppercased())
+        for district in order.districts {
+            let text = Text(label(district).uppercased())
                 .font(.system(size: 10, weight: .semibold, design: .serif))
-                .foregroundStyle(order.inks[i])
+                .foregroundStyle(ink(district))
             context.draw(context.resolve(text),
-                         at: CGPoint(x: leftGutter + position(start, in: order),
+                         at: CGPoint(x: leftGutter + position(district.start, in: order),
                                      y: topGutter + span + 12),
                          anchor: .topLeading)
         }

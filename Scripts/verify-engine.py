@@ -126,6 +126,21 @@ def check_structure(report, label):
         check(0 <= e["f"] < len(nodes) and 0 <= e["t"] < len(nodes),
               f"{label}: map.edges[{i}] {e['f']}->{e['t']} out of range")
 
+    # The matrix is the same files in another arrangement, so every one of them
+    # must appear in it exactly once -- a duplicate would draw two rows for one
+    # file, and an omission would leave a gap the grid has no way to show.
+    matrix = ladder["matrix"]
+    order = matrix["order"]
+    check(sorted(order) == list(range(len(nodes))),
+          f"{label}: matrix.order is not a permutation of the {len(nodes)} map nodes")
+    starts = [d["start"] for d in matrix["districts"]]
+    check(starts == sorted(starts), f"{label}: matrix districts are out of order")
+    for d in matrix["districts"]:
+        check(0 <= d["start"] < max(1, len(order)),
+              f"{label}: matrix district {d['key']!r} starts at {d['start']}, outside the order")
+        check(d["key"] in {"interface", "logic", "data"},
+              f"{label}: matrix district key {d['key']!r} is not one of the three")
+
 
 # ---- determinism ---------------------------------------------------------
 

@@ -50,7 +50,7 @@ def run(engine, project, *extra):
         if result.returncode != 0:
             fail(f"engine exited {result.returncode} on {project}\n{result.stderr.strip()}")
             return None
-        return json.loads(out.read_text())
+        return json.loads(out.read_text(encoding="utf-8"))
 
 
 def fail(message):

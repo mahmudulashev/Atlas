@@ -88,7 +88,12 @@ jobs:
             --out fixture.json --no-drift
           python - <<'PY'
           import hashlib, json
-          report = json.load(open("fixture.json"))
+          # encoding is explicit: Python's text mode defaults to the locale
+          # encoding, which on a Windows runner is cp1252. The report carries
+          # typographic punctuation -- an em dash in kindExplanation -- and
+          # reading those three UTF-8 bytes as three cp1252 characters changed
+          # the digest without changing the analysis.
+          report = json.load(open("fixture.json", encoding="utf-8"))
           report["project"].pop("parseSeconds")
           report["project"].pop("analysedAt")
           report["project"].pop("root")          # absolute, differs per runner

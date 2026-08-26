@@ -166,6 +166,9 @@ jobs:
       # Only on a tag. Run by hand from a branch, github.ref_name is the
       # branch, and this would publish a release called "main" — which is the
       # kind of thing you find out about after it has happened.
+      - name: Write the release notes
+        run: sed "s/VERSION/${VERSION}/g" .github/release-notes.md > notes.md
+
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
@@ -174,7 +177,7 @@ jobs:
           tag_name: ${{ github.ref_name }}
           draft: false
           prerelease: false
-          generate_release_notes: true
+          body_path: notes.md
           files: |
             Atlas-*.dmg
             Atlas-*.dmg.sha256

@@ -388,3 +388,26 @@ extension Report {
         }
     }
 }
+
+
+/// One file's text, divided into coloured runs.
+///
+/// Offsets are into the UTF-8 of `text`, which is what the lexer works in — a
+/// client indexing by character would land in the middle of anything outside
+/// ASCII.
+struct SourceSnippet: Encodable {
+    var path: String
+    var language: String
+    /// 1-based line number of the first line of `text`.
+    var firstLine: Int
+    var lineCount: Int
+    var text: String
+    var spans: [Span]
+
+    /// Short names: a long file runs to thousands of these.
+    struct Span: Encodable {
+        var o: Int          // byte offset
+        var n: Int          // byte length
+        var r: String       // SyntaxRole.rawValue
+    }
+}

@@ -14,5 +14,6 @@ namespace Atlas.Windows.Engine;
 /// </summary>
 [JsonSourceGenerationOptions(PropertyNameCaseInsensitive = false)]
 [JsonSerializable(typeof(Report))]
+[JsonSerializable(typeof(SourceSnippet))]
 [JsonSerializable(typeof(Dictionary<string, string>))]
 internal partial class ReportContext : JsonSerializerContext;

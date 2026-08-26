@@ -14,6 +14,7 @@ atlas-engine — Atlas's code analysis engine, headless.
 USAGE
   atlas-engine analyze <path> [options]
   atlas-engine strings [--lang <uz|en>] [--pretty]
+  atlas-engine source <path> --file <relative> [--first N] [--last N] [--pretty]
   atlas-engine version
   atlas-engine help
 
@@ -78,6 +79,84 @@ case "version", "--version", "-v":
     exit(0)
 case "help", "--help", "-h":
     print(usage)
+    exit(0)
+case "source":
+    // One file's text, divided into coloured runs by the same lexer the
+    // analysis uses. A client that brought its own would eventually disagree
+    // with the parser about where a string ends.
+    var sourceRoot: String?
+    var sourceFile: String?
+    var firstLine = 1
+    var lastLine = Int.max
+    var sourcePretty = false
+    var si = 0
+    while si < arguments.count {
+        let argument = arguments[si]
+        func next(_ name: String) -> String {
+            si += 1
+            guard si < arguments.count else { fail("\(name) needs a value", code: 1) }
+            return arguments[si]
+        }
+        switch argument {
+        case "--file":   sourceFile = next("--file")
+        case "--first":  firstLine = Int(next("--first")) ?? 1
+        case "--last":   lastLine = Int(next("--last")) ?? Int.max
+        case "--pretty": sourcePretty = true
+        default:
+            if argument.hasPrefix("-") { fail("unknown option '\(argument)'", code: 1) }
+            if sourceRoot != nil { fail("more than one path given", code: 1) }
+            sourceRoot = argument
+        }
+        si += 1
+    }
+    guard let sourceRoot, let sourceFile else {
+        fail("source needs a project path and --file", code: 1)
+    }
+
+    let full = P.join(P.normalize(sourceRoot), sourceFile)
+    guard let data = try? Data(contentsOf: P.url(full)),
+          let text = String(data: data, encoding: .utf8)
+                  ?? String(data: data, encoding: .isoLatin1) else {
+        fail("could not read \(sourceFile)", code: 2)
+    }
+
+    // Line endings are normalised the way the analyser normalises them, so a
+    // CRLF checkout does not shift every offset by one byte per line.
+    let normalized = text.replacingOccurrences(of: "\r\n", with: "\n")
+                         .replacingOccurrences(of: "\r", with: "\n")
+    let allLines = normalized.components(separatedBy: "\n")
+    let start = max(0, min(firstLine - 1, allLines.count))
+    let end = max(start, min(lastLine, allLines.count))
+    let snippet = allLines[start..<end].joined(separator: "\n")
+
+    // A file Atlas does not have a lexer for still shows its text; it simply
+    // comes back as one plain run, which is honest about what is known.
+    let sourceLanguage = Language.detect(path: sourceFile)
+    let sourceSpans: [SourceSnippet.Span]
+    if let sourceLanguage {
+        sourceSpans = Highlighter.spans(source: snippet, language: sourceLanguage).map {
+            SourceSnippet.Span(o: $0.offset, n: $0.length, r: $0.role.rawValue)
+        }
+    } else {
+        sourceSpans = [SourceSnippet.Span(o: 0, n: snippet.utf8.count, r: "plain")]
+    }
+
+    let sourceOut = SourceSnippet(path: sourceFile,
+                                  language: sourceLanguage?.rawValue ?? "",
+                                  firstLine: start + 1,
+                                  lineCount: end - start,
+                                  text: snippet,
+                                  spans: sourceSpans)
+
+    let sourceEncoder = JSONEncoder()
+    sourceEncoder.outputFormatting = sourcePretty
+        ? [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        : [.withoutEscapingSlashes]
+    guard let sourceData = try? sourceEncoder.encode(sourceOut) else {
+        fail("could not encode the snippet", code: 2)
+    }
+    FileHandle.standardOutput.write(sourceData)
+    FileHandle.standardOutput.write(Data([0x0A]))
     exit(0)
 case "strings":
     // Every interface string, for a client that cannot link L10n.

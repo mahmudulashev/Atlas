@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Text.Json;
 
 namespace Atlas.Windows.Engine;
@@ -159,6 +160,56 @@ public sealed class EngineRunner(string enginePath)
             throw new EngineException(complaint.Trim() is { Length: > 0 } said
                 ? said : $"the engine exited with code {process.ExitCode}");
         return table;
+    }
+
+    /// <summary>
+    /// One file's text, coloured, for the lines a declaration occupies.
+    /// </summary>
+    public async Task<SourceSnippet> SourceAsync(
+        string projectPath, string file, int firstLine, int lastLine,
+        CancellationToken cancellationToken = default)
+    {
+        var root = Path.GetFullPath(projectPath);
+        var startInfo = new ProcessStartInfo(EnginePath)
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WorkingDirectory = root,
+        };
+        foreach (var argument in new[]
+                 { "source", root, "--file", file,
+                   "--first", firstLine.ToString(CultureInfo.InvariantCulture),
+                   "--last", lastLine.ToString(CultureInfo.InvariantCulture) })
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
+
+        using var process = new Process { StartInfo = startInfo };
+        if (!process.Start()) throw new EngineException($"could not start {EnginePath}");
+
+        SourceSnippet? snippet;
+        try
+        {
+            snippet = await JsonSerializer.DeserializeAsync(
+                process.StandardOutput.BaseStream, ReportContext.Default.SourceSnippet,
+                cancellationToken);
+        }
+        catch (JsonException error)
+        {
+            await process.WaitForExitAsync(CancellationToken.None);
+            throw new EngineException($"could not read {file}: {error.Message}");
+        }
+
+        var complaint = await process.StandardError.ReadToEndAsync(cancellationToken);
+        await process.WaitForExitAsync(cancellationToken);
+        if (process.ExitCode != 0 || snippet is null)
+        {
+            throw new EngineException(complaint.Trim() is { Length: > 0 } said
+                ? said : $"could not read {file}");
+        }
+        return snippet;
     }
 
     /// <summary>Progress arrives as one JSON object per line, e.g.

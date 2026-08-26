@@ -163,6 +163,47 @@ def check_determinism(engine, project, label, runs=3):
           f"{label}: {len(seen)} different results from {runs} identical runs")
 
 
+# ---- highlighting ---------------------------------------------------------
+
+def check_highlighting(engine):
+    """Spans must rebuild the file exactly.
+
+    A highlighter that loses or duplicates a byte draws code that is not the
+    code — the worst kind of wrong, because it looks like source. Reconstructing
+    the text from the spans is the whole check.
+    """
+    samples = [
+        "Sources/AtlasEngine/Graph/Tokenizer.swift",
+        "Sources/AtlasEngine/Core/L10n.swift",
+        "Tests/Fixtures/python-package/pkg/sub/mod.py",
+        "README.md",                       # no lexer for it: one plain run
+    ]
+    for relative in samples:
+        if not (ROOT / relative).exists():
+            continue
+        result = subprocess.run(
+            [str(engine), "source", str(ROOT), "--file", relative],
+            capture_output=True, text=True, encoding="utf-8")
+        if result.returncode != 0:
+            fail(f"source {relative}: exit {result.returncode} {result.stderr.strip()}")
+            continue
+
+        snippet = json.loads(result.stdout)
+        raw = snippet["text"].encode("utf-8")
+        spans = snippet["spans"]
+        rebuilt = b"".join(raw[s["o"]:s["o"] + s["n"]] for s in spans)
+        check(rebuilt == raw, f"source {relative}: spans do not rebuild the text")
+
+        gaps = sum(1 for i in range(1, len(spans))
+                   if spans[i]["o"] != spans[i - 1]["o"] + spans[i - 1]["n"])
+        check(gaps == 0, f"source {relative}: {gaps} gap(s) between spans")
+
+        known = {"plain", "comment", "string", "number", "keyword", "function",
+                 "type", "punct"}
+        unknown = {s["r"] for s in spans} - known
+        check(not unknown, f"source {relative}: unknown span roles {unknown}")
+
+
 # ---- fixtures ------------------------------------------------------------
 
 def check_python_fixture(engine):
@@ -258,6 +299,9 @@ def main():
 
     print("  fixtures    (python-package)")
     check_python_fixture(engine)
+
+    print("  highlighting(spans rebuild the source)")
+    check_highlighting(engine)
 
     print("  line endings(CRLF vs LF)")
     check_line_endings(engine)

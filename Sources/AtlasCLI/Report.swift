@@ -90,6 +90,10 @@ struct Report: Encodable {
         /// re-analysing the whole project to answer one question about one
         /// function.
         var explanation: String
+        /// How execution arrives here, from an entry point down. At most nine
+        /// indices into `symbols`, which is cheap enough to send for every
+        /// symbol rather than asking per click.
+        var chain: [Int]
     }
 
     /// One call edge. Short keys because a large project has tens of
@@ -278,7 +282,8 @@ extension Report {
                         branches: node.branches,
                         nesting: node.maxNesting,
                         difficulty: label(node.difficulty),
-                        explanation: Explanation.fromGraph(node: node, graph: graph, t: words))
+                        explanation: Explanation.fromGraph(node: node, graph: graph, t: words),
+                        chain: graph.chain(to: node.id))
         }
 
         let calls = graph.edges.map { Call(f: $0.from, t: $0.to, n: $0.count) }

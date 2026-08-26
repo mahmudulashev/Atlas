@@ -34,9 +34,12 @@ public sealed class ReadView : UserControl
         _report = report;
         _t = t;
         _engine = engine;
-        _selected = report.Route.Count > 0
-            ? report.Route[Math.Clamp(step, 0, report.Route.Count - 1)].Symbol
-            : -1;
+        _selected = Screenshot.Select is { } picked
+                    && picked >= 0 && picked < report.Symbols.Count
+            ? picked
+            : report.Route.Count > 0
+                ? report.Route[Math.Clamp(step, 0, report.Route.Count - 1)].Symbol
+                : -1;
 
         var railColumn = new Border
         {
@@ -256,7 +259,7 @@ public sealed class ReadView : UserControl
         {
             var snippet = await _engine.SourceAsync(
                 _report.Project.Root, file.Path, symbol.Line, symbol.EndLine);
-            _stage.Content = Code(symbol, file, snippet);
+            _stage.Content = Code(index, symbol, file, snippet);
             _inspector.Content = new InspectorView(_report, _t, index, snippet);
         }
         catch (EngineException error)
@@ -265,7 +268,7 @@ public sealed class ReadView : UserControl
         }
     }
 
-    private Control Code(SymbolEntry symbol, FileEntry file, SourceSnippet snippet)
+    private Control Code(int index, SymbolEntry symbol, FileEntry file, SourceSnippet snippet)
     {
         var header = new StackPanel
         {
@@ -321,6 +324,15 @@ public sealed class ReadView : UserControl
             Child = new CallTreeView(_report, _t, _selected),
         };
 
+        // "How did we get here?" belongs beside the code, not before it.
+        var chain = new Border
+        {
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            BorderBrush = Broadsheet.Brush(Broadsheet.Border),
+            Child = new CallChainView(_report, _t, index,
+                                      pick => { _selected = pick; RefreshList(); _ = ShowAsync(pick); }),
+        };
+
         var shell = new DockPanel();
         var top = new Border
         {
@@ -329,8 +341,10 @@ public sealed class ReadView : UserControl
             BorderBrush = Broadsheet.Brush(Broadsheet.Border),
         };
         DockPanel.SetDock(top, Dock.Top);
+        DockPanel.SetDock(chain, Dock.Top);
         DockPanel.SetDock(tree, Dock.Bottom);
         shell.Children.Add(top);
+        shell.Children.Add(chain);
         shell.Children.Add(tree);
         shell.Children.Add(new ScrollViewer
         {

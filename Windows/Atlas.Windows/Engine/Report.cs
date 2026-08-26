@@ -91,6 +91,8 @@ public sealed record SymbolEntry
     [JsonPropertyName("difficulty")] public string Difficulty { get; init; } = "";
     /// <summary>What this declaration does, said from the graph alone.</summary>
     [JsonPropertyName("explanation")] public string Explanation { get; init; } = "";
+    /// <summary>How execution arrives here, from an entry point down.</summary>
+    [JsonPropertyName("chain")]     public IReadOnlyList<int> Chain { get; init; } = [];
 
     public int Span => Math.Max(1, EndLine - Line + 1);
 }

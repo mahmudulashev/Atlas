@@ -186,7 +186,14 @@ struct CodeGraph: Sendable {
 
         // No true root within reach — take the furthest caller we did find, so
         // the chain still shows something rather than nothing.
-        let start = best ?? cameFrom.keys.max { (cameFrom[$0] ?? 0) < (cameFrom[$1] ?? 0) }
+        // Ties settle on the key. `cameFrom` is a dictionary and Swift
+        // reseeds its hashing per process, so without this the fallback chain
+        // — the one shown when no true entry point is within reach — was a
+        // different path on every run.
+        let start = best ?? cameFrom.keys.max { a, b in
+            let ta = cameFrom[a] ?? 0, tb = cameFrom[b] ?? 0
+            return ta != tb ? ta < tb : a < b
+        }
         guard var walk = start else { return [id] }
 
         var path = [walk]

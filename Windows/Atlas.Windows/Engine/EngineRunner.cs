@@ -60,15 +60,22 @@ public sealed class EngineRunner(string enginePath)
         IProgress<AnalysisProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
+        // Resolved here rather than handed over as written. The engine is a
+        // separate process, and a relative path would be resolved against
+        // whatever working directory it happened to inherit — which is not
+        // something this app should be betting the answer on.
+        var root = Path.GetFullPath(projectPath);
+
         var startInfo = new ProcessStartInfo(EnginePath)
         {
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true,
+            WorkingDirectory = root,
         };
         foreach (var argument in new[]
-                 { "analyze", projectPath, "--lang", language, "--progress" })
+                 { "analyze", root, "--lang", language, "--progress" })
         {
             startInfo.ArgumentList.Add(argument);
         }

@@ -200,46 +200,6 @@ final class Explainer: ObservableObject {
         return "generic"
     }
 
-    /// Names the kind of program this is, choosing from a fixed list.
-    ///
-    /// The evidence given to the model is what the analyser already knows: the
-    /// most connected symbol names and a sample of the directory tree. That is
-    /// usually enough to tell a web framework from a parser, and it costs one
-    /// short round trip when a project is opened.
-    func classifyProject(graph: CodeGraph) async -> ProjectKind? {
-        guard modelState.canGenerate else { return nil }
-        #if canImport(FoundationModels)
-        guard #available(macOS 26.0, *) else { return nil }
-
-        let hubs = graph.hubs(limit: 18).map { graph.nodes[$0].name }.joined(separator: ", ")
-        let files = graph.files.prefix(40).joined(separator: ", ")
-        let languages = graph.languageCounts
-            .sorted { $0.value > $1.value }.prefix(3)
-            .map(\.key.displayName).joined(separator: ", ")
-
-        do {
-            let root = DynamicGenerationSchema(name: "ProjectKind", properties: [
-                .init(name: "kind",
-                      description: "What kind of program this project is",
-                      schema: DynamicGenerationSchema(name: "Kind",
-                                                      anyOf: ProjectKind.allCases.map(\.rawValue)))
-            ])
-            let schema = try GenerationSchema(root: root, dependencies: [])
-            let session = LanguageModelSession(
-                model: .default,
-                instructions: "You identify what kind of software project this is from its structure. Choose the single best option.")
-            let prompt = "Languages: \(languages)\nMost-called functions: \(hubs)\nFiles: \(files)"
-            let response = try await session.respond(to: prompt, schema: schema,
-                                                     options: GenerationOptions(temperature: 0.1))
-            let raw = (try? response.content.value(String.self, forProperty: "kind")) ?? ""
-            return ProjectKind(rawValue: raw)
-        } catch {
-            return nil
-        }
-        #else
-        return nil
-        #endif
-    }
 
     @available(macOS 26.0, *)
     private static func buildSchema() throws -> GenerationSchema {
@@ -278,6 +238,53 @@ final class Explainer: ObservableObject {
         return try GenerationSchema(root: root, dependencies: [])
     }
     #endif
+
+    /// Names the kind of program this is, choosing from a fixed list.
+    ///
+    /// The evidence given to the model is what the analyser already knows:
+    /// the most connected symbol names and a sample of the directory tree.
+    /// That is usually enough to tell a web framework from a parser, and it
+    /// costs one short round trip when a project is opened.
+    ///
+    /// Declared outside the region above deliberately. It used to sit inside,
+    /// so on a machine without FoundationModels the method did not exist at
+    /// all — and AppState calls it unconditionally, which meant the app only
+    /// compiled where the model happened to be available. Its own
+    /// `#else return nil` was unreachable.
+    func classifyProject(graph: CodeGraph) async -> ProjectKind? {
+        guard modelState.canGenerate else { return nil }
+        #if canImport(FoundationModels)
+        guard #available(macOS 26.0, *) else { return nil }
+
+        let hubs = graph.hubs(limit: 18).map { graph.nodes[$0].name }.joined(separator: ", ")
+        let files = graph.files.prefix(40).joined(separator: ", ")
+        let languages = graph.languageCounts
+            .sorted { $0.value > $1.value }.prefix(3)
+            .map(\.key.displayName).joined(separator: ", ")
+
+        do {
+            let root = DynamicGenerationSchema(name: "ProjectKind", properties: [
+                .init(name: "kind",
+                      description: "What kind of program this project is",
+                      schema: DynamicGenerationSchema(name: "Kind",
+                                                      anyOf: ProjectKind.allCases.map(\.rawValue)))
+            ])
+            let schema = try GenerationSchema(root: root, dependencies: [])
+            let session = LanguageModelSession(
+                model: .default,
+                instructions: "You identify what kind of software project this is from its structure. Choose the single best option.")
+            let prompt = "Languages: \(languages)\nMost-called functions: \(hubs)\nFiles: \(files)"
+            let response = try await session.respond(to: prompt, schema: schema,
+                                                     options: GenerationOptions(temperature: 0.1))
+            let raw = (try? response.content.value(String.self, forProperty: "kind")) ?? ""
+            return ProjectKind(rawValue: raw)
+        } catch {
+            return nil
+        }
+        #else
+        return nil
+        #endif
+    }
 
     // MARK: - Preset questions
 

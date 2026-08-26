@@ -192,6 +192,24 @@ jobs:
           name: Atlas-windows-x64
           path: dist/Atlas-windows-x64
 
+  # The macOS app must build where Apple's on-device model does not exist —
+  # which is most machines, and every CI runner older than macos-15. It did
+  # not: classifyProject sat inside a canImport(FoundationModels) region while
+  # AppState called it unconditionally, so the app compiled only where the
+  # model happened to be present and the release workflow had never once
+  # succeeded. Nothing checked it, so nothing caught it.
+  app:
+    name: macOS app without the model
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Report toolchain
+        run: swift --version
+      - name: Build the app
+        run: |
+          chmod +x Scripts/*.sh
+          ./Scripts/build.sh
+
   agree:
     name: Platforms agree
     needs: engine

@@ -6,28 +6,31 @@
 
 Analyses a project and answers the three questions a newcomer actually has:
 what is this, how is it wired, and where do I start. Native on macOS, and on
-Windows through the same analysis engine — the two read a codebase
+Windows and Linux through the same analysis engine — all three read a codebase
 identically, and CI fails if they ever stop.
 
-[![Platform](https://img.shields.io/badge/platform-macOS%2014%2B%20%C2%B7%20Windows%2010%2B-1a1a1a)]()
-[![Language](https://img.shields.io/badge/Swift-6.3-orange)]()
-[![Architecture](https://img.shields.io/badge/Apple%20Silicon-arm64-0088b0)]()
-[![Size](https://img.shields.io/badge/app-3.1%20MB-d6006c)]()
-[![License](https://img.shields.io/badge/license-MIT-green)]()
+![Platform](https://img.shields.io/badge/macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-1a1a1a)
+![Language](https://img.shields.io/badge/engine-Swift%206.3-orange)
+![Interface](https://img.shields.io/badge/interface-SwiftUI%20%C2%B7%20Avalonia-0088b0)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 <br/>
 
-<a href="https://github.com/mahmudulashev/Atlas/releases/latest/download/Atlas-1.0.dmg">
-  <img src="https://img.shields.io/badge/Download%20Atlas.dmg-Apple%20Silicon%20(macOS)-0088b0?style=for-the-badge&logo=apple&logoColor=white" alt="Download Atlas DMG" />
+<a href="https://github.com/mahmudulashev/Atlas/releases/latest">
+  <img src="https://img.shields.io/badge/Download-macOS-0088b0?style=for-the-badge&logo=apple&logoColor=white" alt="Download for macOS" />
 </a>
 <a href="https://github.com/mahmudulashev/Atlas/releases/latest">
-  <img src="https://img.shields.io/badge/Download%20Atlas.zip-Windows%20x64-0078d4?style=for-the-badge&logo=windows&logoColor=white" alt="Download Atlas for Windows" />
+  <img src="https://img.shields.io/badge/Download-Windows-0078d4?style=for-the-badge&logo=windows&logoColor=white" alt="Download for Windows" />
 </a>
-<a href="https://github.com/mahmudulashev/Atlas/releases">
-  <img src="https://img.shields.io/github/v/release/mahmudulashev/Atlas?style=for-the-badge&color=d6006c&label=Releases" alt="Latest Releases" />
+<a href="https://github.com/mahmudulashev/Atlas/releases/latest">
+  <img src="https://img.shields.io/badge/Download-Linux-d6006c?style=for-the-badge&logo=linux&logoColor=white" alt="Download for Linux" />
 </a>
 
-<br/><br/>
+<br/>
+
+[![Latest release](https://img.shields.io/github/v/release/mahmudulashev/Atlas?label=latest&color=1a1a1a)](https://github.com/mahmudulashev/Atlas/releases)
+
+<br/>
 
 [O'zbekcha →](README.uz.md)
 
@@ -213,17 +216,28 @@ Adding one means adding a case to `Language.swift`.
 
 ## Installation
 
-### Option 1: Direct Download (DMG)
+Every download is on the [latest release](https://github.com/mahmudulashev/Atlas/releases/latest).
 
-1. Download the latest **[Atlas-1.0.dmg](https://github.com/mahmudulashev/Atlas/releases/latest/download/Atlas-1.0.dmg)** (or browse [all releases](https://github.com/mahmudulashev/Atlas/releases)).
-2. Open `Atlas-1.0.dmg` and drag **Atlas** into the **Applications** folder.
-3. Launch **Atlas** from Applications or Spotlight.
+**macOS** — open the `.dmg` and drag **Atlas** into **Applications**.
 
 > [!TIP]
-> **First-time launch (Gatekeeper)**: Since Atlas is currently ad-hoc signed, macOS may ask for confirmation on first launch. If blocked, right-click (or Control-click) `Atlas.app` in Finder and select **Open**, or run this one-liner in Terminal:
+> Atlas is ad-hoc signed, so macOS asks for confirmation the first time. If it
+> is blocked, right-click `Atlas.app` in Finder and choose **Open**, or run:
 > ```bash
 > xattr -cr /Applications/Atlas.app
 > ```
+
+**Windows** — unzip anywhere and run `Atlas.exe`.
+
+**Linux** — `tar xzf` the archive and run `./Atlas`.
+
+On Windows and Linux, keep `atlas-engine` in the same folder as the app. That
+is the analysis; the app runs it as a separate program and will say so if it
+cannot find it.
+
+No installer, no runtime to download, and nothing written outside your own
+user folder — Atlas keeps its scan history there so it can tell you what moved
+since last time.
 
 ---
 

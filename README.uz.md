@@ -2,27 +2,35 @@
 
 # Atlas
 
-**Hech koʻrmagan kodni oʻqi.**
+**Hech qachon ko'rmagan kodni o'qi.**
 
-macOS uchun native ilova. Loyihani tahlil qilib, notanish odamda tugʻiladigan
-uchta savolga javob beradi: bu nima, qanday ulangan, va qayerdan boshlash kerak.
+Loyihani tahlil qilib, yangi kelgan odamning uchta haqiqiy savoliga javob
+beradi: bu nima, qanday ulangan, va qayerdan boshlayman. macOS'da native,
+Windows va Linux'da esa o'sha tahlil engine'i orqali — uchalasi kodni bir xil
+o'qiydi, va agar bir kun farq qilsa, CI qurilishni yiqitadi.
 
-[![Platforma](https://img.shields.io/badge/platforma-macOS%2014%2B-1a1a1a)]()
-[![Til](https://img.shields.io/badge/Swift-6.3-orange)]()
-[![Arxitektura](https://img.shields.io/badge/Apple%20Silicon-arm64-0088b0)]()
-[![Hajm](https://img.shields.io/badge/ilova-3.1%20MB-d6006c)]()
-[![Litsenziya](https://img.shields.io/badge/litsenziya-MIT-green)]()
+![Platforma](https://img.shields.io/badge/macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-1a1a1a)
+![Til](https://img.shields.io/badge/engine-Swift%206.3-orange)
+![Interfeys](https://img.shields.io/badge/interfeys-SwiftUI%20%C2%B7%20Avalonia-0088b0)
+[![Litsenziya](https://img.shields.io/badge/litsenziya-MIT-green)](LICENSE)
 
 <br/>
 
-<a href="https://github.com/mahmudulashev/Atlas/releases/latest/download/Atlas-1.0.dmg">
-  <img src="https://img.shields.io/badge/Atlas.dmg%20yuklab%20olish-Apple%20Silicon%20(macOS)-0088b0?style=for-the-badge&logo=apple&logoColor=white" alt="Atlas DMG yuklab olish" />
+<a href="https://github.com/mahmudulashev/Atlas/releases/latest">
+  <img src="https://img.shields.io/badge/Yuklab%20olish-macOS-0088b0?style=for-the-badge&logo=apple&logoColor=white" alt="macOS uchun" />
 </a>
-<a href="https://github.com/mahmudulashev/Atlas/releases">
-  <img src="https://img.shields.io/github/v/release/mahmudulashev/Atlas?style=for-the-badge&color=d6006c&label=Versiyalar" alt="So'nggi versiyalar" />
+<a href="https://github.com/mahmudulashev/Atlas/releases/latest">
+  <img src="https://img.shields.io/badge/Yuklab%20olish-Windows-0078d4?style=for-the-badge&logo=windows&logoColor=white" alt="Windows uchun" />
+</a>
+<a href="https://github.com/mahmudulashev/Atlas/releases/latest">
+  <img src="https://img.shields.io/badge/Yuklab%20olish-Linux-d6006c?style=for-the-badge&logo=linux&logoColor=white" alt="Linux uchun" />
 </a>
 
-<br/><br/>
+<br/>
+
+[![So'nggi reliz](https://img.shields.io/github/v/release/mahmudulashev/Atlas?label=so%27nggi&color=1a1a1a)](https://github.com/mahmudulashev/Atlas/releases)
+
+<br/>
 
 [English →](README.md)
 
@@ -213,17 +221,28 @@ Yangi til qoʻshish uchun `Language.swift` ga bitta case qoʻshiladi.
 
 ## Oʻrnatish
 
-### 1-usul: Tayyor DMG faylini yuklab olish (Tavsiya etiladi)
+Barcha fayllar [soʻnggi relizda](https://github.com/mahmudulashev/Atlas/releases/latest).
 
-1. Eng soʻnggi **[Atlas-1.0.dmg](https://github.com/mahmudulashev/Atlas/releases/latest/download/Atlas-1.0.dmg)** faylini yuklab oling (yoki barcha [versiyalarni koʻring](https://github.com/mahmudulashev/Atlas/releases)).
-2. `Atlas-1.0.dmg` faylini oching va **Atlas** ilovasini **Applications** papkasiga torting.
-3. Spotlight yoki Applications papkasidan **Atlas**ni ishga tushiring.
+**macOS** — `.dmg` ni oching va **Atlas** ni **Applications** ga torting.
 
 > [!TIP]
-> **Birinchi marta ochishda (Gatekeeper ogohlantirishi)**: Ilova hozirda ad-hoc imzolangani sababli, macOS birinchi ochilishda ogohlantirishi mumkin. Agar ochilmasa, Finder'da `Atlas.app` ustiga oʻng tugmani (yoki Control-click) bosib **Open (Ochish)** ni tanlang, yoki Terminal'da quyidagi bitta qator buyruqni bering:
+> Atlas ad-hoc imzolangan, shuning uchun macOS birinchi ochilishda tasdiq
+> soʻraydi. Agar toʻxtatsa, Finder'da `Atlas.app` ni oʻng tugma bilan bosib
+> **Open** ni tanlang, yoki:
 > ```bash
 > xattr -cr /Applications/Atlas.app
 > ```
+
+**Windows** — arxivni istalgan joyga chiqarib, `Atlas.exe` ni ishga tushiring.
+
+**Linux** — `tar xzf` qiling va `./Atlas` ni ishga tushiring.
+
+Windows va Linux'da `atlas-engine` ilova bilan bir papkada tursin. U tahlilning
+oʻzi; ilova uni alohida dastur sifatida chaqiradi va topa olmasa shuni aytadi.
+
+Oʻrnatuvchi yoʻq, yuklab olinadigan runtime yoʻq, va oʻz papkangizdan tashqariga
+hech narsa yozilmaydi — Atlas skanlar tarixini oʻsha yerda saqlaydi, shuning
+uchun oʻtgan safardan beri nima oʻzgarganini ayta oladi.
 
 ---
 

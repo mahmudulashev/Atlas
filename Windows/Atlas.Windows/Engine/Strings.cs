@@ -26,6 +26,11 @@ public sealed class Strings(IReadOnlyDictionary<string, string> table, string la
     public string Format(string key, object value) =>
         this[key].Replace("{0}", Convert.ToString(value, CultureInfo.CurrentCulture));
 
+    /// <summary>The two-value form, for strings like "{0} files reach it · it reaches {1}".</summary>
+    public string Format(string key, object first, object second) =>
+        this[key].Replace("{0}", Convert.ToString(first, CultureInfo.CurrentCulture))
+                 .Replace("{1}", Convert.ToString(second, CultureInfo.CurrentCulture));
+
     /// <summary>
     /// Large counts, abbreviated. Mirrors L10n.count(_:) exactly.
     ///

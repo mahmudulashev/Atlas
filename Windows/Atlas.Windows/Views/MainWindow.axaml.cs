@@ -302,7 +302,7 @@ public partial class MainWindow : Window
 
         Control body = screen switch
         {
-            "map" => new LadderView(_report, _strings),
+            "map" => new MapView(_report, _strings),
             // The grid is bigger than any window at a useful cell size, so it
             // scrolls rather than zooms.
             "matrix" => new ScrollViewer

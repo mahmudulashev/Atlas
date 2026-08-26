@@ -177,6 +177,11 @@ enum Strings {
 
         // `severityName` switches on an enum rather than taking a number, so
         // the three answers are exported under keys of their own.
+        // Two values, so two sentinels: one placeholder each.
+        out["ladderSelection"] = t.ladderSelection(up: 918_273_645, down: 918_273_646)
+            .replacingOccurrences(of: "918273645", with: "{0}")
+            .replacingOccurrences(of: "918273646", with: "{1}")
+
         out["severityHigh"] = t.severityName(.high)
         out["severityMedium"] = t.severityName(.medium)
         out["severityLow"] = t.severityName(.low)

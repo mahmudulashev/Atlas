@@ -32,6 +32,8 @@ public sealed class LadderView : Control
     private readonly Dictionary<int, Box> _boxOf;
 
     private int? _selected;
+    /// <summary>Raised when the selection changes, so the chrome can follow.</summary>
+    public event Action? SelectionChanged;
     private HashSet<int> _downstream = [];
     private HashSet<int> _upstream = [];
     private HashSet<int> _lit = [];
@@ -94,6 +96,22 @@ public sealed class LadderView : Control
         return seen;
     }
 
+    public int? Selected => _selected;
+    public int UpstreamCount => _upstream.Count;
+    public int DownstreamCount => _downstream.Count;
+
+    public void FitToScreen() { _fitted = false; Fit(); }
+
+    public void Zoom(double factor)
+    {
+        var centre = new Point(Bounds.Width / 2, Bounds.Height / 2);
+        double applied = Clamp(_scale * factor) / _scale;
+        _offset = new Point(centre.X - (centre.X - _offset.X) * applied,
+                            centre.Y - (centre.Y - _offset.Y) * applied);
+        _scale = Clamp(_scale * applied);
+        InvalidateVisual();
+    }
+
     private void Choose(int? node)
     {
         _selected = node;
@@ -107,6 +125,7 @@ public sealed class LadderView : Control
         {
             _downstream = _upstream = _lit = [];
         }
+        SelectionChanged?.Invoke();
         InvalidateVisual();
     }
 

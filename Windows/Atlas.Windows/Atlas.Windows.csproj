@@ -11,6 +11,9 @@
          Windows, macOS and Linux. Developing it on a Mac is therefore a real
          test of the Windows build rather than a rough preview. -->
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- The same mark the Mac app wears, converted rather than redrawn: see
+         Scripts/make-ico.py. -->
+    <ApplicationIcon>../../Resources/AppIcon.ico</ApplicationIcon>
     <!-- The .NET built-in COM marshaller is not trim compatible, and Avalonia
          does not want it: its Win32 backend talks to IFileDialog and friends
          through MicroCom, which is source-generated and needs no runtime
@@ -45,6 +48,10 @@
     <DebugType>none</DebugType>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets/**" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="12.1.1" />

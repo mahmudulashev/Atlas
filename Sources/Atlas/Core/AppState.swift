@@ -374,7 +374,13 @@ final class AppState: ObservableObject {
                 let nb = graph.nodes[b].name.lowercased()
                 if (na == needle) != (nb == needle) { return na == needle }
                 if na.hasPrefix(needle) != nb.hasPrefix(needle) { return na.hasPrefix(needle) }
-                return graph.nodes[a].fanIn > graph.nodes[b].fanIn
+                // Ties settle on the index. Swift's sort is not stable and
+                // C#'s OrderBy is, so two equally-called symbols would list in
+                // a different order in the two builds of Atlas.
+                if graph.nodes[a].fanIn != graph.nodes[b].fanIn {
+                    return graph.nodes[a].fanIn > graph.nodes[b].fanIn
+                }
+                return a < b
             }
     }
 

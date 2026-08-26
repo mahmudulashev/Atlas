@@ -23,6 +23,8 @@ public static class Screenshot
     public static string Screen { get; private set; } = "overview";
     /// <summary>A map node to select, so the highlight can be photographed.</summary>
     public static int? Select { get; private set; }
+    /// <summary>A query to type into the Read tab's search, so results can be seen.</summary>
+    public static string? Query { get; private set; }
     public static bool Requested => OutputPath is not null;
 
     /// <summary>Pulls the developer flags out, returning the rest.</summary>
@@ -41,6 +43,9 @@ public static class Screenshot
                     break;
                 case "--screen" when i + 1 < args.Length:
                     Screen = args[++i];
+                    break;
+                case "--search" when i + 1 < args.Length:
+                    Query = args[++i];
                     break;
                 case "--select" when i + 1 < args.Length
                                      && int.TryParse(args[i + 1], out int node):

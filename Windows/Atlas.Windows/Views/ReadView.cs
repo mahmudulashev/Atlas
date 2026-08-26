@@ -24,15 +24,19 @@ public sealed class ReadView : UserControl
     private readonly StackPanel _rail = new() { Spacing = 0 };
     private readonly ContentControl _stage = new();
     private readonly ContentControl _inspector = new();
+    private readonly StackPanel _list = new() { Spacing = 0 };
 
-    private int _step;
+    private int _selected;
+    private string _query = "";
 
     public ReadView(Report report, Strings t, EngineRunner engine, int step = 0)
     {
         _report = report;
         _t = t;
         _engine = engine;
-        _step = Math.Clamp(step, 0, Math.Max(0, report.Route.Count - 1));
+        _selected = report.Route.Count > 0
+            ? report.Route[Math.Clamp(step, 0, report.Route.Count - 1)].Symbol
+            : -1;
 
         var railColumn = new Border
         {
@@ -60,31 +64,71 @@ public sealed class ReadView : UserControl
         Content = shell;
 
         BuildRail();
-        _ = ShowStepAsync(_step);
+        _ = ShowAsync(_selected);
     }
 
     // MARK: - The rail
 
+    /// <summary>
+    /// The search box, built once.
+    ///
+    /// It used to be rebuilt with the rest of the rail, which recursed without
+    /// end: attaching a TextBox raises TextChanged, the handler rebuilt the
+    /// rail, and that made another TextBox. Only the list below it changes now.
+    /// </summary>
     private void BuildRail()
     {
         _rail.Children.Clear();
-        _rail.Children.Add(new Rule(_t["routeLabel"]));
 
-        if (_report.Route.Count == 0)
+        var search = new TextBox
         {
-            _rail.Children.Add(new TextBlock
+            PlaceholderText = _t["searchPlaceholder"],
+            FontFamily = Broadsheet.Fonts.Serif,
+            FontSize = Broadsheet.Fonts.Caption,
+            Margin = new Thickness(0, 0, 0, 14),
+            CornerRadius = new CornerRadius(Broadsheet.Metric.Radius),
+        };
+        search.TextChanged += (_, _) =>
+        {
+            _query = search.Text ?? "";
+            RefreshList();
+        };
+        _rail.Children.Add(search);
+        _rail.Children.Add(_list);
+
+        if (Screenshot.Query is { Length: > 0 } typed) search.Text = typed;
+        RefreshList();
+    }
+
+    /// <summary>
+    /// Matches while there is a query, the route otherwise.
+    ///
+    /// The route is an argument about where to start; a search is the reader
+    /// already knowing. They should not compete for the same column.
+    /// </summary>
+    private void RefreshList()
+    {
+        _list.Children.Clear();
+
+        if (_query.Length > 0)
+        {
+            var hits = Search.Find(_report, _query);
+            if (hits.Count == 0)
             {
-                Text = _t["routeEmpty"],
-                FontFamily = Broadsheet.Fonts.Serif,
-                FontSize = Broadsheet.Fonts.Caption,
-                Foreground = Broadsheet.Brush(Broadsheet.TextTertiary),
-                TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(0, 10, 0, 0),
-            });
+                _list.Children.Add(Note(_t["noResults"]));
+                return;
+            }
+            foreach (int index in hits.Take(40)) _list.Children.Add(Hit(index));
             return;
         }
 
-        _rail.Children.Add(new TextBlock
+        _list.Children.Add(new Rule(_t["routeLabel"]));
+        if (_report.Route.Count == 0)
+        {
+            _list.Children.Add(Note(_t["routeEmpty"]));
+            return;
+        }
+        _list.Children.Add(new TextBlock
         {
             Text = _t["routeHint"],
             FontFamily = Broadsheet.Fonts.Serif,
@@ -94,17 +138,49 @@ public sealed class ReadView : UserControl
             LineHeight = 15,
             Margin = new Thickness(0, 8, 0, 12),
         });
-
-        for (int i = 0; i < _report.Route.Count; i++)
-        {
-            _rail.Children.Add(RailStep(i));
-        }
+        for (int i = 0; i < _report.Route.Count; i++) _list.Children.Add(RailStep(i));
     }
+
+    private Control Hit(int index)
+    {
+        var name = new TextBlock
+        {
+            Text = _report.Symbols[index].Display,
+            FontFamily = Broadsheet.Fonts.Mono,
+            FontSize = Broadsheet.Fonts.MonoSmall,
+            Foreground = Broadsheet.Brush(index == _selected
+                ? Broadsheet.TextPrimary : Broadsheet.TextSecondary),
+            TextTrimming = TextTrimming.CharacterEllipsis,
+        };
+        var button = new Button
+        {
+            Content = name,
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(0),
+            Padding = new Thickness(2, 6),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Left,
+        };
+        int target = index;
+        button.Click += (_, _) => { _selected = target; RefreshList(); _ = ShowAsync(target); };
+        return button;
+    }
+
+    private static TextBlock Note(string text) => new()
+    {
+        Text = text,
+        FontFamily = Broadsheet.Fonts.Serif,
+        FontSize = Broadsheet.Fonts.Caption,
+        Foreground = Broadsheet.Brush(Broadsheet.TextTertiary),
+        TextWrapping = TextWrapping.Wrap,
+        Margin = new Thickness(0, 8, 0, 0),
+    };
 
     private Control RailStep(int index)
     {
         var symbol = _report.Symbols[_report.Route[index].Symbol];
-        bool current = index == _step;
+        bool current = _report.Route[index].Symbol == _selected;
 
         // Position is set in weight, not a hue: both process inks already mean
         // a direction and a third colour would start competing with them.
@@ -147,22 +223,27 @@ public sealed class ReadView : UserControl
             HorizontalContentAlignment = HorizontalAlignment.Left,
         };
         int target = index;
-        button.Click += (_, _) => { _step = target; BuildRail(); _ = ShowStepAsync(target); };
+        button.Click += (_, _) =>
+        {
+            _selected = _report.Route[target].Symbol;
+            RefreshList();
+            _ = ShowAsync(_selected);
+        };
         return button;
     }
 
     // MARK: - The code
 
-    private async Task ShowStepAsync(int index)
+    private async Task ShowAsync(int index)
     {
-        if (_report.Route.Count == 0)
+        if (index < 0 || index >= _report.Symbols.Count)
         {
-            _stage.Content = Message(_t["routeEmpty"]);
+            _stage.Content = Message(_t["pickSomething"]);
             _inspector.Content = new InspectorView(_report, _t, -1, null);
             return;
         }
 
-        var symbol = _report.Symbols[_report.Route[index].Symbol];
+        var symbol = _report.Symbols[index];
         if (symbol.File < 0 || symbol.File >= _report.Files.Count)
         {
             _stage.Content = Message(_t["pickSomething"]);
@@ -176,8 +257,7 @@ public sealed class ReadView : UserControl
             var snippet = await _engine.SourceAsync(
                 _report.Project.Root, file.Path, symbol.Line, symbol.EndLine);
             _stage.Content = Code(symbol, file, snippet);
-            _inspector.Content = new InspectorView(
-                _report, _t, _report.Route[index].Symbol, snippet);
+            _inspector.Content = new InspectorView(_report, _t, index, snippet);
         }
         catch (EngineException error)
         {
@@ -238,7 +318,7 @@ public sealed class ReadView : UserControl
             // neighbours it has, and a fixed one clipped the last of them.
             BorderThickness = new Thickness(0, 1, 0, 0),
             BorderBrush = Broadsheet.Brush(Broadsheet.Border),
-            Child = new CallTreeView(_report, _t, _report.Route[_step].Symbol),
+            Child = new CallTreeView(_report, _t, _selected),
         };
 
         var shell = new DockPanel();

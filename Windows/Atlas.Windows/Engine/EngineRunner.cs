@@ -23,14 +23,6 @@ public sealed class EngineException(string message) : Exception(message);
 /// </summary>
 public sealed class EngineRunner(string enginePath)
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = false,
-        // The engine omits null rather than writing it, so anything absent
-        // simply stays at its default here.
-        NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString,
-    };
-
     public string EnginePath { get; } = enginePath;
 
     /// <summary>
@@ -102,8 +94,9 @@ public sealed class EngineRunner(string enginePath)
         Report? report;
         try
         {
-            report = await JsonSerializer.DeserializeAsync<Report>(
-                process.StandardOutput.BaseStream, JsonOptions, cancellationToken);
+            report = await JsonSerializer.DeserializeAsync(
+                process.StandardOutput.BaseStream, ReportContext.Default.Report,
+                cancellationToken);
         }
         catch (JsonException error)
         {
@@ -149,8 +142,9 @@ public sealed class EngineRunner(string enginePath)
         using var process = new Process { StartInfo = startInfo };
         if (!process.Start()) throw new EngineException($"could not start {EnginePath}");
 
-        var table = await JsonSerializer.DeserializeAsync<Dictionary<string, string>>(
-            process.StandardOutput.BaseStream, cancellationToken: cancellationToken);
+        var table = await JsonSerializer.DeserializeAsync(
+            process.StandardOutput.BaseStream,
+            ReportContext.Default.DictionaryStringString, cancellationToken);
         var complaint = await process.StandardError.ReadToEndAsync(cancellationToken);
         await process.WaitForExitAsync(cancellationToken);
 

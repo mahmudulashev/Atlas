@@ -11,8 +11,39 @@
          Windows, macOS and Linux. Developing it on a Mac is therefore a real
          test of the Windows build rather than a rough preview. -->
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <!-- The .NET built-in COM marshaller is not trim compatible, and Avalonia
+         does not want it: its Win32 backend talks to IFileDialog and friends
+         through MicroCom, which is source-generated and needs no runtime
+         marshalling. The template switches this on by default; a trimmed
+         publish fails outright with it. -->
+    <BuiltInComInteropSupport>false</BuiltInComInteropSupport>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- IL2104 is the aggregate "this assembly produced trim warnings" notice.
+         The only one that fires is Avalonia.DesignerSupport, which exists for
+         the IDE's XAML previewer and is never reached at runtime. Individual
+         trim warnings about our own code (IL2026 and friends) are untouched by
+         this, and there are none: the JSON readers are source-generated. -->
+    <NoWarn>$(NoWarn);IL2104</NoWarn>
+  </PropertyGroup>
+
+  <!-- How a release is cut. Kept here rather than passed on the command line
+       so a local publish and the CI one cannot drift apart.
+
+       Self-contained because asking someone to install a .NET runtime before
+       they can look at a codebase is a worse first minute than a larger
+       download. Trimmed and compressed because the macOS build of Atlas is
+       3 MB, and shipping 100 for the same app would say something untrue
+       about what it is. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>partial</TrimMode>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <DebugType>none</DebugType>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <ItemGroup>

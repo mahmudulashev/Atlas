@@ -116,12 +116,46 @@ jobs:
             fingerprint.txt
             fixture.json
 
-      - name: Package the engine
+      # Only Windows can produce a complete package: the engine is Swift and
+      # does not cross-compile there from anywhere else.
+      - name: Set up .NET
+        if: runner.os == 'Windows'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Package
+        if: runner.os == 'Windows'
+        shell: bash
+        run: bash Scripts/package-windows.sh dist/Atlas-windows-x64
+
+      # The package is only worth shipping if it runs. This starts the actual
+      # published, trimmed, single-file exe and has it draw a screen -- which
+      # exercises the whole stack at once: the trimmer kept what the UI needs,
+      # the source-generated JSON readers survived, the client found the engine
+      # beside it, and Skia can put pixels on a surface.
+      - name: Draw a screen with it
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          ./dist/Atlas-windows-x64/Atlas.exe \
+            --shot windows-map.png --project . --screen map --select 26
+          test -s windows-map.png || { echo "::error::the app wrote no image"; exit 1; }
+          echo "rendered $(wc -c < windows-map.png) bytes"
+
+      - name: Upload what it drew
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
         with:
-          name: atlas-engine-windows-x64
-          path: ${{ matrix.binary }}
+          name: windows-screenshot
+          path: windows-map.png
+
+      - name: Upload the package
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Atlas-windows-x64
+          path: dist/Atlas-windows-x64
 
   agree:
     name: Platforms agree

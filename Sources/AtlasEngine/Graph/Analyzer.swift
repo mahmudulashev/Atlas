@@ -33,6 +33,59 @@ enum Analyzer {
         var includeTests: Bool = true
     }
 
+    /// Gathers every source file under `directory`, pruning as it goes.
+    ///
+    /// Written as a plain recursion rather than using `FileManager`'s
+    /// enumerator, which offers `skipDescendants()` for exactly this. That
+    /// call does not mean the same thing on every platform: on Windows it
+    /// prunes past the directory it was asked about, and a scan of this
+    /// repository came back with twelve files out of seventy-three — whole
+    /// directories missing, no error, just a smaller project. Pointing the
+    /// engine at any one of those directories found them all, which is what
+    /// gave the pruning away.
+    ///
+    /// Recursing by hand is a dozen lines, prunes exactly what it is told to,
+    /// and reads the same everywhere.
+    private static func collect(directory: URL,
+                                rootPath: String,
+                                options: Options,
+                                into paths: inout [(url: URL, relative: String, language: Language)]) {
+        guard paths.count < maxFiles else { return }
+
+        let fm = FileManager.default
+        guard let entries = try? fm.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: [.isDirectoryKey, .fileSizeKey],
+            options: [.skipsHiddenFiles]) else { return }
+
+        for url in entries {
+            guard paths.count < maxFiles else { return }
+            let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .fileSizeKey])
+
+            if values?.isDirectory == true {
+                guard !skippedDirectories.contains(url.lastPathComponent) else { continue }
+                collect(directory: url, rootPath: rootPath, options: options, into: &paths)
+                continue
+            }
+
+            guard let language = Language.detect(path: url.path) else { continue }
+            if let size = values?.fileSize, size > maxFileBytes { continue }
+
+            var relative = P.normalize(url.standardizedFileURL.path)
+            if relative.hasPrefix(rootPath) {
+                relative = String(relative.dropFirst(rootPath.count))
+                if relative.hasPrefix("/") { relative.removeFirst() }
+            }
+            if !options.includeTests {
+                let lower = relative.lowercased()
+                if lower.contains("/test") || lower.hasPrefix("test") || lower.contains("spec.") {
+                    continue
+                }
+            }
+            paths.append((url, relative, language))
+        }
+    }
+
     // MARK: - Entry point
 
     static func analyze(root: URL,
@@ -45,38 +98,8 @@ enum Analyzer {
         // ---- 1. Collect candidate files ---------------------------------
         var paths: [(url: URL, relative: String, language: Language)] = []
         let rootPath = P.normalize(root.standardizedFileURL.path)
-        let fm = FileManager.default
 
-        if let walker = fm.enumerator(at: root,
-                                      includingPropertiesForKeys: [.isDirectoryKey, .fileSizeKey],
-                                      options: [.skipsHiddenFiles, .skipsPackageDescendants]) {
-            for case let url as URL in walker {
-                guard paths.count < maxFiles else { break }
-                let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .fileSizeKey])
-
-                if values?.isDirectory == true {
-                    if skippedDirectories.contains(url.lastPathComponent) {
-                        walker.skipDescendants()
-                    }
-                    continue
-                }
-                guard let language = Language.detect(path: url.path) else { continue }
-                if let size = values?.fileSize, size > maxFileBytes { continue }
-
-                var relative = P.normalize(url.standardizedFileURL.path)
-                if relative.hasPrefix(rootPath) {
-                    relative = String(relative.dropFirst(rootPath.count))
-                    if relative.hasPrefix("/") { relative.removeFirst() }
-                }
-                if !options.includeTests {
-                    let lower = relative.lowercased()
-                    if lower.contains("/test") || lower.hasPrefix("test") || lower.contains("spec.") {
-                        continue
-                    }
-                }
-                paths.append((url, relative, language))
-            }
-        }
+        collect(directory: root, rootPath: rootPath, options: options, into: &paths)
 
         guard !paths.isEmpty else {
             progress(Progress(stage: .done, current: 0, total: 0))

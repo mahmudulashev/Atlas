@@ -81,11 +81,15 @@ jobs:
       # Proves the platforms agree, not merely that each one is self-consistent.
       # A parser that reads a file differently on Windows would pass every
       # check above and still make the two clients disagree.
+      # Both the fixture and this repository. The fixture alone was too small
+      # to notice a walk that lost whole directories -- six files have no
+      # subdirectories to lose.
       - name: Fingerprint the analysis
         shell: bash
         run: |
           "${{ matrix.binary }}" analyze Tests/Fixtures/python-package \
             --out fixture.json --no-drift
+          "${{ matrix.binary }}" analyze . --out repository.json --no-drift
           python - <<'PY'
           import hashlib, json
           # encoding is explicit: Python's text mode defaults to the locale
@@ -93,18 +97,21 @@ jobs:
           # typographic punctuation -- an em dash in kindExplanation -- and
           # reading those three UTF-8 bytes as three cp1252 characters changed
           # the digest without changing the analysis.
-          report = json.load(open("fixture.json", encoding="utf-8"))
-          report["project"].pop("parseSeconds")
-          report["project"].pop("analysedAt")
-          report["project"].pop("root")          # absolute, differs per runner
-          digest = hashlib.sha256(
-              json.dumps(report, sort_keys=True).encode()).hexdigest()
-          print(digest)
+          digests = []
+          for name in ("fixture.json", "repository.json"):
+              report = json.load(open(name, encoding="utf-8"))
+              report["project"].pop("parseSeconds")
+              report["project"].pop("analysedAt")
+              report["project"].pop("root")      # absolute, differs per runner
+              report["project"].pop("name")      # the checkout's folder name
+              digests.append(hashlib.sha256(
+                  json.dumps(report, sort_keys=True).encode()).hexdigest())
+              print(f"{name}: {report['project']['fileCount']} files, {digests[-1][:16]}")
           # newline="" keeps Python's text mode from turning this "\n" into
           # "\r\n" on Windows, which would make the file differ from the
           # others by an invisible byte and fail the comparison below.
           with open("fingerprint.txt", "w", newline="") as handle:
-              handle.write(digest + "\n")
+              handle.write(" ".join(digests) + "\n")
           PY
 
       - uses: actions/upload-artifact@v4
@@ -115,6 +122,7 @@ jobs:
           path: |
             fingerprint.txt
             fixture.json
+            repository.json
 
       # Only Windows can produce a complete package: the engine is Swift and
       # does not cross-compile there from anywhere else.

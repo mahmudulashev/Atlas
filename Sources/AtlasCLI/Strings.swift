@@ -15,7 +15,7 @@ enum Strings {
 
     /// Every interface string, in the requested language.
     static func table(_ t: L10n) -> [String: String] {
-        [
+        templates(t).merging([
             "appTagline": t.appTagline,
             "welcomeTitle": t.welcomeTitle,
             "welcomeBody": t.welcomeBody,
@@ -147,6 +147,32 @@ enum Strings {
             "widgetDescription": t.widgetDescription,
             "widgetEmpty": t.widgetEmpty,
             "widgetTopHub": t.widgetTopHub,
+        ]) { template, _ in template }
+    }
+
+    /// Strings that take a value, exported with `{0}` where it goes.
+    ///
+    /// Produced by asking `L10n` for the real sentence with a sentinel in it
+    /// and putting the placeholder back, rather than writing the templates out
+    /// here. A client that composed its own sentence would drift from the
+    /// macOS wording the first time either was edited, and word order is not
+    /// the same in both languages — "reaches 12" against "12 taga yetadi".
+    private static func templates(_ t: L10n) -> [String: String] {
+        let marker = 918_273_645
+        var out = [
+            "reaches": t.reaches(marker)
+                .replacingOccurrences(of: "\(marker)", with: "{0}"),
         ]
+
+        // `driftSince` renders a date, so the sentinel is a date and the
+        // placeholder replaces however this language chose to write it.
+        let date = Date(timeIntervalSince1970: 0)
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: t.language == .uz ? "uz" : "en_US")
+        formatter.dateFormat = "d MMM"
+        out["driftSince"] = t.driftSince(date)
+            .replacingOccurrences(of: formatter.string(from: date), with: "{0}")
+
+        return out
     }
 }

@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Atlas.Windows.Engine;
 
 /// <summary>
@@ -15,18 +17,34 @@ public sealed class Strings(IReadOnlyDictionary<string, string> table, string la
         table.TryGetValue(key, out var value) ? value : key;
 
     /// <summary>
-    /// Large counts, abbreviated. Mirrors L10n.count(_:) exactly — a figure
-    /// that reads "12.3k" on macOS must not read "12,340" on Windows.
+    /// A string that takes a value, with <c>{0}</c> filled in.
+    ///
+    /// The templates come from the engine complete, word order included:
+    /// English puts the number after the verb, Uzbek before it, so composing
+    /// the sentence here would get one of the two languages wrong.
+    /// </summary>
+    public string Format(string key, object value) =>
+        this[key].Replace("{0}", Convert.ToString(value, CultureInfo.CurrentCulture));
+
+    /// <summary>
+    /// Large counts, abbreviated. Mirrors L10n.count(_:) exactly.
+    ///
+    /// Formatted against the invariant culture, not the machine's. Swift's
+    /// String(format:) writes the C locale's decimal point, so a reader whose
+    /// region uses a comma would see "9,7k" here and "9.7k" in the same
+    /// project on macOS — the same number, printed two ways, in an app whose
+    /// whole point is that the two builds agree.
     /// </summary>
     public static string Count(int n) => n switch
     {
-        >= 1_000_000 => $"{n / 1_000_000.0:0.0}M",
-        >= 10_000    => $"{n / 1_000.0:0}k",
-        >= 1_000     => $"{n / 1_000.0:0.0}k",
-        _            => n.ToString(),
+        >= 1_000_000 => FormattableString.Invariant($"{n / 1_000_000.0:0.0}M"),
+        >= 10_000    => FormattableString.Invariant($"{n / 1_000.0:0}k"),
+        >= 1_000     => FormattableString.Invariant($"{n / 1_000.0:0.0}k"),
+        _            => n.ToString(CultureInfo.InvariantCulture),
     };
 
-    /// <summary>Mirrors L10n.seconds(_:).</summary>
+    /// <summary>Mirrors L10n.seconds(_:), invariant for the same reason.</summary>
     public static string Seconds(double v) =>
-        v < 1 ? $"{v * 1000:0} ms" : $"{v:0.00} s";
+        v < 1 ? FormattableString.Invariant($"{v * 1000:0} ms")
+              : FormattableString.Invariant($"{v:0.00} s");
 }

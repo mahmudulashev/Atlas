@@ -175,6 +175,10 @@ struct Report: Encodable {
     struct RouteStep: Encodable {
         var symbol: Int             // index into `symbols`
         var from: Int?              // the step that calls it
+        /// How many symbols this step can reach. Computed here because it is
+        /// a graph walk, and a client that repeated it would be reimplementing
+        /// the analysis it was given.
+        var reach: Int
     }
 
     struct DriftReport: Encodable {
@@ -186,6 +190,11 @@ struct Report: Encodable {
             var subject: String
             var delta: Int
             var detail: String
+            /// The change written out as a sentence. Composed here because the
+            /// wording depends on the kind *and* the numbers, which no simple
+            /// template survives — and because an entry can have no subject at
+            /// all, where the sentence is the whole row.
+            var note: String
             var regression: Bool
             var improvement: Bool
         }
@@ -266,8 +275,12 @@ extension Report {
                        symbol: $0.symbolID)
         }
 
-        let steps = route.steps.map { RouteStep(symbol: $0.nodeID, from: $0.reachedFrom) }
+        let steps = route.steps.map {
+            RouteStep(symbol: $0.nodeID, from: $0.reachedFrom,
+                      reach: graph.reach(of: $0.nodeID))
+        }
 
+        let words = L10n(language: language)
         let driftReport = drift.map { d in
             DriftReport(previousScan: d.previousScan,
                         entries: d.entries.map {
@@ -275,6 +288,7 @@ extension Report {
                                               subject: $0.subject,
                                               delta: $0.delta,
                                               detail: $0.detail,
+                                              note: words.driftNote($0),
                                               regression: $0.isRegression,
                                               improvement: $0.isImprovement)
                         })

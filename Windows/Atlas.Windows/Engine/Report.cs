@@ -208,6 +208,8 @@ public sealed record RouteStep
     [JsonPropertyName("symbol")] public int Symbol { get; init; }
     /// <summary>The step that calls this one; absent for the first.</summary>
     [JsonPropertyName("from")]   public int? From { get; init; }
+    /// <summary>How many symbols this step can reach, counted by the engine.</summary>
+    [JsonPropertyName("reach")]  public int Reach { get; init; }
 }
 
 public sealed record DriftReport
@@ -223,6 +225,8 @@ public sealed record DriftEntry
     [JsonPropertyName("subject")]     public string Subject { get; init; } = "";
     [JsonPropertyName("delta")]       public int Delta { get; init; }
     [JsonPropertyName("detail")]      public string Detail { get; init; } = "";
+    /// <summary>The change written out as a sentence, composed by the engine.</summary>
+    [JsonPropertyName("note")]        public string Note { get; init; } = "";
     [JsonPropertyName("regression")]  public bool Regression { get; init; }
     [JsonPropertyName("improvement")] public bool Improvement { get; init; }
 }

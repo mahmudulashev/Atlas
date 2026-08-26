@@ -51,6 +51,10 @@ public static class Broadsheet
         return BrushCache.GetOrAdd(key, _ => new SolidColorBrush(color).ToImmutable());
     }
 
+    /// <summary>The same ink, laid on more lightly.</summary>
+    public static Color Fade(Color color, double alpha) =>
+        Color.FromArgb((byte)Math.Clamp(alpha * 255, 0, 255), color.R, color.G, color.B);
+
     // MARK: - Paper and ink
     //
     // Light is the system's real ground: warm off-white stock, near-black ink.

@@ -218,6 +218,44 @@ jobs:
           chmod +x Scripts/*.sh
           ./Scripts/build.sh
 
+  # Avalonia draws every pixel itself, so a Linux build ought to look like the
+  # others — but "ought to" is not the same as having watched it. This puts the
+  # published binary in front of a virtual display and makes it draw, which is
+  # the only way to find out whether the toolkit resolves a serif there.
+  linux-app:
+    name: Linux client
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: SwiftyLab/setup-swift@latest
+        with:
+          swift-version: ${{ env.SWIFT_VERSION }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: A display, and fonts to draw with
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb fonts-dejavu-core fonts-liberation
+
+      - name: Build both halves
+        run: |
+          swift build -c release
+          dotnet publish Windows/Atlas.Windows -c Release -r linux-x64 -o dist/linux
+
+      - name: Draw a screen
+        run: |
+          cp .build/release/atlas-engine dist/linux/atlas-engine
+          xvfb-run -a ./dist/linux/Atlas --shot linux-overview.png --project . --screen overview
+          test -s linux-overview.png || { echo "::error::the app wrote no image"; exit 1; }
+          echo "rendered $(wc -c < linux-overview.png) bytes"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-screenshot
+          path: linux-overview.png
+
   agree:
     name: Platforms agree
     needs: engine

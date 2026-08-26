@@ -163,20 +163,27 @@ public static class Broadsheet
 
     // MARK: - Type
     //
-    // One serif throughout, as the system specifies. macOS reaches New York
-    // through SwiftUI's `.serif`; Windows has no New York, so the stack falls
-    // to Georgia — the closest thing Windows ships in spirit, a warm text
-    // serif drawn for screens rather than a scaled print face like Times.
-    // Listing New York first means a Mac still gets the face the design was
-    // drawn against.
+    // One serif throughout, as the system specifies, and each platform's best
+    // approximation of it in turn. macOS reaches New York through SwiftUI's
+    // `.serif`; Windows has no New York, so the stack falls to Georgia — the
+    // closest thing it ships in spirit, a warm text serif drawn for screens
+    // rather than a scaled print face like Times. Linux ships none of those,
+    // which is why the list carries on past them: without DejaVu and its
+    // neighbours the whole design would land on whatever sans-serif the
+    // toolkit happened to default to, and "one serif throughout" would quietly
+    // stop being true.
 
     public static class Fonts
     {
-        public static readonly FontFamily Serif =
-            new("New York, Georgia, Cambria, Times New Roman, serif");
+        public static readonly FontFamily Serif = new(
+            "New York, Georgia, Cambria, Times New Roman, " +   // macOS, Windows
+            "DejaVu Serif, Liberation Serif, Noto Serif, " +    // Linux
+            "serif");
 
-        public static readonly FontFamily Mono =
-            new("SF Mono, Cascadia Mono, Consolas, Menlo, monospace");
+        public static readonly FontFamily Mono = new(
+            "SF Mono, Menlo, Cascadia Mono, Consolas, " +       // macOS, Windows
+            "DejaVu Sans Mono, Liberation Mono, Noto Sans Mono, " +
+            "monospace");
 
         public const double Display = 34;
         public const double Title   = 20;

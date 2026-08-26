@@ -4,10 +4,12 @@
 
 **Read a codebase you have never seen.**
 
-A native macOS app that analyses a project and answers the three questions a
-newcomer actually has: what is this, how is it wired, and where do I start.
+Analyses a project and answers the three questions a newcomer actually has:
+what is this, how is it wired, and where do I start. Native on macOS, and on
+Windows through the same analysis engine — the two read a codebase
+identically, and CI fails if they ever stop.
 
-[![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-1a1a1a)]()
+[![Platform](https://img.shields.io/badge/platform-macOS%2014%2B%20%C2%B7%20Windows%2010%2B-1a1a1a)]()
 [![Language](https://img.shields.io/badge/Swift-6.3-orange)]()
 [![Architecture](https://img.shields.io/badge/Apple%20Silicon-arm64-0088b0)]()
 [![Size](https://img.shields.io/badge/app-3.1%20MB-d6006c)]()
@@ -17,6 +19,9 @@ newcomer actually has: what is this, how is it wired, and where do I start.
 
 <a href="https://github.com/mahmudulashev/Atlas/releases/latest/download/Atlas-1.0.dmg">
   <img src="https://img.shields.io/badge/Download%20Atlas.dmg-Apple%20Silicon%20(macOS)-0088b0?style=for-the-badge&logo=apple&logoColor=white" alt="Download Atlas DMG" />
+</a>
+<a href="https://github.com/mahmudulashev/Atlas/releases/latest">
+  <img src="https://img.shields.io/badge/Download%20Atlas.zip-Windows%20x64-0078d4?style=for-the-badge&logo=windows&logoColor=white" alt="Download Atlas for Windows" />
 </a>
 <a href="https://github.com/mahmudulashev/Atlas/releases">
   <img src="https://img.shields.io/github/v/release/mahmudulashev/Atlas?style=for-the-badge&color=d6006c&label=Releases" alt="Latest Releases" />
@@ -283,6 +288,42 @@ overview, as a ladder, as a matrix, as a route, as a list of findings.
 
 The interface ships in Uzbek and English, and the map view keeps its Uzbek name:
 *xarita*.
+
+## Windows
+
+The Windows build is two programs in one folder:
+
+    Atlas.exe          the interface, written with Avalonia
+    atlas-engine.exe   the analysis — the same Swift the macOS app links
+
+Nothing else. No installer, no runtime to fetch, and nothing written outside
+`%LOCALAPPDATA%\Atlas`, where Atlas keeps the scan history that lets it tell
+you what moved since last time.
+
+Splitting it that way was the point rather than a compromise. The parser, the
+graph, the layouts, the wording and the glossary all live in the engine, so a
+change to any of them reaches both versions at once. Only the drawing is
+written twice, because SwiftUI does not exist off Apple platforms and there is
+no honest way around that.
+
+You can check the claim yourself:
+
+```
+atlas-engine analyze <folder> --pretty
+```
+
+That prints everything the app draws. CI runs it on Windows, macOS and Linux
+and compares the three digests; a difference fails the build.
+
+### Building it
+
+```
+swift build -c release                 # the engine
+dotnet publish Windows/Atlas.Windows -c Release -r win-x64
+```
+
+Or `Scripts/package-windows.sh`, which does both and puts them together. That
+needs Windows: the engine is Swift and does not cross-compile there.
 
 ## License
 

@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
@@ -32,6 +33,49 @@ public partial class MainWindow : Window
     }
 
     private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
+
+    /// <summary>
+    /// The same shortcuts the macOS build has, under Ctrl rather than Command,
+    /// plus Ctrl+1..4 for the tabs — which is what a Windows reader will try
+    /// first, and costs nothing to honour.
+    /// </summary>
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        base.OnKeyDown(e);
+        if (e.Handled) return;
+
+        bool control = e.KeyModifiers.HasFlag(KeyModifiers.Control);
+        bool shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+        if (!control) return;
+
+        switch (e.Key)
+        {
+            case Key.O:
+                _ = ChooseAsync();
+                break;
+            case Key.R when _report is not null:
+                _ = AnalyzeAsync(_report.Project.Root);
+                break;
+            case Key.W when shift:
+                _report = null;
+                _complaint = null;
+                ShowWelcome();
+                break;
+            case Key.D0 when _report is not null:
+                ShowProject("overview");
+                break;
+            case Key.D1 when _report is not null: ShowProject("overview"); break;
+            case Key.D2 when _report is not null: ShowProject("map"); break;
+            case Key.D3 when _report is not null: ShowProject("read"); break;
+            case Key.D4 when _report is not null: ShowProject("review"); break;
+            case Key.E when _report is not null:
+                Reveal.InFileManager(_report.Project.Root);
+                break;
+            default:
+                return;
+        }
+        e.Handled = true;
+    }
 
     private async Task StartAsync()
     {

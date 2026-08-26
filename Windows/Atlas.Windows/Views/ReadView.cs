@@ -379,15 +379,27 @@ public sealed class ReadView : UserControl
             FontWeight = FontWeight.Medium,
             Foreground = Broadsheet.Brush(Broadsheet.ForKind(symbol.Kind, symbol.External)),
         });
-        header.Children.Add(new TextBlock
+        var where = new Button
         {
-            Text = $"{file.Path}:{symbol.Line}",
-            FontFamily = Broadsheet.Fonts.Serif,
-            FontSize = Broadsheet.Fonts.Micro,
-            Foreground = Broadsheet.Brush(Broadsheet.TextTertiary),
+            Content = new TextBlock
+            {
+                Text = $"{file.Path}:{symbol.Line}",
+                FontFamily = Broadsheet.Fonts.Serif,
+                FontSize = Broadsheet.Fonts.Micro,
+                Foreground = Broadsheet.Brush(Broadsheet.TextTertiary),
+                TextTrimming = TextTrimming.CharacterEllipsis,
+            },
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(0),
+            Padding = new Thickness(0),
             VerticalAlignment = VerticalAlignment.Center,
-            TextTrimming = TextTrimming.CharacterEllipsis,
-        });
+        };
+        // Atlas reads code; it does not edit it. Naming a file without being
+        // able to open it just moves the search back to the reader.
+        where.Click += (_, _) => Reveal.InEditor(
+            Path.Combine(_report.Project.Root, file.Path.Replace('/', Path.DirectorySeparatorChar)));
+        header.Children.Add(where);
 
         var gutter = new StackPanel { Margin = new Thickness(12, 10, 10, 10) };
         var code = new StackPanel { Margin = new Thickness(0, 10, 20, 10) };

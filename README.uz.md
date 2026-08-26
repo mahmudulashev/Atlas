@@ -291,6 +291,45 @@ koʻrinish, zina, jadval, yoʻnalish va topilmalar roʻyxati sifatida.
 Interfeys oʻzbek va ingliz tillarida, xarita koʻrinishi esa oʻz nomini saqlab
 qoldi: *xarita*.
 
+## Windows
+
+Windows versiyasi — bitta papkadagi ikki dastur:
+
+    Atlas.exe          interfeys, Avalonia bilan yozilgan
+    atlas-engine.exe   tahlil — macOS ilovasi ishlatadigan aynan o'sha Swift
+
+Boshqa hech narsa. O'rnatuvchi yo'q, yuklab olinadigan runtime yo'q, va
+`%LOCALAPPDATA%\Atlas` dan tashqariga hech narsa yozilmaydi — Atlas skanlar
+tarixini o'sha yerda saqlaydi, shuning uchun "o'tgan safardan beri nima
+o'zgardi" degan savolga javob bera oladi.
+
+Bunday bo'linish murosaga kelish emas, maqsadning o'zi edi. Parser, graf,
+joylashuvlar, matnlar va lug'at — hammasi engine ichida, ya'ni ulardan biriga
+kiritilgan o'zgarish ikkala versiyaga birdan yetib boradi. Faqat chizish ikki
+marta yozilgan, chunki SwiftUI Apple platformalaridan tashqarida mavjud emas
+va buning halol chorasi yo'q.
+
+Buni o'zingiz tekshirishingiz mumkin:
+
+```
+atlas-engine analyze <papka> --pretty
+```
+
+Bu ilova chizadigan hamma narsani chop etadi. CI uni Windows, macOS va
+Linux'da chopib, uchala natijani solishtiradi — farq chiqsa, qurilish
+yiqiladi.
+
+### Qurish
+
+```
+swift build -c release                 # engine
+dotnet publish Windows/Atlas.Windows -c Release -r win-x64
+```
+
+Yoki `Scripts/package-windows.sh` — u ikkalasini qilib, bir joyga yig'adi. Buning
+uchun Windows kerak: engine Swift'da yozilgan va u yerga kross-kompilyatsiya
+qilinmaydi.
+
 ## Litsenziya
 
 MIT

@@ -10,16 +10,24 @@ on:
   push:
     branches: [main]
     paths:
+      - 'Sources/Atlas/**'
       - 'Sources/AtlasEngine/**'
       - 'Sources/AtlasCLI/**'
+      - 'Sources/Shared/**'
+      - 'Sources/AtlasWidget/**'
+      - 'Scripts/build.sh'
       - 'Tests/Fixtures/**'
       - 'Scripts/verify-engine.py'
       - 'Package.swift'
       - '.github/workflows/engine.yml'
   pull_request:
     paths:
+      - 'Sources/Atlas/**'
       - 'Sources/AtlasEngine/**'
       - 'Sources/AtlasCLI/**'
+      - 'Sources/Shared/**'
+      - 'Sources/AtlasWidget/**'
+      - 'Scripts/build.sh'
       - 'Tests/Fixtures/**'
       - 'Scripts/verify-engine.py'
       - 'Package.swift'

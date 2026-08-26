@@ -26,13 +26,26 @@ SOURCES=()
 while IFS= read -r f; do SOURCES+=("$f"); done < <(find Sources/Atlas Sources/AtlasEngine Sources/Shared -name '*.swift' | sort)
 echo "▸ Compiling ${#SOURCES[@]} files…"
 
+# The on-device model is weak-linked when the SDK has it and left out
+# entirely when it does not. Passing -weak_framework for a framework the SDK
+# has never heard of is a hard link error, which is why this app would not
+# build on anything older than macOS 26 — and why its release workflow had
+# never once succeeded.
+MODEL_LINK=()
+if [ -d "$SDK/System/Library/Frameworks/FoundationModels.framework" ]; then
+  MODEL_LINK=(-Xlinker -weak_framework -Xlinker FoundationModels)
+  echo "▸ Model     : FoundationModels found, weak-linked"
+else
+  echo "▸ Model     : no FoundationModels in this SDK; building without it"
+fi
+
 xcrun swiftc \
   -sdk "$SDK" \
   -target "$TARGET" \
   -parse-as-library \
   -O -whole-module-optimization \
   -framework SwiftUI -framework AppKit -framework UserNotifications -framework WidgetKit \
-  -Xlinker -weak_framework -Xlinker FoundationModels \
+  ${MODEL_LINK[@]+"${MODEL_LINK[@]}"} \
   -o "$CONTENTS/MacOS/$APP_NAME" \
   "${SOURCES[@]}"
 

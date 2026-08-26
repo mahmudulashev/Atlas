@@ -1,0 +1,27 @@
+# The Swift half has no external dependencies at all — Package.swift declares
+# none, and the engine builds on Foundation. Everything below is the C# client,
+# which pulls Avalonia and, through it, Skia, HarfBuzz and a DBus client.
+#
+# `dotnet build` already fails on a vulnerable package: NuGet audits on
+# restore and TreatWarningsAsErrors turns that into an error. That is how the
+# high-severity advisory against Tmds.DBus.Protocol 0.20.0 was caught during
+# the Windows port. But it only speaks when someone builds, and a project can
+# sit for months between builds while an advisory is published against it.
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: /Windows/Atlas.Windows
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "build"
+
+  # The workflows pin actions by major version, which still leaves the Node
+  # deprecation warnings CI prints on every run.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "ci"

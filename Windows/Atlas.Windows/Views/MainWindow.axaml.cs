@@ -305,16 +305,7 @@ public partial class MainWindow : Window
             "map" => new MapView(_report, _strings),
             // The grid is bigger than any window at a useful cell size, so it
             // scrolls rather than zooms.
-            "matrix" => new ScrollViewer
-            {
-                HorizontalScrollBarVisibility =
-                    Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
-                Content = new Border
-                {
-                    Padding = new Avalonia.Thickness(26),
-                    Child = new MatrixView(_report, _strings),
-                },
-            },
+            "matrix" => MatrixPane(),
             "read" => new ReadView(_report, _strings, _engine!, _settings),
             "review" => new IssuesView(_report, _strings),
             _ => new OverviewView(_report, _strings),
@@ -325,6 +316,39 @@ public partial class MainWindow : Window
         shell.Children.Add(tabs);
         shell.Children.Add(body);
         Show(shell);
+    }
+
+    /// <summary>
+    /// The grid, scrolled rather than zoomed: at a useful cell size it is
+    /// bigger than any window, and shrinking it to fit would make the marks
+    /// unreadable, which is the one thing the view is for.
+    /// </summary>
+    private Control MatrixPane()
+    {
+        var grid = new MatrixView(_report!, _strings);
+        var scroller = new ScrollViewer
+        {
+            HorizontalScrollBarVisibility =
+                Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+            Content = new Border
+            {
+                Padding = new Avalonia.Thickness(26),
+                Child = grid,
+            },
+        };
+        // Applied after layout, not on the spot: a ScrollViewer clamps Offset
+        // against an extent it does not have until it has measured, so setting
+        // it any earlier silently lands on zero.
+        Avalonia.Vector? wanted = null;
+        grid.ScrollWanted += area =>
+            wanted = new Avalonia.Vector(Math.Max(0, area.X), Math.Max(0, area.Y));
+        scroller.LayoutUpdated += (_, _) =>
+        {
+            if (wanted is not { } target || scroller.Extent.Height <= 0) return;
+            wanted = null;
+            scroller.Offset = target;
+        };
+        return scroller;
     }
 
     private string Stage(string stage) => stage switch

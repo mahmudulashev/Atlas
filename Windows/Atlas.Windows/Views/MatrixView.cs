@@ -36,6 +36,14 @@ public sealed class MatrixView : Control
 
     private int? _selected;
 
+    /// <summary>
+    /// Where the selection sits on the canvas, so a container can bring it
+    /// into view. The grid is routinely larger than any window, and a row
+    /// picked by search or by keyboard is otherwise selected off-screen —
+    /// which reads as nothing having happened.
+    /// </summary>
+    public event Action<Rect>? ScrollWanted;
+
     public MatrixView(Report report, Strings t)
     {
         _t = t;
@@ -62,6 +70,22 @@ public sealed class MatrixView : Control
 
         Focusable = true;
         if (Screenshot.Select is { } node && _rank.ContainsKey(node)) _selected = node;
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        Announce();
+    }
+
+    private void Announce()
+    {
+        if (_selected is not { } picked || !_rank.TryGetValue(picked, out int rank)) return;
+        double at = Position(rank, _map.Matrix.Districts);
+        // The whole cross, not just the cell: the row and its column are what
+        // the selection is actually about.
+        ScrollWanted?.Invoke(new Rect(LeftGutter + at - 200, TopGutter + at - 200,
+                                      400, 400));
     }
 
     private static long Key(int row, int column) => ((long)row << 32) | (uint)column;
@@ -104,6 +128,7 @@ public sealed class MatrixView : Control
             {
                 int node = _order[rank];
                 _selected = _selected == node ? null : node;
+                Announce();
                 InvalidateVisual();
                 return;
             }

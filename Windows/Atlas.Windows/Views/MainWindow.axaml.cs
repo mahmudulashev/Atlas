@@ -14,6 +14,7 @@ public partial class MainWindow : Window
 
     private EngineRunner? _engine;
     private Strings _strings = new(new Dictionary<string, string>(), "en");
+    private Report? _report;
 
     public MainWindow()
     {
@@ -163,13 +164,69 @@ public partial class MainWindow : Window
 
         try
         {
-            var report = await _engine!.AnalyzeAsync(path, _strings.Language, progress);
-            Show(new OverviewView(report, _strings));
+            _report = await _engine!.AnalyzeAsync(path, _strings.Language, progress);
+            ShowProject(Screenshot.Screen);
         }
         catch (EngineException error)
         {
             Show(Message(_strings["noSourceFiles"], error.Message));
         }
+    }
+
+    // MARK: - The project shell
+
+    /// <summary>
+    /// The tabs, and whichever view is on. Built fresh per switch rather than
+    /// kept alive: each view reads a finished report and holds no state worth
+    /// preserving, and the Map refits itself to the window anyway.
+    /// </summary>
+    private void ShowProject(string screen)
+    {
+        if (_report is null) return;
+
+        var tabs = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 20,
+            Margin = new Avalonia.Thickness(44, 14, 44, 12),
+        };
+        foreach (var (key, name) in new[] { ("overview", "tabOverview"), ("map", "tabMap") })
+        {
+            bool on = key == screen;
+            var tab = new Button
+            {
+                Content = new TextBlock
+                {
+                    Text = _strings[name].ToUpperInvariant(),
+                    FontFamily = Broadsheet.Fonts.Serif,
+                    FontSize = Broadsheet.Fonts.Label,
+                    FontWeight = FontWeight.SemiBold,
+                    LetterSpacing = Broadsheet.Fonts.LabelTracking,
+                    // The current tab is the one printed solid — position is
+                    // set in ink weight, never a hue.
+                    Foreground = Broadsheet.Brush(on ? Broadsheet.TextPrimary
+                                                     : Broadsheet.TextTertiary),
+                },
+                Background = Brushes.Transparent,
+                BorderThickness = new Avalonia.Thickness(0, 0, 0, on ? 1.5 : 0),
+                BorderBrush = Broadsheet.Brush(Broadsheet.TextPrimary),
+                CornerRadius = new Avalonia.CornerRadius(0),
+                Padding = new Avalonia.Thickness(0, 0, 0, 5),
+            };
+            string target = key;
+            tab.Click += (_, _) => ShowProject(target);
+            tabs.Children.Add(tab);
+        }
+
+        Control body = screen == "map"
+            ? new LadderView(_report, _strings)
+            : new OverviewView(_report, _strings);
+
+        var shell = new DockPanel();
+        DockPanel.SetDock(tabs, Dock.Top);
+        shell.Children.Add(tabs);
+        shell.Children.Add(body);
+        Show(shell);
     }
 
     private string Stage(string stage) => stage switch

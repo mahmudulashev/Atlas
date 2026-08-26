@@ -162,6 +162,8 @@ enum Strings {
         var out = [
             "reaches": t.reaches(marker)
                 .replacingOccurrences(of: "\(marker)", with: "{0}"),
+            "columnDepth": t.columnDepth(marker)
+                .replacingOccurrences(of: "\(marker)", with: "{0}"),
         ]
 
         // `driftSince` renders a date, so the sentinel is a date and the

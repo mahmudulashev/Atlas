@@ -22,7 +22,7 @@ struct Report: Encodable {
 
     /// Bumped when a field changes meaning or disappears, so a mismatched
     /// client can say so instead of misreading the numbers.
-    static let schema = 1
+    static let schema = 2
 
     var schema: Int = Report.schema
     var project: Project
@@ -31,7 +31,7 @@ struct Report: Encodable {
     var calls: [Call]
     var fileEdges: [FileEdge]
     var hubs: [Int]
-    var diagram: Diagram?
+    var map: Map?
     var issues: [IssueEntry]
     var route: [RouteStep]
     var drift: DriftReport?
@@ -99,21 +99,22 @@ struct Report: Encodable {
         var t: Int
     }
 
-    // MARK: - Diagram
+    // MARK: - Map
 
-    /// The Map view, already laid out.
+    /// The call ladder, already placed.
     ///
-    /// The layout travels with the data because it is deliberate, not
-    /// incidental: columns come from dependency depth and the row order is
-    /// chosen to minimise crossings. Re-deriving that per platform would let
-    /// the two drawings drift apart. Coordinates are absolute on a canvas of
-    /// `canvas` size, so a client only pans and zooms.
-    struct Diagram: Encodable {
+    /// The layout travels with the data because it is deliberate — depth by
+    /// longest path, then barycentre sweeps to reduce crossings — and because
+    /// the picture is the product. Two clients each deriving their own would
+    /// draw the same repository two different ways. Coordinates are absolute
+    /// on a canvas of `canvas` size, so a client only pans and zooms.
+    struct Map: Encodable {
         var canvas: Size
         var nodes: [Node]
-        var cards: [Card]
-        var connectors: [Connector]
-        var columns: [Column]
+        var boxes: [Box]
+        /// Node indices per column, in the order they are stacked.
+        var columns: [[Int]]
+        var edges: [Edge]
         var cycles: [[Int]]         // indices into `nodes`
 
         struct Size: Encodable { var w: Double; var h: Double }
@@ -122,7 +123,7 @@ struct Report: Encodable {
             var file: Int           // index into `files`
             var path: String
             var name: String
-            var layer: String       // Layer.rawValue — drives the card colour
+            var layer: String       // Layer.rawValue — drives the district rule
             var layerLabel: String
             var language: String
             var symbols: [Int]      // indices into `symbols`, most connected first
@@ -132,8 +133,8 @@ struct Report: Encodable {
             var fanOut: Int
         }
 
-        struct Card: Encodable {
-            var node: Int           // index into `diagram.nodes`
+        struct Box: Encodable {
+            var node: Int           // index into `map.nodes`
             var x: Double
             var y: Double
             var w: Double
@@ -142,18 +143,11 @@ struct Report: Encodable {
             var row: Int
         }
 
-        struct Connector: Encodable {
-            var f: Int              // index into `cards`
+        /// A file-to-file dependency, weighted by how many call sites back it.
+        struct Edge: Encodable {
+            var f: Int              // index into `map.nodes`
             var t: Int
             var weight: Int
-            var backward: Bool      // a backwards arrow is a cycle
-            var points: [[Double]]  // orthogonal polyline, [[x, y], …]
-        }
-
-        struct Column: Encodable {
-            var x: Double
-            var layer: String
-            var label: String
         }
     }
 
@@ -208,7 +202,7 @@ extension Report {
     /// Assembles the report from a finished analysis.
     static func build(graph: CodeGraph,
                       fileGraph: FileGraph,
-                      layout: DiagramLayout?,
+                      layout: LadderLayout?,
                       issues: [Issue],
                       route: Route,
                       kind: ProjectKind,
@@ -300,61 +294,51 @@ extension Report {
                       calls: calls,
                       fileEdges: fileEdges,
                       hubs: graph.hubs(limit: 12),
-                      diagram: layout.map { diagram(fileGraph: fileGraph, layout: $0,
-                                                    language: language) },
+                      map: layout.map { map(fileGraph: fileGraph, layout: $0,
+                                            language: language) },
                       issues: issueEntries,
                       route: steps,
                       drift: driftReport)
     }
 
-    private static func diagram(fileGraph: FileGraph,
-                                layout: DiagramLayout,
-                                language: AppLanguage) -> Diagram {
+    private static func map(fileGraph: FileGraph,
+                            layout: LadderLayout,
+                            language: AppLanguage) -> Map {
         let nodes = fileGraph.nodes.map { node in
-            Diagram.Node(file: node.id,
-                         path: node.path,
-                         name: node.name,
-                         layer: node.layer.rawValue,
-                         layerLabel: language == .uz ? node.layer.uz : node.layer.en,
-                         language: node.language.rawValue,
-                         symbols: node.symbols,
-                         symbolCount: node.symbolCount,
-                         lines: node.lines,
-                         fanIn: node.fanIn,
-                         fanOut: node.fanOut)
+            Map.Node(file: node.id,
+                     path: node.path,
+                     name: node.name,
+                     layer: node.layer.rawValue,
+                     layerLabel: language == .uz ? node.layer.uz : node.layer.en,
+                     language: node.language.rawValue,
+                     symbols: node.symbols,
+                     symbolCount: node.symbolCount,
+                     lines: node.lines,
+                     fanIn: node.fanIn,
+                     fanOut: node.fanOut)
         }
 
-        let cards = layout.cards.map {
-            Diagram.Card(node: $0.nodeIndex,
-                         x: Double($0.frame.origin.x),
-                         y: Double($0.frame.origin.y),
-                         w: Double($0.frame.size.width),
-                         h: Double($0.frame.size.height),
-                         column: $0.column,
-                         row: $0.row)
+        // Sorted by node index: `frame` is a dictionary, and its order is not
+        // the same twice in a row.
+        let boxes = layout.frame.keys.sorted().compactMap { index -> Map.Box? in
+            guard let rect = layout.frame[index] else { return nil }
+            let column = layout.columns.firstIndex { $0.contains(index) } ?? 0
+            let row = layout.columns[column].firstIndex(of: index) ?? 0
+            return Map.Box(node: index,
+                           x: Double(rect.origin.x), y: Double(rect.origin.y),
+                           w: Double(rect.size.width), h: Double(rect.size.height),
+                           column: column, row: row)
         }
 
-        let connectors = layout.connectors.map {
-            Diagram.Connector(f: $0.from,
-                              t: $0.to,
-                              weight: $0.weight,
-                              backward: $0.isBackward,
-                              points: $0.points.map { [Double($0.x), Double($0.y)] })
-        }
-
-        let columns = layout.columnLabels.map {
-            Diagram.Column(x: Double($0.x),
-                           layer: $0.layer.rawValue,
-                           label: language == .uz ? $0.layer.uz : $0.layer.en)
-        }
-
-        return Diagram(canvas: Diagram.Size(w: Double(layout.canvasSize.width),
-                                            h: Double(layout.canvasSize.height)),
-                       nodes: nodes,
-                       cards: cards,
-                       connectors: connectors,
-                       columns: columns,
-                       cycles: fileGraph.cycles)
+        return Map(canvas: Map.Size(w: Double(layout.canvas.width),
+                                    h: Double(layout.canvas.height)),
+                   nodes: nodes,
+                   boxes: boxes,
+                   columns: layout.columns,
+                   edges: fileGraph.edges.map {
+                       Map.Edge(f: $0.from, t: $0.to, weight: $0.weight)
+                   },
+                   cycles: fileGraph.cycles)
     }
 
     // Both enums are ordered rather than named in the model, because ordering

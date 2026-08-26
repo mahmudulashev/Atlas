@@ -21,7 +21,7 @@ namespace Atlas.Windows.Engine;
 public sealed record Report
 {
     /// <summary>The schema this client understands.</summary>
-    public const int ExpectedSchema = 1;
+    public const int ExpectedSchema = 2;
 
     [JsonPropertyName("schema")]    public int Schema { get; init; }
     [JsonPropertyName("project")]   public ProjectInfo Project { get; init; } = new();
@@ -30,7 +30,7 @@ public sealed record Report
     [JsonPropertyName("calls")]     public IReadOnlyList<Call> Calls { get; init; } = [];
     [JsonPropertyName("fileEdges")] public IReadOnlyList<FileEdge> FileEdges { get; init; } = [];
     [JsonPropertyName("hubs")]      public IReadOnlyList<int> Hubs { get; init; } = [];
-    [JsonPropertyName("diagram")]   public DiagramInfo? Diagram { get; init; }
+    [JsonPropertyName("map")]       public MapInfo? Map { get; init; }
     [JsonPropertyName("issues")]    public IReadOnlyList<IssueEntry> Issues { get; init; } = [];
     [JsonPropertyName("route")]     public IReadOnlyList<RouteStep> Route { get; init; } = [];
     [JsonPropertyName("drift")]     public DriftReport? Drift { get; init; }
@@ -112,23 +112,24 @@ public sealed record FileEdge
 }
 
 /// <summary>
-/// The Map view, already laid out by the engine.
+/// The call ladder, already placed by the engine.
 ///
-/// The layout travels with the data because it is deliberate: columns come
-/// from dependency depth and row order is chosen to minimise crossings.
-/// Re-deriving it here would let the two drawings of Atlas drift apart.
-/// Coordinates are absolute on a canvas of <see cref="Canvas"/> size, so this
-/// client only pans and zooms.
+/// The layout travels with the data because it is deliberate — depth by
+/// longest path, then barycentre sweeps to reduce crossings — and because the
+/// picture is the product. Two clients each deriving their own would draw the
+/// same repository two different ways. Coordinates are absolute on a canvas of
+/// <see cref="Canvas"/> size, so this client only pans and zooms.
 /// </summary>
-public sealed record DiagramInfo
+public sealed record MapInfo
 {
-    [JsonPropertyName("canvas")]     public CanvasSize Canvas { get; init; } = new();
-    [JsonPropertyName("nodes")]      public IReadOnlyList<DiagramNode> Nodes { get; init; } = [];
-    [JsonPropertyName("cards")]      public IReadOnlyList<Card> Cards { get; init; } = [];
-    [JsonPropertyName("connectors")] public IReadOnlyList<Connector> Connectors { get; init; } = [];
-    [JsonPropertyName("columns")]    public IReadOnlyList<Column> Columns { get; init; } = [];
+    [JsonPropertyName("canvas")]  public CanvasSize Canvas { get; init; } = new();
+    [JsonPropertyName("nodes")]   public IReadOnlyList<MapNode> Nodes { get; init; } = [];
+    [JsonPropertyName("boxes")]   public IReadOnlyList<Box> Boxes { get; init; } = [];
+    /// <summary>Node indices per column, in the order they are stacked.</summary>
+    [JsonPropertyName("columns")] public IReadOnlyList<IReadOnlyList<int>> Columns { get; init; } = [];
+    [JsonPropertyName("edges")]   public IReadOnlyList<MapEdge> Edges { get; init; } = [];
     /// <summary>Indices into <see cref="Nodes"/>.</summary>
-    [JsonPropertyName("cycles")]     public IReadOnlyList<IReadOnlyList<int>> Cycles { get; init; } = [];
+    [JsonPropertyName("cycles")]  public IReadOnlyList<IReadOnlyList<int>> Cycles { get; init; } = [];
 }
 
 public sealed record CanvasSize
@@ -137,13 +138,13 @@ public sealed record CanvasSize
     [JsonPropertyName("h")] public double Height { get; init; }
 }
 
-public sealed record DiagramNode
+public sealed record MapNode
 {
     /// <summary>Index into <see cref="Report.Files"/>.</summary>
     [JsonPropertyName("file")]        public int File { get; init; }
     [JsonPropertyName("path")]        public string Path { get; init; } = "";
     [JsonPropertyName("name")]        public string Name { get; init; } = "";
-    /// <summary>Stable key — drives the card colour.</summary>
+    /// <summary>Stable key — drives the district rule down the box's left edge.</summary>
     [JsonPropertyName("layer")]       public string Layer { get; init; } = "";
     [JsonPropertyName("layerLabel")]  public string LayerLabel { get; init; } = "";
     [JsonPropertyName("language")]    public string Language { get; init; } = "";
@@ -155,9 +156,9 @@ public sealed record DiagramNode
     [JsonPropertyName("fanOut")]      public int FanOut { get; init; }
 }
 
-public sealed record Card
+public sealed record Box
 {
-    /// <summary>Index into <see cref="DiagramInfo.Nodes"/>.</summary>
+    /// <summary>Index into <see cref="MapInfo.Nodes"/>.</summary>
     [JsonPropertyName("node")]   public int Node { get; init; }
     [JsonPropertyName("x")]      public double X { get; init; }
     [JsonPropertyName("y")]      public double Y { get; init; }
@@ -167,23 +168,12 @@ public sealed record Card
     [JsonPropertyName("row")]    public int Row { get; init; }
 }
 
-public sealed record Connector
+/// <summary>A file-to-file dependency, weighted by how many call sites back it.</summary>
+public sealed record MapEdge
 {
-    /// <summary>Index into <see cref="DiagramInfo.Cards"/>.</summary>
-    [JsonPropertyName("f")]        public int From { get; init; }
-    [JsonPropertyName("t")]        public int To { get; init; }
-    [JsonPropertyName("weight")]   public int Weight { get; init; }
-    /// <summary>A backwards arrow is a cycle.</summary>
-    [JsonPropertyName("backward")] public bool Backward { get; init; }
-    /// <summary>Orthogonal polyline, each point [x, y].</summary>
-    [JsonPropertyName("points")]   public IReadOnlyList<IReadOnlyList<double>> Points { get; init; } = [];
-}
-
-public sealed record Column
-{
-    [JsonPropertyName("x")]     public double X { get; init; }
-    [JsonPropertyName("layer")] public string Layer { get; init; } = "";
-    [JsonPropertyName("label")] public string Label { get; init; } = "";
+    [JsonPropertyName("f")]      public int From { get; init; }
+    [JsonPropertyName("t")]      public int To { get; init; }
+    [JsonPropertyName("weight")] public int Weight { get; init; }
 }
 
 public sealed record IssueEntry

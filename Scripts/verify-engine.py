@@ -70,7 +70,7 @@ def check_structure(report, label):
     files, symbols = report["files"], report["symbols"]
     nf, ns = len(files), len(symbols)
 
-    check(report["schema"] == 1, f"{label}: schema is {report['schema']}, expected 1")
+    check(report["schema"] == 2, f"{label}: schema is {report['schema']}, expected 2")
 
     for i, s in enumerate(symbols):
         check(-1 <= s["file"] < nf, f"{label}: symbols[{i}].file={s['file']} out of range")
@@ -95,32 +95,36 @@ def check_structure(report, label):
         sym = issue.get("symbol")
         check(sym is None or 0 <= sym < ns, f"{label}: issues[{i}].symbol out of range")
 
-    diagram = report.get("diagram")
-    if diagram is None:
+    ladder = report.get("map")
+    if ladder is None:
         return
-    nodes, cards = diagram["nodes"], diagram["cards"]
-    width, height = diagram["canvas"]["w"], diagram["canvas"]["h"]
+    nodes, boxes = ladder["nodes"], ladder["boxes"]
+    width, height = ladder["canvas"]["w"], ladder["canvas"]["h"]
 
     for i, n in enumerate(nodes):
-        check(0 <= n["file"] < nf, f"{label}: diagram.nodes[{i}].file out of range")
-        for s in n["symbols"]:
-            check(0 <= s < ns, f"{label}: diagram.nodes[{i}] symbol {s} out of range")
+        check(0 <= n["file"] < nf, f"{label}: map.nodes[{i}].file out of range")
+        for s_ in n["symbols"]:
+            check(0 <= s_ < ns, f"{label}: map.nodes[{i}] symbol {s_} out of range")
 
-    for i, c in enumerate(cards):
-        check(0 <= c["node"] < len(nodes), f"{label}: diagram.cards[{i}].node out of range")
-        check(c["w"] > 0 and c["h"] > 0, f"{label}: diagram.cards[{i}] has no size")
-        check(0 <= c["x"] and c["x"] + c["w"] <= width + 1,
-              f"{label}: diagram.cards[{i}] sticks out of the canvas horizontally")
-        check(0 <= c["y"] and c["y"] + c["h"] <= height + 1,
-              f"{label}: diagram.cards[{i}] sticks out of the canvas vertically")
+    for i, b in enumerate(boxes):
+        check(0 <= b["node"] < len(nodes), f"{label}: map.boxes[{i}].node out of range")
+        check(b["w"] > 0 and b["h"] > 0, f"{label}: map.boxes[{i}] has no size")
+        check(0 <= b["x"] and b["x"] + b["w"] <= width + 1,
+              f"{label}: map.boxes[{i}] sticks out of the canvas horizontally")
+        check(0 <= b["y"] and b["y"] + b["h"] <= height + 1,
+              f"{label}: map.boxes[{i}] sticks out of the canvas vertically")
 
-    for i, k in enumerate(diagram["connectors"]):
-        check(0 <= k["f"] < len(cards) and 0 <= k["t"] < len(cards),
-              f"{label}: diagram.connectors[{i}] card index out of range")
-        check(len(k["points"]) >= 2,
-              f"{label}: diagram.connectors[{i}] has {len(k['points'])} points")
-        check(all(len(p) == 2 for p in k["points"]),
-              f"{label}: diagram.connectors[{i}] has a malformed point")
+    placed = {b["node"] for b in boxes}
+    check(placed == set(range(len(nodes))),
+          f"{label}: {len(nodes) - len(placed)} node(s) in the map were never placed")
+
+    for c, column in enumerate(ladder["columns"]):
+        for n_ in column:
+            check(0 <= n_ < len(nodes), f"{label}: map.columns[{c}] holds {n_}, out of range")
+
+    for i, e in enumerate(ladder["edges"]):
+        check(0 <= e["f"] < len(nodes) and 0 <= e["t"] < len(nodes),
+              f"{label}: map.edges[{i}] {e['f']}->{e['t']} out of range")
 
 
 # ---- determinism ---------------------------------------------------------

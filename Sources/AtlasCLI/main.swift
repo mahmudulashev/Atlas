@@ -206,7 +206,7 @@ guard !graph.nodes.isEmpty else {
 // The same order the app uses: the file graph feeds both the Map and the
 // issue finder, and drift compares against it.
 let fileGraph = FileGraph.build(from: graph, includeTests: testsInDiagram)
-let layout = wantLayout ? DiagramLayout(graph: fileGraph) : nil
+let layout = wantLayout ? LadderLayout(graph: fileGraph) : nil
 let issues = IssueFinder.find(graph: graph, fileGraph: fileGraph)
 let route = Route.build(from: graph)
 let kind = ProjectKind.heuristic(for: graph)

@@ -395,7 +395,7 @@ public sealed class OverviewView : UserControl
     /// </summary>
     private static Control Districts(Report report, Strings t)
     {
-        var nodes = report.Diagram?.Nodes ?? [];
+        var nodes = report.Map?.Nodes ?? [];
         var stack = new StackPanel { Margin = new Thickness(0, 34, 0, 0) };
         if (nodes.Count == 0) return stack;
 

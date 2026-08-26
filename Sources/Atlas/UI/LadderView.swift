@@ -20,12 +20,9 @@ struct LadderView: View {
     @State private var dragAnchor: CGSize = .zero
     @State private var didFit = false
 
-    // The design's grid.
-    private let columnWidth: CGFloat = 156
-    private let boxWidth: CGFloat = 132
-    private let boxHeight: CGFloat = 21
-    private let verticalGap: CGFloat = 5
-    private let headRoom: CGFloat = 36
+    // The design's grid, shared with the engine so the Windows client places
+    // the same boxes in the same order.
+    private let columnWidth = LadderLayout.columnWidth
 
     var body: some View {
         GeometryReader { geo in
@@ -59,85 +56,11 @@ struct LadderView: View {
 
     // MARK: - Model
 
-    /// Depth by longest path, capped, then a barycentre sweep to reduce
-    /// crossings — the same two passes the design specifies.
-    private struct Placed {
-        var columns: [[Int]] = []
-        var frame: [Int: CGRect] = [:]
-        var canvas = CGSize.zero
-    }
-
-    private var placed: Placed {
-        let graph = state.fileGraph
-        guard !graph.nodes.isEmpty else { return Placed() }
-
-        let maxDepth = 5
-        var depth = [Int](repeating: 0, count: graph.nodes.count)
-        for _ in 0..<12 {
-            for edge in graph.edges where depth[edge.to] < depth[edge.from] + 1 {
-                depth[edge.to] = min(maxDepth, depth[edge.from] + 1)
-            }
-        }
-
-        var columns: [[Int]] = Array(repeating: [], count: maxDepth + 1)
-        for index in graph.nodes.indices { columns[depth[index]].append(index) }
-
-        let districtRank: [Layer: Int] = [
-            .entry: 0, .ui: 0, .api: 1, .logic: 1, .util: 1, .config: 1,
-            .model: 2, .data: 2, .test: 2,
-        ]
-        func rank(_ i: Int) -> Int { districtRank[graph.nodes[i].layer] ?? 1 }
-
-        for c in columns.indices {
-            columns[c].sort {
-                rank($0) != rank($1) ? rank($0) < rank($1)
-                                     : graph.nodes[$0].symbolCount > graph.nodes[$1].symbolCount
-            }
-        }
-
-        var row: [Int: Int] = [:]
-        for column in columns { for (i, node) in column.enumerated() { row[node] = i } }
-
-        for sweep in 0..<6 {
-            let downward = sweep % 2 == 0
-            for c in columns.indices {
-                if downward && c == 0 { continue }
-                if !downward && c == columns.count - 1 { continue }
-                var scores: [Int: Double] = [:]
-                for node in columns[c] {
-                    let related = downward ? graph.incoming[node] : graph.outgoing[node]
-                    let rows = related.compactMap { row[$0] }
-                    scores[node] = rows.isEmpty ? Double(row[node] ?? 0)
-                        : Double(rows.reduce(0, +)) / Double(rows.count)
-                }
-                columns[c].sort {
-                    (scores[$0] ?? 0) != (scores[$1] ?? 0) ? (scores[$0] ?? 0) < (scores[$1] ?? 0)
-                                                           : rank($0) < rank($1)
-                }
-                for (i, node) in columns[c].enumerated() { row[node] = i }
-            }
-        }
-
-        // Columns are centred against the tallest, so the drawing reads as a
-        // band rather than hanging from the top edge.
-        let tallest = columns.map(\.count).max() ?? 0
-        let fullHeight = CGFloat(tallest) * (boxHeight + verticalGap) - verticalGap
-
-        var result = Placed()
-        result.columns = columns
-        for (c, column) in columns.enumerated() {
-            let height = CGFloat(column.count) * (boxHeight + verticalGap) - verticalGap
-            let top = headRoom + (fullHeight - height) / 2
-            for (i, node) in column.enumerated() {
-                result.frame[node] = CGRect(x: CGFloat(c) * columnWidth,
-                                            y: top + CGFloat(i) * (boxHeight + verticalGap),
-                                            width: boxWidth, height: boxHeight)
-            }
-        }
-        result.canvas = CGSize(width: CGFloat(columns.count) * columnWidth,
-                               height: headRoom + fullHeight + 20)
-        return result
-    }
+    /// Where every file sits. Computed by `LadderLayout` in the engine — the
+    /// depth pass and the barycentre sweeps used to live here, but the picture
+    /// is the product, and two clients each deriving their own would draw the
+    /// same repository two different ways.
+    private var placed: LadderLayout { LadderLayout(graph: state.fileGraph) }
 
     /// Everything reachable from a file, in one direction.
     private func reach(_ index: Int, downstream: Bool) -> Set<Int> {

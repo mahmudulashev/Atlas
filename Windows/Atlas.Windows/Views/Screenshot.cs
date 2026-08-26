@@ -13,12 +13,16 @@ namespace Atlas.Windows.Views;
 /// repeatable — and it works the same on a machine with no display permission
 /// to grant, because Avalonia is drawing the pixels either way.
 ///
-///     dotnet run -- --shot out.png --project ../..
+///     dotnet run -- --shot out.png --project ../.. --screen map
 /// </summary>
 public static class Screenshot
 {
     public static string? OutputPath { get; private set; }
     public static string? ProjectPath { get; private set; }
+    /// <summary>Which screen to photograph: "overview" (default) or "map".</summary>
+    public static string Screen { get; private set; } = "overview";
+    /// <summary>A map node to select, so the highlight can be photographed.</summary>
+    public static int? Select { get; private set; }
     public static bool Requested => OutputPath is not null;
 
     /// <summary>Pulls the developer flags out, returning the rest.</summary>
@@ -34,6 +38,14 @@ public static class Screenshot
                     break;
                 case "--project" when i + 1 < args.Length:
                     ProjectPath = args[++i];
+                    break;
+                case "--screen" when i + 1 < args.Length:
+                    Screen = args[++i];
+                    break;
+                case "--select" when i + 1 < args.Length
+                                     && int.TryParse(args[i + 1], out int node):
+                    Select = node;
+                    i++;
                     break;
                 default:
                     rest.Add(args[i]);

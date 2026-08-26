@@ -107,7 +107,11 @@ jobs:
           echo "SHA256 Checksum:"
           cat "${DMG_FILE}.sha256"
 
+      # Only on a tag. Run by hand from a branch, github.ref_name is the
+      # branch, and this would publish a release called "main" — which is the
+      # kind of thing you find out about after it has happened.
       - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           name: Atlas v${{ env.VERSION }}
@@ -120,3 +124,11 @@ jobs:
             Atlas-*.dmg.sha256
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # So a dry run still hands back something to look at.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Atlas-macos
+          path: |
+            Atlas-*.dmg
+            Atlas-*.dmg.sha256

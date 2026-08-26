@@ -177,6 +177,8 @@ struct Report: Encodable {
         var title: String
         var subject: String
         var detail: String
+        /// The same numbers with their units, in the requested language.
+        var measurement: String
         var advice: String
         var file: String
         var line: Int
@@ -273,6 +275,7 @@ extension Report {
         let calls = graph.edges.map { Call(f: $0.from, t: $0.to, n: $0.count) }
         let fileEdges = graph.fileReferences.map { FileEdge(f: $0.from, t: $0.to) }
 
+        let words = L10n(language: language)
         let issueEntries = issues.map {
             IssueEntry(id: $0.id,
                        kind: $0.kind.rawValue,
@@ -280,6 +283,7 @@ extension Report {
                        title: $0.title(language),
                        subject: $0.subject,
                        detail: $0.detail,
+                       measurement: words.measurement($0),
                        advice: $0.advice(language),
                        file: $0.file,
                        line: $0.line,
@@ -291,7 +295,6 @@ extension Report {
                       reach: graph.reach(of: $0.nodeID))
         }
 
-        let words = L10n(language: language)
         let driftReport = drift.map { d in
             DriftReport(previousScan: d.previousScan,
                         entries: d.entries.map {

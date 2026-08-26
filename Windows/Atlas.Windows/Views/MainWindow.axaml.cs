@@ -190,7 +190,8 @@ public partial class MainWindow : Window
             Spacing = 20,
             Margin = new Avalonia.Thickness(44, 14, 44, 12),
         };
-        foreach (var (key, name) in new[] { ("overview", "tabOverview"), ("map", "tabMap") })
+        foreach (var (key, name) in new[]
+                 { ("overview", "tabOverview"), ("map", "tabMap"), ("review", "tabReview") })
         {
             bool on = key == screen || (key == "map" && screen == "matrix");
             var tab = new Button
@@ -268,6 +269,7 @@ public partial class MainWindow : Window
                     Child = new MatrixView(_report, _strings),
                 },
             },
+            "review" => new IssuesView(_report, _strings),
             _ => new OverviewView(_report, _strings),
         };
 

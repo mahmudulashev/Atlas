@@ -203,6 +203,8 @@ public sealed record IssueEntry
     [JsonPropertyName("title")]    public string Title { get; init; } = "";
     [JsonPropertyName("subject")]  public string Subject { get; init; } = "";
     [JsonPropertyName("detail")]   public string Detail { get; init; } = "";
+    /// <summary>The same numbers with their units, in the report's language.</summary>
+    [JsonPropertyName("measurement")] public string Measurement { get; init; } = "";
     [JsonPropertyName("advice")]   public string Advice { get; init; } = "";
     [JsonPropertyName("file")]     public string File { get; init; } = "";
     [JsonPropertyName("line")]     public int Line { get; init; }

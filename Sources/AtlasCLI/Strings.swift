@@ -175,6 +175,12 @@ enum Strings {
         out["driftSince"] = t.driftSince(date)
             .replacingOccurrences(of: formatter.string(from: date), with: "{0}")
 
+        // `severityName` switches on an enum rather than taking a number, so
+        // the three answers are exported under keys of their own.
+        out["severityHigh"] = t.severityName(.high)
+        out["severityMedium"] = t.severityName(.medium)
+        out["severityLow"] = t.severityName(.low)
+
         return out
     }
 }

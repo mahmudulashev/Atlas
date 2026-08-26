@@ -181,6 +181,33 @@ struct L10n {
     }
     var issuesNone: String        { s("Eʼtibor talab qiladigan joy topilmadi.", "Nothing stood out.") }
 
+    /// An issue's numbers, said in units.
+    ///
+    /// `Issue.detail` carries the measurement as bare figures so the finder
+    /// stays language-free; this is where they are given their nouns, and word
+    /// order differs enough between the two that a format string will not do.
+    func measurement(_ issue: Issue) -> String {
+        let parts = issue.detail.split(separator: "·").map { $0.trimmingCharacters(in: .whitespaces) }
+        switch issue.kind {
+        case .complexFunction where parts.count == 3:
+            return language == .uz
+                ? "\(parts[0]) shart · \(parts[1]) qavat · \(parts[2]) qator"
+                : "\(parts[0]) branches · \(parts[1]) deep · \(parts[2]) lines"
+        case .oversizedFile:
+            return language == .uz ? "\(issue.detail) ta" : issue.detail
+        case .godFunction:
+            return language == .uz ? "\(issue.detail) ta chaqiruv" : "\(issue.detail) callers"
+        case .unreachable:
+            return language == .uz ? "\(issue.detail) qator" : "\(issue.detail) lines"
+        case .cycle:
+            return language == .uz ? "\(issue.detail) ta fayl" : "\(issue.detail) files"
+        case .layerViolation:
+            return language == .uz ? "\(issue.detail) ta chaqiruv" : "\(issue.detail) calls"
+        default:
+            return issue.detail
+        }
+    }
+
     func severityName(_ s2: Issue.Severity) -> String {
         switch s2 {
         case .high:   return s("Muhim", "Important")

@@ -160,27 +160,7 @@ private struct IssueRow: View {
     }
 
     /// The numbers behind the finding, spelled out rather than left as a code.
-    private var measurement: String {
-        let parts = issue.detail.split(separator: "·").map { $0.trimmingCharacters(in: .whitespaces) }
-        switch issue.kind {
-        case .complexFunction where parts.count == 3:
-            return loc.language == .uz
-                ? "\(parts[0]) shart · \(parts[1]) qavat · \(parts[2]) qator"
-                : "\(parts[0]) branches · \(parts[1]) deep · \(parts[2]) lines"
-        case .oversizedFile:
-            return loc.language == .uz ? "\(issue.detail) ta" : "\(issue.detail)"
-        case .godFunction:
-            return loc.language == .uz ? "\(issue.detail) ta chaqiruv" : "\(issue.detail) callers"
-        case .unreachable:
-            return loc.language == .uz ? "\(issue.detail) qator" : "\(issue.detail) lines"
-        case .cycle:
-            return loc.language == .uz ? "\(issue.detail) ta fayl" : "\(issue.detail) files"
-        case .layerViolation:
-            return loc.language == .uz ? "\(issue.detail) ta chaqiruv" : "\(issue.detail) calls"
-        default:
-            return issue.detail
-        }
-    }
+    private var measurement: String { loc.t.measurement(issue) }
 }
 
 extension Issue.Severity {

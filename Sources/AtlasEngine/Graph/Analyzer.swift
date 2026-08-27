@@ -150,7 +150,12 @@ enum Analyzer {
                 let tokens = Tokenizer(source: source, language: entry.language).tokenize()
                 parsed = Parser(language: entry.language, fileIndex: index).parse(tokens: tokens)
             }
-            let lines = source.reduce(into: 1) { acc, ch in if ch == "\n" { acc += 1 } }
+            // Counted over UTF-8 bytes, not Characters: `source` is a
+            // grapheme-broken collection, and asking it for a million
+            // Characters to compare each against "\n" costs several times
+            // what looking at the bytes does. Line endings are already
+            // normalised, so a 0x0A byte is a line and nothing else is.
+            let lines = source.utf8.count { $0 == 0x0A } + 1
 
             box.set(index, GraphBuilder.FileResult(path: entry.relative,
                                                    symbols: parsed.symbols,

@@ -145,38 +145,31 @@ jobs:
         shell: bash
         run: bash Scripts/package.sh windows dist/Atlas-windows-x64
 
+      # The same project reached by two different names must analyse the same.
+      # It did not: the packaged app drew ten files where the engine, on this
+      # runner and this checkout, had just found seventy-three -- whole
+      # directories missing, no error, and the only difference was whether the
+      # path was relative or absolute. Two lines to assert, and the fingerprint
+      # above cannot see it, since every scan there is spelled `.`.
+      - name: The same project by two names
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          count() { "${{ matrix.binary }}" analyze "$1" --out r.json --no-drift \
+                      --no-layout >/dev/null && python -c \
+                      "import json;print(json.load(open('r.json'))['project']['fileCount'])"; }
+          relative=$(count .)
+          absolute=$(count "$(pwd)")
+          echo "relative: $relative files, absolute: $absolute files"
+          [ "$relative" = "$absolute" ] || {
+            echo "::error::the same project analysed as $relative files by one name and $absolute by another"
+            exit 1; }
+
       # The package is only worth shipping if it runs. This starts the actual
       # published, trimmed, single-file exe and has it draw a screen -- which
       # exercises the whole stack at once: the trimmer kept what the UI needs,
       # the source-generated JSON readers survived, the client found the engine
       # beside it, and Skia can put pixels on a surface.
-      # A relative path and an absolute one must name the same project. They
-      # did not: the packaged app drew ten files where the engine had just
-      # found seventy-three, and the only difference was how the path reached
-      # it. Cheap to assert, and it would have caught that before it shipped.
-      # The packaged app drew ten files where the engine, on the same runner
-      # and the same checkout, had just found seventy-three. Print what each
-      # copy of the engine actually walked, so the difference is visible rather
-      # than inferred.
-      # The packaged app drew ten files where the engine, on the same runner
-      # and the same checkout, had just found seventy-three -- and the missing
-      # ones were whole directories, not a scattering. Pointing the engine at
-      # each of them separately says whether the walk is broken or whether
-      # something above is pruning it.
-      - name: What the engine walked
-        if: runner.os == 'Windows'
-        shell: bash
-        run: |
-          walk() { python Scripts/engine-walk.py .build/release/atlas-engine.exe "$1"; }
-          echo "-- the whole repository --"; walk .
-          echo "-- Sources on its own --";    walk Sources
-          echo "-- Scripts on its own --";    walk Scripts
-          echo "-- the client's Engine/ --";  walk Windows/Atlas.Windows/Engine
-          echo "-- the client's Views/ --";   walk Windows/Atlas.Windows/Views
-          echo "-- what is actually there --"
-          find . -name '*.swift' -not -path './.build/*' | wc -l | xargs echo "     .swift on disk:"
-          find . -name '*.cs' -not -path '*/obj/*' -not -path '*/bin/*' | wc -l | xargs echo "     .cs on disk:"
-
       - name: Draw a screen with it
         if: runner.os == 'Windows'
         shell: bash

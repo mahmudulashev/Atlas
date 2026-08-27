@@ -7,9 +7,11 @@ namespace Atlas.Windows.Engine;
 /// The handful of things Atlas remembers between runs.
 ///
 /// Kept beside the engine's own state — %LOCALAPPDATA%\Atlas on Windows,
-/// Application Support on macOS — so a user clearing one clears both. Nothing
-/// here is worth failing a launch over: a corrupt or missing file simply means
-/// defaults.
+/// ~/.local/share/Atlas on Linux — so a user clearing one clears both. That is
+/// the same answer SharedPaths.supportDirectory gives, and the two have to
+/// agree: the engine writes the scan history there and this writes the
+/// settings. Nothing here is worth failing a launch over: a corrupt or missing
+/// file simply means defaults.
 /// </summary>
 public sealed record Settings
 {

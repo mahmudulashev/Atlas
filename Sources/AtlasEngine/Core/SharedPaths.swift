@@ -36,16 +36,39 @@ enum SharedPaths {
         #endif
     }
 
-    /// Where Atlas keeps its own state. `realHome` is already the per-user
-    /// application-data root on Windows, so only macOS adds the two
-    /// `Library/Application Support` components.
+    /// Where Atlas keeps its own state.
+    ///
+    /// Three platforms, three conventions, and the reason for following each
+    /// one is that the engine and the client have to land in the *same*
+    /// directory. The client asks .NET for `LocalApplicationData`, which is
+    /// `%LOCALAPPDATA%` on Windows and `$XDG_DATA_HOME` — or `~/.local/share`
+    /// — everywhere else. The engine answered `Library/Application Support`
+    /// on Linux as well, so a Linux install kept its scan history in a
+    /// macOS-shaped folder the client never looked in, and the README that
+    /// ships in the package promised `~/.local/share/Atlas`, which was not
+    /// where any of it went.
+    ///
+    /// macOS is the exception on purpose: there the client is the SwiftUI app
+    /// and `Application Support` is the convention.
     static var supportDirectory: URL {
         #if os(Windows)
         return realHome.appendingPathComponent("Atlas", isDirectory: true)
-        #else
+        #elseif os(macOS)
         return realHome
             .appendingPathComponent("Library", isDirectory: true)
             .appendingPathComponent("Application Support", isDirectory: true)
+            .appendingPathComponent("Atlas", isDirectory: true)
+        #else
+        // Only an absolute XDG_DATA_HOME counts, which is what the
+        // specification says and what .NET checks before using it.
+        if let data = ProcessInfo.processInfo.environment["XDG_DATA_HOME"],
+           data.hasPrefix("/") {
+            return URL(fileURLWithPath: data, isDirectory: true)
+                .appendingPathComponent("Atlas", isDirectory: true)
+        }
+        return realHome
+            .appendingPathComponent(".local", isDirectory: true)
+            .appendingPathComponent("share", isDirectory: true)
             .appendingPathComponent("Atlas", isDirectory: true)
         #endif
     }

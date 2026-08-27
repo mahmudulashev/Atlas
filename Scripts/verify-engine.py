@@ -3,7 +3,7 @@
 
     Scripts/verify-engine.py .build/release/atlas-engine
 
-Three things are checked, in order of how badly they hurt when broken:
+Five things are checked, in order of how badly they hurt when broken:
 
   structure    every index in the report points at something that exists, and
                every card and connector has usable geometry. A UI reads these
@@ -24,11 +24,17 @@ Three things are checked, in order of how badly they hurt when broken:
                enormous line -- every file one line long, every import
                after the first one lost.
 
+  drift        the same two scans compared repeatedly give the same list of
+               changes. Every check above passes --no-drift, so this was the
+               one path nothing watched -- and it was the one still walking a
+               dictionary to build its output.
+
 Exits non-zero on the first failure, with the reason on stderr.
 """
 
 import hashlib
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -39,13 +45,18 @@ ROOT = Path(__file__).resolve().parent.parent
 failures = []
 
 
-def run(engine, project, *extra):
-    """Analyse `project` and return the parsed report."""
+def run(engine, project, *extra, drift=False):
+    """Analyse `project` and return the parsed report.
+
+    `--no-drift` unless asked otherwise: a scan that records itself is not
+    repeatable by construction, since the next one compares against it.
+    """
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp) / "report.json"
-        result = subprocess.run(
-            [str(engine), "analyze", str(project), "--out", str(out),
-             "--no-drift", *extra],
+        command = [str(engine), "analyze", str(project), "--out", str(out)]
+        if not drift:
+            command.append("--no-drift")
+        result = subprocess.run(command + list(extra),
             capture_output=True, text=True)
         if result.returncode != 0:
             fail(f"engine exited {result.returncode} on {project}\n{result.stderr.strip()}")
@@ -273,6 +284,92 @@ def digest_without_identity(report):
     return hashlib.sha256(json.dumps(trimmed, sort_keys=True).encode()).hexdigest()
 
 
+# ---- drift ---------------------------------------------------------------
+
+def history_directory():
+    """Where the engine keeps one record per project. Mirrors SharedPaths.
+
+    Not guessed: the same three answers `SharedPaths.supportDirectory` gives,
+    which are also the ones the C# client asks .NET for. If this ever stops
+    matching, the check below fails loudly rather than quietly passing on a
+    directory nobody writes to.
+    """
+    if sys.platform == "win32":
+        base = Path(os.environ.get("LOCALAPPDATA") or (Path.home() / "AppData" / "Local"))
+    elif sys.platform == "darwin":
+        base = Path.home() / "Library" / "Application Support"
+    else:
+        xdg = os.environ.get("XDG_DATA_HOME", "")
+        base = Path(xdg) if xdg.startswith("/") else Path.home() / ".local" / "share"
+    return base / "Atlas" / "history"
+
+
+def check_drift(engine):
+    """The same two scans, compared several times, must give the same answer.
+
+    Drift is the only part of a report that remembers anything, and it is the
+    only part every other check here is blind to: they all pass --no-drift,
+    because a scan that records itself cannot be repeated -- the next one would
+    compare against it and find nothing.
+
+    So the comparison is replayed instead of the scan. One scan lays down a
+    record; that record is then rewritten to describe a smaller, simpler
+    version of the same project, and put back before each of several identical
+    runs. Every run is therefore the same comparison, and must produce the same
+    list. It did not: the entries were built by walking a dictionary, and since
+    only the top few survive, an unchanged project reported a different set of
+    changes every time it was scanned.
+
+    Rewriting the record rather than the source is deliberate -- it makes every
+    symbol move by exactly the same amount, which is the case that broke: with
+    nothing to separate them, the order they happened to arrive in decided
+    which ones were shown.
+    """
+    history = history_directory()
+    with tempfile.TemporaryDirectory() as tmp:
+        project = Path(tmp) / "project"
+        shutil.copytree(ROOT / "Sources", project)
+
+        before = set(history.glob("*.json")) if history.is_dir() else set()
+        if run(engine, project, drift=True) is None:
+            return
+
+        if not history.is_dir():
+            fail(f"drift: the engine recorded nothing in {history}")
+            return
+        fresh = set(history.glob("*.json")) - before
+        record = fresh.pop() if fresh else max(history.glob("*.json"),
+                                               key=lambda f: f.stat().st_mtime)
+
+        # The previous scan, describing every function as shorter and less
+        # depended-on than it is now, so this scan finds the whole project
+        # grown by one identical step.
+        snapshot = json.loads(record.read_text(encoding="utf-8"))
+        for measurements in snapshot["symbols"].values():
+            measurements["span"] = max(1, measurements["span"] - 30)
+            measurements["callers"] = max(0, measurements["callers"] - 3)
+        baseline = json.dumps(snapshot)
+
+        seen, entries = set(), []
+        for _ in range(4):
+            record.write_text(baseline, encoding="utf-8")
+            report = run(engine, project, drift=True)
+            if report is None:
+                return
+            entries = (report.get("drift") or {}).get("entries", [])
+            seen.add(hashlib.sha256(
+                json.dumps(entries, sort_keys=True).encode()).hexdigest())
+
+        record.unlink(missing_ok=True)
+
+    # A check that passes because there was nothing to compare is not a check.
+    if not check(len(entries) > 1,
+                 f"drift: only {len(entries)} change(s) found, too few to order"):
+        return
+    check(len(seen) == 1,
+          f"drift: {len(seen)} different lists of changes from the same comparison")
+
+
 # ---- main ----------------------------------------------------------------
 
 def main():
@@ -305,6 +402,9 @@ def main():
 
     print("  line endings(CRLF vs LF)")
     check_line_endings(engine)
+
+    print("  drift       (the same comparison, replayed)")
+    check_drift(engine)
 
     if failures:
         print(f"\n{len(failures)} check(s) failed", file=sys.stderr)

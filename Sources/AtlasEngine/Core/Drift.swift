@@ -101,6 +101,15 @@ enum DriftStore {
     ///
     /// Thresholds exist because everything moves a little: a function that
     /// gained one line is noise, and a list of noise is a list nobody reads.
+    ///
+    /// Every step is ordered explicitly. `symbols` is a dictionary and Swift
+    /// reseeds its hashing per process, so walking it directly built the list
+    /// in a different order on every run; the sort below then kept ties in
+    /// whatever order they arrived in, and `prefix(limit)` cut a different
+    /// eight each time. The same unchanged project reported six different
+    /// Drifts in six runs. Sorting the keys, and settling ties on the entry
+    /// itself rather than on arrival order, is what makes this repeatable —
+    /// the same rule the edge list and the call chain already follow.
     static func compare(previous: ProjectSnapshotRecord,
                         current: ProjectSnapshotRecord,
                         limit: Int = 8) -> Drift {
@@ -117,8 +126,9 @@ enum DriftStore {
         }
 
         // ---- Symbols that changed shape ----
-        for (key, now) in current.symbols {
-            guard let then = previous.symbols[key] else { continue }
+        for key in current.symbols.keys.sorted() {
+            guard let now = current.symbols[key],
+                  let then = previous.symbols[key] else { continue }
             let name = key.contains("#") ? String(key.split(separator: "#").last!) : key
 
             let lineDelta = now.span - then.span
@@ -151,9 +161,14 @@ enum DriftStore {
         }
 
         // A new cycle outranks everything; after that, the biggest movement.
+        // Ties settle on the kind and then the subject, so the comparison is a
+        // total order rather than one that leans on the sort being stable —
+        // which Swift does not promise, and C# and Swift do not agree on.
         entries.sort { a, b in
             if (a.kind == .newCycle) != (b.kind == .newCycle) { return a.kind == .newCycle }
-            return abs(a.delta) > abs(b.delta)
+            if abs(a.delta) != abs(b.delta) { return abs(a.delta) > abs(b.delta) }
+            if a.kind != b.kind { return a.kind.rawValue < b.kind.rawValue }
+            return a.subject < b.subject
         }
 
         var drift = Drift()

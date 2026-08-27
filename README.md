@@ -124,6 +124,35 @@ with the codebase would name. In Flask it surfaces `Scaffold.route`,
 Pointed at its own source, it names `Parser.parse` — 80 branches, 5 levels deep,
 327 lines — as the hardest function to read. That is true.
 
+### How it is checked
+
+There is one engine and three platforms, so the check that matters is that they
+agree. Every push that touches the engine analyses a fixture *and this
+repository* on macOS, Windows and Linux, hashes each report, and fails the
+build if the three digests differ — a parser that read a file differently on
+Windows would pass every other check and still make the two clients disagree
+about the same code.
+
+Before that, `Scripts/verify-engine.py` runs against each build:
+
+| | What it proves |
+|---|---|
+| structure | every index in the report points at something that exists, and every card has usable geometry — a UI reads these without bounds-checking |
+| determinism | the same binary over the same files three times, byte for byte |
+| fixtures | a known project still yields the dependencies it is known to have |
+| highlighting | the colour spans reconstruct the file exactly — a highlighter that loses a byte draws code that is not the code |
+| line endings | a CRLF checkout and an LF one analyse identically |
+| drift | the same two scans compared repeatedly give the same list of changes |
+
+Determinism earns its own check because Swift reseeds its hashing every process,
+so anything that reaches output through a dictionary makes an unchanged project
+redraw differently on every scan. Bugs of exactly that shape have been caught
+here in the edge list, in the call chain, and in Drift.
+
+Finally, the Windows and Linux packages are started in CI and made to draw a
+screen. A build that cannot render is not a release, and finding that out from
+an artifact is cheaper than hearing it from someone who downloaded it.
+
 ---
 
 ## How it works

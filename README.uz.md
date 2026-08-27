@@ -126,6 +126,36 @@ yaʼni Redis kodini bilgan odam aynan shularni aytadi. Flask'da esa
 Oʻz kodiga qaratilganda `Parser.parse` ni eng murakkab funksiya deb koʻrsatadi —
 80 ta shart, 5 qavat ichma-ichlik, 327 qator. Bu rost.
 
+### Qanday tekshiriladi
+
+Bitta dvigatel, uchta platforma — demak asosiy savol ularning bir xil javob
+berishida. Dvigatelga tegadigan har bir push'da sinov loyihasi *va shu
+repozitoriyning oʻzi* macOS, Windows va Linux'da tahlil qilinadi, har bir
+hisobotdan hash olinadi va uchtasi mos kelmasa build yiqiladi. Windows'da
+faylni boshqacha oʻqiydigan parser qolgan barcha tekshiruvlardan oʻtib ketardi
+— va ikki mijoz bir xil kod haqida har xil gapirib turaverardi.
+
+Undan oldin har bir build `Scripts/verify-engine.py` dan oʻtadi:
+
+| | Nimani isbotlaydi |
+|---|---|
+| tuzilma | hisobotdagi har bir indeks mavjud narsaga ishora qiladi, har bir kartaning oʻlchami joyida — interfeys buni tekshirmasdan oʻqiydi |
+| takrorlanuvchanlik | bir xil dvigatel, bir xil fayllar, uch marta — bayt-bayt bir xil |
+| sinov loyihalari | maʼlum loyiha oʻzida bor deb bilingan bogʻlanishlarni beraveradi |
+| boʻyash | rang boʻlaklari faylni aynan qayta tiklaydi — bir baytni yoʻqotgan boʻyash kod boʻlmagan narsani kod qilib koʻrsatadi |
+| qator oxirlari | CRLF va LF nusxalari bir xil tahlil qilinadi |
+| oʻzgarishlar | bir xil ikki skanni qayta-qayta solishtirish bir xil roʻyxat beradi |
+
+Takrorlanuvchanlik alohida tekshiriladi, chunki Swift har bir jarayonda hash
+urugʻini yangilaydi: chiqishga lugʻat orqali yetib boradigan har qanday narsa
+oʻzgarmagan loyihani har skanda boshqacha chizdiradi. Aynan shu shakldagi
+xatolar shu yerda ushlangan — bogʻlanishlar roʻyxatida, chaqiruv zanjirida va
+Drift'da.
+
+Oxirida CI Windows va Linux paketlarini ishga tushirib, ekran chizdiradi. Chiza
+olmaydigan build reliz emas, va buni artefaktdan bilib olish yuklab olgan
+odamdan eshitishdan arzonroq.
+
 ---
 
 ## Qanday ishlaydi

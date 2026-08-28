@@ -23,7 +23,14 @@ OUT="${2:-dist/Atlas-$PLATFORM-x64}"
 CLIENT="Windows/Atlas.Windows"
 
 echo "▸ Engine"
-swift build -c release
+# Linux links the Swift runtime in. The default is to leave it dynamic, where
+# it resolves through an rpath into the toolchain's own lib directory -- an
+# absolute path that exists on the machine that built the package and on no
+# machine that unpacks it. Windows has no equivalent flag, and carries the
+# runtime beside the binary instead; see Scripts/copy-windows-runtime.py.
+BUILD=(swift build -c release)
+[ "$PLATFORM" = linux ] && BUILD+=(--static-swift-stdlib)
+"${BUILD[@]}"
 ENGINE=".build/release/atlas-engine$EXE"
 [ -f "$ENGINE" ] || { echo "no engine at $ENGINE — did swift build run?" >&2; exit 1; }
 
@@ -44,6 +51,17 @@ chmod +x "$OUT/atlas-engine$EXE" "$OUT/Atlas$EXE" 2>/dev/null || true
 # on no machine that had only downloaded it -- which is exactly what v1.2 did.
 if [ "$PLATFORM" = windows ]; then
   python Scripts/copy-windows-runtime.py "$OUT/atlas-engine.exe"
+fi
+
+# And the same question asked of Linux, where the answer should be that the
+# loader has nothing left to look for: ldd names every library the engine
+# needs by name, and none of them may be one the toolchain owns.
+if [ "$PLATFORM" = linux ]; then
+  if ldd "$OUT/atlas-engine" | grep -i swift; then
+    echo "the engine still wants a Swift library from the toolchain" >&2
+    exit 1
+  fi
+  echo "▸ Runtime : linked in, so the machine needs no Swift"
 fi
 
 if [ "$PLATFORM" = windows ]; then

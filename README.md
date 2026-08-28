@@ -156,7 +156,9 @@ Windows one starts with `PATH` cut back to Windows itself, because the Swift
 runtime is a set of DLLs the toolchain publishes on `PATH`: a runner that has
 just built the engine can start it whether or not the package carries them,
 which is how v1.2 was proved to run and shipped unable to start anywhere
-else.
+else. Linux is asked the same question a different way: its runtime is linked
+into the engine, and packaging fails if `ldd` still names a library the
+toolchain owns.
 
 ---
 

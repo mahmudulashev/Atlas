@@ -6,7 +6,6 @@
 |---|---|---|
 | **macOS** | Apple Silicon · 14+ | [`Atlas-VERSION.dmg`](https://github.com/mahmudulashev/Atlas/releases/download/vVERSION/Atlas-VERSION.dmg) |
 | **Windows** | x64 · 10+ | [`Atlas-VERSION-windows-x64.zip`](https://github.com/mahmudulashev/Atlas/releases/download/vVERSION/Atlas-VERSION-windows-x64.zip) |
-| **Linux** | x64 | [`Atlas-VERSION-linux-x64.tar.gz`](https://github.com/mahmudulashev/Atlas/releases/download/vVERSION/Atlas-VERSION-linux-x64.tar.gz) |
 
 ### Installing
 
@@ -14,15 +13,13 @@
 
 **Windows** — unzip anywhere and run `Atlas.exe`.
 
-**Linux** — `tar xzf Atlas-VERSION-linux-x64.tar.gz`, then run `./Atlas`.
-
-On Windows and Linux, keep the folder as it comes. `atlas-engine` is the analysis, which the app runs as a separate program; on Windows the `.dll` files beside it are the Swift runtime that engine is built against.
+On Windows, keep the folder as it comes. `atlas-engine` is the analysis, which the app runs as a separate program, and the `.dll` files beside it are the Swift runtime that engine is built against.
 
 No installer, no runtime to download, and nothing written outside your own user folder — Atlas keeps its scan history there so it can tell you what moved since last time.
 
-### One engine, three platforms
+### One engine, two platforms
 
-The reading is done by the same Swift code everywhere. Only the drawing is written twice, because SwiftUI does not exist off Apple platforms and there is no honest way around that.
+The reading is done by the same Swift code on both. Only the drawing is written twice, because SwiftUI does not exist off Apple platforms and there is no honest way around that.
 
 You can check the claim yourself:
 
@@ -30,7 +27,7 @@ You can check the claim yourself:
 atlas-engine analyze <folder> --pretty
 ```
 
-That prints everything the app draws. CI runs it on all three platforms on every push and compares the results; a difference fails the build.
+That prints everything the app draws. CI runs it on both platforms on every push and compares the results; a difference fails the build.
 
 ### Verifying a download
 

@@ -32,6 +32,7 @@ cp "$ENGINE" "$OUT/atlas-engine.exe"
 # into the binary, and the toolchain keeps them on PATH. A package built
 # without them therefore started on every machine that could have built it and
 # on no machine that had only downloaded it -- which is exactly what v1.2 did.
+echo "▸ Runtime"
 python Scripts/copy-windows-runtime.py "$OUT/atlas-engine.exe"
 
 cat > "$OUT/README.txt" <<TXT

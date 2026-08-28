@@ -65,9 +65,11 @@ jobs:
         timeout-minutes: 5
         run: |
           WINDOWS="$(cygpath "${SYSTEMROOT:-C:/Windows}")"
-          export PATH="$WINDOWS/System32:$WINDOWS"
-          "./dist/Atlas-$VERSION-windows-x64/Atlas.exe" \
-            --shot proof.png --project . --screen map
+          # The subshell keeps the scrub on the app rather than on this
+          # shell, which needs its own tools to check the result.
+          ( export PATH="$WINDOWS/System32:$WINDOWS"
+            "./dist/Atlas-$VERSION-windows-x64/Atlas.exe" \
+              --shot proof.png --project . --screen map )
           test -s proof.png || { echo "::error::the packaged app drew nothing"; exit 1; }
 
       - name: Zip

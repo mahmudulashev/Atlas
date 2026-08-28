@@ -154,7 +154,14 @@ Drift'da.
 
 Oxirida CI Windows va Linux paketlarini ishga tushirib, ekran chizdiradi. Chiza
 olmaydigan build reliz emas, va buni artefaktdan bilib olish yuklab olgan
-odamdan eshitishdan arzonroq.
+odamdan eshitishdan arzonroq. Windows paketi `PATH` Windows'ning oʻziga
+qisqartirilgan holda ishga tushiriladi: Swift runtime'i — toolchain `PATH` ga
+qoʻyadigan DLL'lar toʻplami, shuning uchun engine'ni endigina qurgan runner
+uni paket olib yurgan-yurmaganidan qatʼi nazar ishga tushira oladi. v1.2 aynan
+shunday "ishlaydi" deb tasdiqlanib, boshqa hech qayerda ochilmaydigan holda
+chiqib ketdi. Linux'ga savol boshqacha beriladi: runtime engine ichiga
+bogʻlangan, va `ldd` hamon toolchain'ga tegishli kutubxonani koʻrsatsa, paket
+yigʻilmaydi.
 
 ---
 
@@ -267,8 +274,9 @@ Barcha fayllar [soʻnggi relizda](https://github.com/mahmudulashev/Atlas/release
 
 **Linux** — `tar xzf` qiling va `./Atlas` ni ishga tushiring.
 
-Windows va Linux'da `atlas-engine` ilova bilan bir papkada tursin. U tahlilning
+Windows va Linux'da papkani kelgan holida saqlang. `atlas-engine` — tahlilning
 oʻzi; ilova uni alohida dastur sifatida chaqiradi va topa olmasa shuni aytadi.
+Windows'da uning yonidagi `.dll` fayllar — engine qurilgan Swift runtime'i.
 
 Oʻrnatuvchi yoʻq, yuklab olinadigan runtime yoʻq, va oʻz papkangizdan tashqariga
 hech narsa yozilmaydi — Atlas skanlar tarixini oʻsha yerda saqlaydi, shuning
@@ -347,7 +355,14 @@ Windows versiyasi — bitta papkadagi ikki dastur:
     Atlas.exe          interfeys, Avalonia bilan yozilgan
     atlas-engine.exe   tahlil — macOS ilovasi ishlatadigan aynan o'sha Swift
 
-Boshqa hech narsa. O'rnatuvchi yo'q, yuklab olinadigan runtime yo'q, va
+Ular yonida Swift runtime'ining DLL'lari turadi. Windows'da Swift yo'q va
+linker uni binary ichiga qo'shmaydi, shuning uchun
+`Scripts/copy-windows-runtime.py` engine'ning import jadvalini — va o'zi
+ko'chirgan har bir DLL'ning import jadvalini — o'qib, loader so'raydigan
+narsaning aynan o'zini olib yuradi. Hech narsa o'rnatilmaydi va ro'yxatga
+olinmaydi: papkani o'chirsangiz, Atlas ham yo'q bo'ladi.
+
+O'rnatuvchi yo'q, yuklab olinadigan runtime yo'q, va
 `%LOCALAPPDATA%\Atlas` dan tashqariga hech narsa yozilmaydi — Atlas skanlar
 tarixini o'sha yerda saqlaydi, shuning uchun "o'tgan safardan beri nima
 o'zgardi" degan savolga javob bera oladi.

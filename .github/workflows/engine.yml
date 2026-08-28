@@ -189,9 +189,12 @@ jobs:
         timeout-minutes: 5
         run: |
           WINDOWS="$(cygpath "${SYSTEMROOT:-C:/Windows}")"
-          export PATH="$WINDOWS/System32:$WINDOWS"
-          ./dist/Atlas-windows-x64/Atlas.exe \
-            --shot windows-map.png --project . --screen map --select 26
+          # Only the app loses the toolchain. Scrubbing PATH for the whole
+          # step takes this shell's own tools with it, and `wc` reporting
+          # nothing through a command substitution is not an error anywhere.
+          ( export PATH="$WINDOWS/System32:$WINDOWS"
+            ./dist/Atlas-windows-x64/Atlas.exe \
+              --shot windows-map.png --project . --screen map --select 26 )
           test -s windows-map.png || { echo "::error::the app wrote no image"; exit 1; }
           echo "rendered $(wc -c < windows-map.png) bytes"
 

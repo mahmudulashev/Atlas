@@ -6,10 +6,10 @@
 
 Loyihani tahlil qilib, yangi kelgan odamning uchta haqiqiy savoliga javob
 beradi: bu nima, qanday ulangan, va qayerdan boshlayman. macOS'da native,
-Windows va Linux'da esa o'sha tahlil engine'i orqali — uchalasi kodni bir xil
-o'qiydi, va agar bir kun farq qilsa, CI qurilishni yiqitadi.
+Windows'da esa o'sha tahlil engine'i orqali — ikkalasi kodni bir xil o'qiydi,
+va agar bir kun farq qilsa, CI qurilishni yiqitadi.
 
-![Platforma](https://img.shields.io/badge/macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-1a1a1a)
+![Platforma](https://img.shields.io/badge/macOS%20%C2%B7%20Windows-1a1a1a)
 ![Til](https://img.shields.io/badge/engine-Swift%206.3-orange)
 ![Interfeys](https://img.shields.io/badge/interfeys-SwiftUI%20%C2%B7%20Avalonia-0088b0)
 [![Litsenziya](https://img.shields.io/badge/litsenziya-MIT-green)](LICENSE)
@@ -21,9 +21,6 @@ o'qiydi, va agar bir kun farq qilsa, CI qurilishni yiqitadi.
 </a>
 <a href="https://github.com/mahmudulashev/Atlas/releases/latest">
   <img src="https://img.shields.io/badge/Yuklab%20olish-Windows-0078d4?style=for-the-badge&logo=windows&logoColor=white" alt="Windows uchun" />
-</a>
-<a href="https://github.com/mahmudulashev/Atlas/releases/latest">
-  <img src="https://img.shields.io/badge/Yuklab%20olish-Linux-d6006c?style=for-the-badge&logo=linux&logoColor=white" alt="Linux uchun" />
 </a>
 
 <br/>
@@ -128,10 +125,10 @@ Oʻz kodiga qaratilganda `Parser.parse` ni eng murakkab funksiya deb koʻrsatadi
 
 ### Qanday tekshiriladi
 
-Bitta dvigatel, uchta platforma — demak asosiy savol ularning bir xil javob
+Bitta dvigatel, ikkita platforma — demak asosiy savol ularning bir xil javob
 berishida. Dvigatelga tegadigan har bir push'da sinov loyihasi *va shu
-repozitoriyning oʻzi* macOS, Windows va Linux'da tahlil qilinadi, har bir
-hisobotdan hash olinadi va uchtasi mos kelmasa build yiqiladi. Windows'da
+repozitoriyning oʻzi* macOS va Windows'da tahlil qilinadi, har bir hisobotdan
+hash olinadi va ikkitasi mos kelmasa build yiqiladi. Windows'da
 faylni boshqacha oʻqiydigan parser qolgan barcha tekshiruvlardan oʻtib ketardi
 — va ikki mijoz bir xil kod haqida har xil gapirib turaverardi.
 
@@ -152,16 +149,14 @@ oʻzgarmagan loyihani har skanda boshqacha chizdiradi. Aynan shu shakldagi
 xatolar shu yerda ushlangan — bogʻlanishlar roʻyxatida, chaqiruv zanjirida va
 Drift'da.
 
-Oxirida CI Windows va Linux paketlarini ishga tushirib, ekran chizdiradi. Chiza
-olmaydigan build reliz emas, va buni artefaktdan bilib olish yuklab olgan
-odamdan eshitishdan arzonroq. Windows paketi `PATH` Windows'ning oʻziga
-qisqartirilgan holda ishga tushiriladi: Swift runtime'i — toolchain `PATH` ga
-qoʻyadigan DLL'lar toʻplami, shuning uchun engine'ni endigina qurgan runner
-uni paket olib yurgan-yurmaganidan qatʼi nazar ishga tushira oladi. v1.2 aynan
-shunday "ishlaydi" deb tasdiqlanib, boshqa hech qayerda ochilmaydigan holda
-chiqib ketdi. Linux'ga savol boshqacha beriladi: runtime engine ichiga
-bogʻlangan, va `ldd` hamon toolchain'ga tegishli kutubxonani koʻrsatsa, paket
-yigʻilmaydi.
+Oxirida CI Windows paketini ishga tushirib, ekran chizdiradi. Chiza olmaydigan
+build reliz emas, va buni artefaktdan bilib olish yuklab olgan odamdan
+eshitishdan arzonroq. Paket `PATH` Windows'ning oʻziga qisqartirilgan holda
+ishga tushiriladi: Swift runtime'i — toolchain `PATH` ga qoʻyadigan DLL'lar
+toʻplami, shuning uchun engine'ni endigina qurgan runner uni paket olib
+yurgan-yurmaganidan qatʼi nazar ishga tushira oladi. v1.2 aynan shunday
+"ishlaydi" deb tasdiqlanib, boshqa hech qayerda ochilmaydigan holda chiqib
+ketdi.
 
 ---
 
@@ -272,11 +267,9 @@ Barcha fayllar [soʻnggi relizda](https://github.com/mahmudulashev/Atlas/release
 
 **Windows** — arxivni istalgan joyga chiqarib, `Atlas.exe` ni ishga tushiring.
 
-**Linux** — `tar xzf` qiling va `./Atlas` ni ishga tushiring.
-
-Windows va Linux'da papkani kelgan holida saqlang. `atlas-engine` — tahlilning
-oʻzi; ilova uni alohida dastur sifatida chaqiradi va topa olmasa shuni aytadi.
-Windows'da uning yonidagi `.dll` fayllar — engine qurilgan Swift runtime'i.
+Windows'da papkani kelgan holida saqlang. `atlas-engine` — tahlilning oʻzi;
+ilova uni alohida dastur sifatida chaqiradi va topa olmasa shuni aytadi. Uning
+yonidagi `.dll` fayllar — engine qurilgan Swift runtime'i.
 
 Oʻrnatuvchi yoʻq, yuklab olinadigan runtime yoʻq, va oʻz papkangizdan tashqariga
 hech narsa yozilmaydi — Atlas skanlar tarixini oʻsha yerda saqlaydi, shuning
@@ -379,9 +372,8 @@ Buni o'zingiz tekshirishingiz mumkin:
 atlas-engine analyze <papka> --pretty
 ```
 
-Bu ilova chizadigan hamma narsani chop etadi. CI uni Windows, macOS va
-Linux'da chopib, uchala natijani solishtiradi — farq chiqsa, qurilish
-yiqiladi.
+Bu ilova chizadigan hamma narsani chop etadi. CI uni Windows va macOS'da
+chopib, ikkala natijani solishtiradi — farq chiqsa, qurilish yiqiladi.
 
 ### Qurish
 
@@ -390,9 +382,9 @@ swift build -c release                 # engine
 dotnet publish Windows/Atlas.Windows -c Release -r win-x64
 ```
 
-Yoki `Scripts/package.sh windows` — u ikkalasini qilib, bir joyga yig'adi;
-Linux uchun `linux`. Har biri o'z platformasida qurilishi kerak: engine
-Swift'da yozilgan va kross-kompilyatsiya qilinmaydi.
+Yoki `Scripts/package.sh` — u ikkalasini qilib, bir joyga yig'adi va engine
+talab qiladigan Swift runtime'ini ham qo'shadi. Windows'da bajarilishi kerak:
+engine Swift'da yozilgan va kross-kompilyatsiya qilinmaydi.
 
 ## Litsenziya
 

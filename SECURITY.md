@@ -16,10 +16,9 @@ Worth knowing before deciding whether something is a vulnerability:
 - It **reads** source files. It never writes to the project it is pointed at.
 - It makes **no network requests** of any kind — no telemetry, no update check,
   no crash reporting.
-- It writes only to its own folder: `%LOCALAPPDATA%\Atlas` on Windows,
-  `~/Library/Application Support/Atlas` on macOS, `~/.local/share/Atlas` on
-  Linux. That holds the scan history that powers the Drift section, and the
-  interface language.
+- It writes only to its own folder: `%LOCALAPPDATA%\Atlas` on Windows and
+  `~/Library/Application Support/Atlas` on macOS. That holds the scan history
+  that powers the Drift section, and the interface language.
 - The app runs `atlas-engine` as a child process and reads JSON from it.
 
 So the interesting surface is the parser: Atlas reads files it did not write,

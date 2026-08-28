@@ -6,10 +6,10 @@
 
 Analyses a project and answers the three questions a newcomer actually has:
 what is this, how is it wired, and where do I start. Native on macOS, and on
-Windows and Linux through the same analysis engine — all three read a codebase
-identically, and CI fails if they ever stop.
+Windows through the same analysis engine — both read a codebase identically,
+and CI fails if they ever stop.
 
-![Platform](https://img.shields.io/badge/macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-1a1a1a)
+![Platform](https://img.shields.io/badge/macOS%20%C2%B7%20Windows-1a1a1a)
 ![Language](https://img.shields.io/badge/engine-Swift%206.3-orange)
 ![Interface](https://img.shields.io/badge/interface-SwiftUI%20%C2%B7%20Avalonia-0088b0)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -21,9 +21,6 @@ identically, and CI fails if they ever stop.
 </a>
 <a href="https://github.com/mahmudulashev/Atlas/releases/latest">
   <img src="https://img.shields.io/badge/Download-Windows-0078d4?style=for-the-badge&logo=windows&logoColor=white" alt="Download for Windows" />
-</a>
-<a href="https://github.com/mahmudulashev/Atlas/releases/latest">
-  <img src="https://img.shields.io/badge/Download-Linux-d6006c?style=for-the-badge&logo=linux&logoColor=white" alt="Download for Linux" />
 </a>
 
 <br/>
@@ -126,12 +123,12 @@ Pointed at its own source, it names `Parser.parse` — 80 branches, 5 levels dee
 
 ### How it is checked
 
-There is one engine and three platforms, so the check that matters is that they
+There is one engine and two platforms, so the check that matters is that they
 agree. Every push that touches the engine analyses a fixture *and this
-repository* on macOS, Windows and Linux, hashes each report, and fails the
-build if the three digests differ — a parser that read a file differently on
-Windows would pass every other check and still make the two clients disagree
-about the same code.
+repository* on macOS and Windows, hashes each report, and fails the build if
+the two digests differ — a parser that read a file differently on Windows
+would pass every other check and still make the two clients disagree about the
+same code.
 
 Before that, `Scripts/verify-engine.py` runs against each build:
 
@@ -149,16 +146,13 @@ so anything that reaches output through a dictionary makes an unchanged project
 redraw differently on every scan. Bugs of exactly that shape have been caught
 here in the edge list, in the call chain, and in Drift.
 
-Finally, the Windows and Linux packages are started in CI and made to draw a
-screen. A build that cannot render is not a release, and finding that out from
-an artifact is cheaper than hearing it from someone who downloaded it. The
-Windows one starts with `PATH` cut back to Windows itself, because the Swift
-runtime is a set of DLLs the toolchain publishes on `PATH`: a runner that has
-just built the engine can start it whether or not the package carries them,
-which is how v1.2 was proved to run and shipped unable to start anywhere
-else. Linux is asked the same question a different way: its runtime is linked
-into the engine, and packaging fails if `ldd` still names a library the
-toolchain owns.
+Finally, the Windows package is started in CI and made to draw a screen. A
+build that cannot render is not a release, and finding that out from an
+artifact is cheaper than hearing it from someone who downloaded it. It starts
+with `PATH` cut back to Windows itself, because the Swift runtime is a set of
+DLLs the toolchain publishes on `PATH`: a runner that has just built the
+engine can start it whether or not the package carries them, which is how v1.2
+was proved to run and shipped unable to start anywhere else.
 
 ---
 
@@ -265,12 +259,9 @@ Every download is on the [latest release](https://github.com/mahmudulashev/Atlas
 
 **Windows** — unzip anywhere and run `Atlas.exe`.
 
-**Linux** — `tar xzf` the archive and run `./Atlas`.
-
-On Windows and Linux, keep the folder as it comes. `atlas-engine` is the
-analysis; the app runs it as a separate program and will say so if it cannot
-find it. On Windows the `.dll` files beside it are the Swift runtime that
-engine is built against.
+On Windows, keep the folder as it comes. `atlas-engine` is the analysis; the
+app runs it as a separate program and will say so if it cannot find it. The
+`.dll` files beside it are the Swift runtime that engine is built against.
 
 No installer, no runtime to download, and nothing written outside your own
 user folder — Atlas keeps its scan history there so it can tell you what moved
@@ -369,8 +360,8 @@ You can check the claim yourself:
 atlas-engine analyze <folder> --pretty
 ```
 
-That prints everything the app draws. CI runs it on Windows, macOS and Linux
-and compares the three digests; a difference fails the build.
+That prints everything the app draws. CI runs it on Windows and macOS and
+compares the two digests; a difference fails the build.
 
 ### Building it
 
@@ -379,9 +370,9 @@ swift build -c release                 # the engine
 dotnet publish Windows/Atlas.Windows -c Release -r win-x64
 ```
 
-Or `Scripts/package.sh windows`, which does both and puts them together —
-`linux` for the other one. Each needs the platform it is for: the engine is
-Swift and does not cross-compile.
+Or `Scripts/package.sh`, which does both, puts them together, and adds the
+Swift runtime the engine needs. It has to run on Windows: the engine is Swift
+and does not cross-compile.
 
 ## License
 

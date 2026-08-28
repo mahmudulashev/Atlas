@@ -1,9 +1,10 @@
-# Builds and checks atlas-engine on every platform it is meant to run on.
+# Builds and checks atlas-engine on both platforms it ships to.
 #
 # The macOS app is built by release.yml; this workflow is about the half that
-# is supposed to be portable. Windows is the one that matters — the Windows
-# client depends on this binary existing — but Linux is built too, because it
-# is free and it catches anything Apple's Foundation is quietly forgiving of.
+# has to be portable. Windows is the one that matters — the Windows client
+# depends on this binary existing — and macOS is here to disagree with it,
+# since a parser that reads a file differently on one of them is a bug that
+# only comparing the two can see.
 name: Engine
 
 on:
@@ -64,9 +65,6 @@ jobs:
           - name: macOS
             os: macos-15
             binary: .build/release/atlas-engine
-          - name: Linux
-            os: ubuntu-latest
-            binary: .build/release/atlas-engine
 
     steps:
       - uses: actions/checkout@v7
@@ -79,7 +77,7 @@ jobs:
         with:
           swift-version: ${{ env.SWIFT_VERSION }}
 
-      # Guarantees `python` exists under that name on all three runners.
+      # Guarantees `python` exists under that name on both runners.
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
@@ -153,7 +151,7 @@ jobs:
       - name: Package
         if: runner.os == 'Windows'
         shell: bash
-        run: bash Scripts/package.sh windows dist/Atlas-windows-x64
+        run: bash Scripts/package.sh dist/Atlas-windows-x64
 
       # The same project reached by two different names must analyse the same.
       # It did not: the packaged app drew ten files where the engine, on this
@@ -228,44 +226,6 @@ jobs:
         run: |
           chmod +x Scripts/*.sh
           ./Scripts/build.sh
-
-  # Avalonia draws every pixel itself, so a Linux build ought to look like the
-  # others — but "ought to" is not the same as having watched it. This puts the
-  # published binary in front of a virtual display and makes it draw, which is
-  # the only way to find out whether the toolkit resolves a serif there.
-  linux-app:
-    name: Linux client
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: SwiftyLab/setup-swift@latest
-        with:
-          swift-version: ${{ env.SWIFT_VERSION }}
-      - uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: '10.0.x'
-
-      - name: A display, and fonts to draw with
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq xvfb fonts-dejavu-core fonts-liberation
-
-      - name: Build both halves
-        run: |
-          swift build -c release
-          dotnet publish Windows/Atlas.Windows -c Release -r linux-x64 -o dist/linux
-
-      - name: Draw a screen
-        run: |
-          cp .build/release/atlas-engine dist/linux/atlas-engine
-          xvfb-run -a ./dist/linux/Atlas --shot linux-overview.png --project . --screen overview
-          test -s linux-overview.png || { echo "::error::the app wrote no image"; exit 1; }
-          echo "rendered $(wc -c < linux-overview.png) bytes"
-
-      - uses: actions/upload-artifact@v7
-        with:
-          name: linux-screenshot
-          path: linux-overview.png
 
   agree:
     name: Platforms agree

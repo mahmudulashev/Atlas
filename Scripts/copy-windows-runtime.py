@@ -29,6 +29,17 @@ import struct
 import sys
 from pathlib import Path
 
+# A Windows console encodes in the machine's code page -- cp1252 on the CI
+# runner -- and Python raises rather than approximating a character it cannot
+# encode. That is worth a question mark in a log line, never an exception in
+# the middle of packaging: the paths printed below come from wherever the
+# toolchain was installed, which on a machine whose user folder is not spelled
+# in Latin is not encodable at all. Everything this script writes is otherwise
+# ASCII, and the decorated output belongs to package.sh.
+for stream in (sys.stdout, sys.stderr):
+    if hasattr(stream, "reconfigure"):
+        stream.reconfigure(errors="replace")
+
 # API sets: names the loader resolves through a table inside Windows rather
 # than by opening a file. They are never on disk, so "not found" is the
 # ordinary answer for them and means nothing is wrong.
@@ -183,7 +194,7 @@ def main():
 
     for name, source, bytes_copied in copied:
         print(f"    {name:<34} {size(bytes_copied):>8}   {source}")
-    print(f"▸ Runtime : {len(copied)} DLL{'' if len(copied) == 1 else 's'}"
+    print(f"    {len(copied)} DLL{'' if len(copied) == 1 else 's'}"
           f", {size(sum(count for _, _, count in copied))}")
 
     # The question a downloaded copy of Atlas asks: with this folder and
@@ -196,7 +207,7 @@ def main():
             print(f"::error::{wanted_by} needs {name}, and the package does "
                   f"not carry it", file=sys.stderr)
         return 1
-    print("✓ every import resolves against the package and Windows alone")
+    print("    every import resolves against the package and Windows alone")
     return 0
 
 

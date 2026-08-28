@@ -29,6 +29,13 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      # Packaging works out which runtime DLLs the engine needs, and that is
+      # a Python script. The runner has a Python, but not dependably under
+      # that name.
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
       - name: Determine version
         shell: bash
         run: |
@@ -46,9 +53,19 @@ jobs:
 
       # A package that builds is not a package that runs. Start it and have it
       # draw a screen before anyone is offered the download.
+      #
+      # With the toolchain taken off the search path, so that the only Swift
+      # runtime within reach is the copy inside the package. This step passed
+      # for v1.2 and the download still could not start: the DLLs were being
+      # found on PATH, which every machine that builds Atlas has and no
+      # machine that downloads it does. A timeout because a missing DLL stops
+      # the process with a modal dialog rather than an exit code.
       - name: Prove it runs
         shell: bash
+        timeout-minutes: 5
         run: |
+          WINDOWS="$(cygpath "${SYSTEMROOT:-C:/Windows}")"
+          export PATH="$WINDOWS/System32:$WINDOWS"
           "./dist/Atlas-$VERSION-windows-x64/Atlas.exe" \
             --shot proof.png --project . --screen map
           test -s proof.png || { echo "::error::the packaged app drew nothing"; exit 1; }

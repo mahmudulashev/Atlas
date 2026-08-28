@@ -16,7 +16,7 @@
 
 **Linux** — `tar xzf Atlas-VERSION-linux-x64.tar.gz`, then run `./Atlas`.
 
-On Windows and Linux, keep `atlas-engine` in the same folder as the app. That is the analysis; the app runs it as a separate program.
+On Windows and Linux, keep the folder as it comes. `atlas-engine` is the analysis, which the app runs as a separate program; on Windows the `.dll` files beside it are the Swift runtime that engine is built against.
 
 No installer, no runtime to download, and nothing written outside your own user folder — Atlas keeps its scan history there so it can tell you what moved since last time.
 

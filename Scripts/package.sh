@@ -1,5 +1,6 @@
 #!/bin/bash
-# Assembles a release: the client, the engine, and nothing else.
+# Assembles a release: the client, the engine, and what the engine needs to
+# start on a machine that has no Swift toolchain on it.
 #
 #   Scripts/package.sh windows [output-dir]
 #   Scripts/package.sh linux   [output-dir]
@@ -37,10 +38,24 @@ find "$OUT" -name '*.pdb' -delete
 cp "$ENGINE" "$OUT/atlas-engine$EXE"
 chmod +x "$OUT/atlas-engine$EXE" "$OUT/Atlas$EXE" 2>/dev/null || true
 
+# On Windows the Swift runtime is a set of DLLs rather than something linked
+# into the binary, and the toolchain keeps them on PATH. A package built
+# without them therefore started on every machine that could have built it and
+# on no machine that had only downloaded it -- which is exactly what v1.2 did.
+if [ "$PLATFORM" = windows ]; then
+  python Scripts/copy-windows-runtime.py "$OUT/atlas-engine.exe"
+fi
+
 if [ "$PLATFORM" = windows ]; then
   STORE='%LOCALAPPDATA%\Atlas'
+  RUNTIME='The .dll files beside them are the Swift runtime the engine is built
+against. They belong to this folder rather than to your system: nothing is
+installed, nothing is registered, and deleting the folder removes Atlas.
+
+'
 else
   STORE='~/.local/share/Atlas'
+  RUNTIME=''
 fi
 
 cat > "$OUT/README.txt" <<TXT
@@ -53,7 +68,7 @@ Two files matter here:
   Atlas$EXE          the app
   atlas-engine$EXE   the analysis, which the app runs as a separate program
 
-Keep them together. atlas-engine is the same code the macOS build of Atlas
+${RUNTIME}Keep them together. atlas-engine is the same code the macOS build of Atlas
 uses, so every version reads a project identically — you can check that
 yourself: \`atlas-engine$EXE analyze <folder> --pretty\` prints everything the
 app draws.

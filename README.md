@@ -151,7 +151,12 @@ here in the edge list, in the call chain, and in Drift.
 
 Finally, the Windows and Linux packages are started in CI and made to draw a
 screen. A build that cannot render is not a release, and finding that out from
-an artifact is cheaper than hearing it from someone who downloaded it.
+an artifact is cheaper than hearing it from someone who downloaded it. The
+Windows one starts with `PATH` cut back to Windows itself, because the Swift
+runtime is a set of DLLs the toolchain publishes on `PATH`: a runner that has
+just built the engine can start it whether or not the package carries them,
+which is how v1.2 was proved to run and shipped unable to start anywhere
+else.
 
 ---
 
@@ -260,9 +265,10 @@ Every download is on the [latest release](https://github.com/mahmudulashev/Atlas
 
 **Linux** — `tar xzf` the archive and run `./Atlas`.
 
-On Windows and Linux, keep `atlas-engine` in the same folder as the app. That
-is the analysis; the app runs it as a separate program and will say so if it
-cannot find it.
+On Windows and Linux, keep the folder as it comes. `atlas-engine` is the
+analysis; the app runs it as a separate program and will say so if it cannot
+find it. On Windows the `.dll` files beside it are the Swift runtime that
+engine is built against.
 
 No installer, no runtime to download, and nothing written outside your own
 user folder — Atlas keeps its scan history there so it can tell you what moved
@@ -339,7 +345,13 @@ The Windows build is two programs in one folder:
     Atlas.exe          the interface, written with Avalonia
     atlas-engine.exe   the analysis — the same Swift the macOS app links
 
-Nothing else. No installer, no runtime to fetch, and nothing written outside
+Beside them are the Swift runtime DLLs. Windows has no Swift of its own and the
+linker does not fold it into the binary, so `Scripts/copy-windows-runtime.py`
+reads the engine's import table — and the import table of every DLL it takes —
+and carries exactly what the loader will ask for. Nothing is installed and
+nothing is registered: deleting the folder removes Atlas.
+
+No installer, no runtime to fetch, and nothing written outside
 `%LOCALAPPDATA%\Atlas`, where Atlas keeps the scan history that lets it tell
 you what moved since last time.
 

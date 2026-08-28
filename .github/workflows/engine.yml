@@ -18,6 +18,11 @@ on:
       - 'Scripts/build.sh'
       - 'Tests/Fixtures/**'
       - 'Scripts/verify-engine.py'
+      # The packaging scripts belong here too. They are what decides whether
+      # a download starts on a machine without a toolchain, and nothing that
+      # ran on a change to them could tell.
+      - 'Scripts/package.sh'
+      - 'Scripts/copy-windows-runtime.py'
       - 'Package.swift'
       - '.github/workflows/engine.yml'
   pull_request:
@@ -30,6 +35,11 @@ on:
       - 'Scripts/build.sh'
       - 'Tests/Fixtures/**'
       - 'Scripts/verify-engine.py'
+      # The packaging scripts belong here too. They are what decides whether
+      # a download starts on a machine without a toolchain, and nothing that
+      # ran on a change to them could tell.
+      - 'Scripts/package.sh'
+      - 'Scripts/copy-windows-runtime.py'
       - 'Package.swift'
       - '.github/workflows/engine.yml'
   workflow_dispatch:
@@ -170,10 +180,18 @@ jobs:
       # exercises the whole stack at once: the trimmer kept what the UI needs,
       # the source-generated JSON readers survived, the client found the engine
       # beside it, and Skia can put pixels on a surface.
+      #
+      # PATH is cut back to Windows itself first. The Swift runtime is a set
+      # of DLLs the toolchain publishes on PATH, so a runner that built the
+      # engine can always start it -- and every check here said yes while the
+      # released zip could not start at all.
       - name: Draw a screen with it
         if: runner.os == 'Windows'
         shell: bash
+        timeout-minutes: 5
         run: |
+          WINDOWS="$(cygpath "${SYSTEMROOT:-C:/Windows}")"
+          export PATH="$WINDOWS/System32:$WINDOWS"
           ./dist/Atlas-windows-x64/Atlas.exe \
             --shot windows-map.png --project . --screen map --select 26
           test -s windows-map.png || { echo "::error::the app wrote no image"; exit 1; }

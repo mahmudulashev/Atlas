@@ -147,7 +147,13 @@ def closure(start, search, windows):
                 missing.append((name, binary.name))
                 continue
             resolved[name] = found
-            if windows not in found.parents:
+            # Windows' own DLLs need only other Windows DLLs, so descending
+            # into them would walk the operating system. What the package
+            # carries out of System32 is not Windows' own, whatever its
+            # address: MSVCP140.dll wants VCRUNTIME140_1.dll, and both belong
+            # to the Visual C++ redistributable. Carrying a file means
+            # carrying what that file needs.
+            if windows not in found.parents or key in MSVC_RUNTIME:
                 queue.append(found)
     return resolved, missing
 
@@ -201,11 +207,23 @@ def main():
     # Windows, and nothing else, does every import resolve? Answered here
     # rather than by starting the engine, because a missing DLL stops the
     # process with a modal dialog that would sit in CI until it timed out.
-    _, still_missing = closure(engine, [package, system32, windows], windows)
+    shipped, still_missing = closure(engine, [package, system32, windows], windows)
     if still_missing:
         for name, wanted_by in still_missing:
             print(f"::error::{wanted_by} needs {name}, and the package does "
                   f"not carry it", file=sys.stderr)
+        return 1
+
+    # Resolving is not enough for the files the package took responsibility
+    # for. A Visual C++ runtime DLL answered out of System32 proves only that
+    # this machine has the redistributable installed, which is the one thing a
+    # downloaded copy of Atlas cannot assume about the machine it lands on.
+    borrowed = sorted(name for name, found in shipped.items()
+                      if name.lower() in MSVC_RUNTIME and found.parent != package)
+    if borrowed:
+        for name in borrowed:
+            print(f"::error::{name} is being answered by this machine's "
+                  f"System32 rather than by the package", file=sys.stderr)
         return 1
     print("    every import resolves against the package and Windows alone")
     return 0

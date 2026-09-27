@@ -25,6 +25,10 @@ on:
       - 'Scripts/package.sh'
       - 'Scripts/copy-windows-runtime.py'
       - 'Package.swift'
+      # The Windows client too. The Windows job is the only place it is
+      # built, packaged and made to draw, and an Avalonia bump that touched
+      # nothing else got no check at all until someone ran this by hand.
+      - 'Windows/**'
       - '.github/workflows/engine.yml'
   pull_request:
     paths:
@@ -42,6 +46,10 @@ on:
       - 'Scripts/package.sh'
       - 'Scripts/copy-windows-runtime.py'
       - 'Package.swift'
+      # The Windows client too. The Windows job is the only place it is
+      # built, packaged and made to draw, and an Avalonia bump that touched
+      # nothing else got no check at all until someone ran this by hand.
+      - 'Windows/**'
       - '.github/workflows/engine.yml'
   workflow_dispatch:
 

@@ -16,6 +16,12 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: "build"
+    # Avalonia's packages ship together and must stay on one version; bumped
+    # one at a time, each PR leaves the client on two.
+    groups:
+      avalonia:
+        patterns:
+          - "Avalonia*"
 
   # The workflows pin actions by major version, which still leaves the Node
   # deprecation warnings CI prints on every run.
